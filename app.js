@@ -45,6 +45,13 @@ let currentSimulationInvoice = null;
 let currentSimulationMode = 'simulate';
 let confirmCallback = null;
 
+// Selección masiva de facturas (persiste entre cambios de filtro / búsqueda)
+const selectedInvoiceIds = new Set();
+// Estados desde los cuales una factura puede pasar a "Habilitada" mediante la acción masiva
+const HABILITAR_VALID_STATES = new Set(['Pendiente aprobación banco', 'Bloqueada']);
+const HABILITAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para habilitar';
+const HABILITAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para habilitar';
+
 function getSelectedOperatingEntityRazon() {
     const sel = document.getElementById('operating-entity-select');
     if (!sel || sel.value === '') return null;
@@ -516,8 +523,12 @@ function renderInvoices(filter = 'all', searchQuery = '') {
         return matchStatus && matchSearch && matchEnte;
     });
 
+    // Limpia selecciones que apuntan a facturas que ya no existen
+    pruneSelectionsToExistingInvoices();
+
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="table-empty">No se encontraron facturas con los filtros aplicados.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9"><div class="table-empty">No se encontraron facturas con los filtros aplicados.</div></td></tr>`;
+        updateInvoiceSelectionUI(filtered);
         return;
     }
 
@@ -533,8 +544,18 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openApprovalModal('${inv.id}')"><i class="ph ph-check-circle"></i> Aprobar Desembolso</button>`;
         }
 
+        const isChecked = selectedInvoiceIds.has(inv.id);
+        const safeId = invoiceIdToHtmlAttr(inv.id);
+
         const tr = document.createElement('tr');
+        if (isChecked) tr.classList.add('row-selected');
         tr.innerHTML = `
+            <td class="col-select">
+                <label class="row-checkbox" title="Seleccionar factura ${inv.id}">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} data-invoice-id="${safeId}" onchange="onInvoiceCheckboxChange(this)">
+                    <span class="row-checkbox-box" aria-hidden="true"></span>
+                </label>
+            </td>
             <td><strong>${inv.id}</strong></td>
             <td>${inv.egp}</td>
             <td>${inv.prov}</td>
@@ -546,6 +567,174 @@ function renderInvoices(filter = 'all', searchQuery = '') {
         `;
         tbody.appendChild(tr);
     });
+
+    updateInvoiceSelectionUI(filtered);
+}
+
+// Escapa el id de factura para usarlo de forma segura en un atributo HTML.
+function invoiceIdToHtmlAttr(id) {
+    return String(id).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
+
+// Quita del set de selección los IDs de facturas que ya no existen
+// (por ejemplo si el listado cambia en el futuro).
+function pruneSelectionsToExistingInvoices() {
+    const existing = new Set(invoices.map(i => i.id));
+    [...selectedInvoiceIds].forEach(id => {
+        if (!existing.has(id)) selectedInvoiceIds.delete(id);
+    });
+}
+
+// Refresca todos los controles que dependen de la selección actual:
+// header (checkbox / X) y botón Habilitar.
+function updateInvoiceSelectionUI(filteredInvoices) {
+    updateSelectAllToggle(filteredInvoices || getCurrentFilteredInvoices());
+    updateHabilitarButtonState();
+}
+
+function getCurrentFilteredInvoices() {
+    const filter = document.getElementById('filter-status')?.value || 'all';
+    const query = document.getElementById('search-invoice')?.value || '';
+    const enteRazon = getSelectedOperatingEntityRazon();
+    return invoices.filter(inv => {
+        const matchStatus = filter === 'all' || inv.estado === filter;
+        const matchSearch = inv.id.includes(query) ||
+                            inv.egp.toLowerCase().includes(query.toLowerCase()) ||
+                            inv.prov.toLowerCase().includes(query.toLowerCase());
+        const matchEnte = !enteRazon || inv.egp === enteRazon || inv.prov === enteRazon;
+        return matchStatus && matchSearch && matchEnte;
+    });
+}
+
+// ===== Selección masiva: handlers =====
+
+function onInvoiceCheckboxChange(input) {
+    const id = input.dataset.invoiceId;
+    if (!id) return;
+    if (input.checked) {
+        selectedInvoiceIds.add(id);
+    } else {
+        selectedInvoiceIds.delete(id);
+    }
+    const tr = input.closest('tr');
+    if (tr) tr.classList.toggle('row-selected', input.checked);
+    updateInvoiceSelectionUI();
+}
+
+function onSelectAllToggleClick() {
+    if (selectedInvoiceIds.size > 0) {
+        clearAllInvoiceSelections();
+    } else {
+        selectAllVisibleInvoices();
+    }
+}
+
+function onSelectAllToggleKey(e) {
+    if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        onSelectAllToggleClick();
+    }
+}
+
+function selectAllVisibleInvoices() {
+    const visible = getCurrentFilteredInvoices();
+    visible.forEach(inv => selectedInvoiceIds.add(inv.id));
+    renderCurrentConfirmingFilters();
+}
+
+function clearAllInvoiceSelections() {
+    selectedInvoiceIds.clear();
+    renderCurrentConfirmingFilters();
+}
+
+// Renderiza el control de la cabecera. Dos estados:
+//   - 0 selecciones: caja vacía (al clickear, selecciona todo lo visible).
+//   - 1+ selecciones: ícono X (al clickear, deselecciona todo).
+function updateSelectAllToggle(filteredInvoices) {
+    const toggle = document.getElementById('invoices-select-all');
+    if (!toggle) return;
+    const count = selectedInvoiceIds.size;
+
+    if (count > 0) {
+        toggle.classList.add('select-toggle--clear');
+        toggle.classList.remove('select-toggle--checked');
+        toggle.setAttribute('aria-checked', 'true');
+        toggle.setAttribute('title', `Deseleccionar todas las facturas (${count} seleccionada${count === 1 ? '' : 's'})`);
+        toggle.innerHTML = '<i class="ph ph-x" aria-hidden="true"></i>';
+    } else {
+        toggle.classList.remove('select-toggle--clear');
+        toggle.classList.remove('select-toggle--checked');
+        toggle.setAttribute('aria-checked', 'false');
+        const visibleCount = (filteredInvoices || []).length;
+        toggle.setAttribute(
+            'title',
+            visibleCount > 0
+                ? `Seleccionar todas las facturas visibles (${visibleCount})`
+                : 'No hay facturas visibles para seleccionar'
+        );
+        toggle.innerHTML = '<span class="select-toggle-box" aria-hidden="true"></span>';
+    }
+}
+
+// Habilita / deshabilita el botón Habilitar según la selección actual.
+function updateHabilitarButtonState() {
+    const btn = document.getElementById('btn-habilitar-facturas');
+    const wrapper = document.getElementById('btn-habilitar-wrapper');
+    if (!btn || !wrapper) return;
+
+    const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
+    const count = selectedInvoices.length;
+    const allValid = count > 0 && selectedInvoices.every(i => HABILITAR_VALID_STATES.has(i.estado));
+
+    if (count === 0) {
+        btn.classList.add('is-disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.removeAttribute('title');
+        wrapper.setAttribute('title', HABILITAR_EMPTY_TOOLTIP);
+    } else if (!allValid) {
+        btn.classList.add('is-disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.removeAttribute('title');
+        wrapper.setAttribute('title', HABILITAR_INVALID_TOOLTIP);
+    } else {
+        btn.classList.remove('is-disabled');
+        btn.setAttribute('aria-disabled', 'false');
+        btn.setAttribute('title', `Habilitar ${count} factura${count === 1 ? '' : 's'} seleccionada${count === 1 ? '' : 's'}`);
+        wrapper.removeAttribute('title');
+    }
+}
+
+// Acción del botón Habilitar: confirma y, si se acepta, pasa todas las facturas
+// seleccionadas (todas en estado Pendiente o Bloqueada) a estado Habilitada.
+function habilitarSelectedInvoices() {
+    const btn = document.getElementById('btn-habilitar-facturas');
+    if (!btn || btn.classList.contains('is-disabled')) return;
+
+    const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
+    if (selectedInvoices.length === 0) return;
+    const allValid = selectedInvoices.every(i => HABILITAR_VALID_STATES.has(i.estado));
+    if (!allValid) return;
+
+    const count = selectedInvoices.length;
+    const idsPreview = selectedInvoices.slice(0, 5).map(i => i.id).join(', ');
+    const more = count > 5 ? ` y ${count - 5} más` : '';
+    const msg = count === 1
+        ? `¿Confirma habilitar la factura ${idsPreview}? Pasará al estado "Habilitada".`
+        : `¿Confirma habilitar ${count} facturas seleccionadas (${idsPreview}${more})? Todas pasarán al estado "Habilitada".`;
+
+    showCustomConfirm(msg, () => {
+        selectedInvoices.forEach(inv => { inv.estado = 'Habilitada'; });
+        selectedInvoiceIds.clear();
+        renderCurrentConfirmingFilters();
+        showCustomAlert(
+            count === 1
+                ? `La factura fue habilitada correctamente.`
+                : `${count} facturas fueron habilitadas correctamente.`,
+            'Habilitación exitosa'
+        );
+    }, 'Habilitar facturas');
 }
 
 document.getElementById('filter-status').addEventListener('change', (e) => {

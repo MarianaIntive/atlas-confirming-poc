@@ -211,9 +211,16 @@
                             </div>
                             <div class="filters-row-cargar">
                                 <span class="filter-field-label filter-field-label--spacer" aria-hidden="true">&nbsp;</span>
-                                <button type="button" id="btn-cargar-factura-confirming" class="btn-primary" onclick="openModal('new-invoice-modal')">
-                                    <i class="ph ph-plus"></i> Cargar Factura
-                                </button>
+                                <div class="filters-row-cargar-actions">
+                                    <span id="btn-habilitar-wrapper" class="btn-tooltip-wrapper">
+                                        <button type="button" id="btn-habilitar-facturas" class="btn-primary is-disabled" onclick="habilitarSelectedInvoices()">
+                                            <i class="ph ph-check-square-offset"></i> Habilitar
+                                        </button>
+                                    </span>
+                                    <button type="button" id="btn-cargar-factura-confirming" class="btn-primary" onclick="openModal('new-invoice-modal')">
+                                        <i class="ph ph-plus"></i> Cargar Factura
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -222,9 +229,14 @@
                     <div id="operating-entity-panel" class="ente-panel hidden" aria-live="polite"></div>
 
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="data-table data-table--selectable">
                             <thead>
                                 <tr>
+                                    <th class="col-select">
+                                        <span id="invoices-select-all" class="select-toggle" role="checkbox" aria-checked="false" tabindex="0" onclick="onSelectAllToggleClick()" onkeydown="onSelectAllToggleKey(event)" title="Seleccionar todas las facturas visibles">
+                                            <span class="select-toggle-box" aria-hidden="true"></span>
+                                        </span>
+                                    </th>
                                     <th>Nro. Factura</th>
                                     <th>EGP (Empresa)</th>
                                     <th>Proveedor</th>

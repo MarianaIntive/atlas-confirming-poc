@@ -1570,6 +1570,140 @@ textarea.input-text {
     background-color: #4a0f17;
 }
 
+/* ====== Acciones de la barra de filtros (Habilitar + Cargar Factura) ====== */
+.filters-row-cargar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.btn-tooltip-wrapper {
+    display: inline-flex;
+    cursor: help;
+}
+.btn-tooltip-wrapper > .btn-primary {
+    pointer-events: auto;
+}
+
+/* Estado deshabilitado para .btn-primary (sin usar el atributo disabled,
+   así el tooltip funciona en todos los browsers). */
+.btn-primary.is-disabled,
+.btn-primary[aria-disabled="true"] {
+    background-color: #bfbfbf;
+    color: #f3f3f3;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.85;
+}
+.btn-primary.is-disabled:hover,
+.btn-primary[aria-disabled="true"]:hover {
+    background-color: #bfbfbf;
+    box-shadow: none;
+}
+
+/* ====== Columna de selección masiva de facturas ====== */
+.col-select {
+    width: 44px;
+    padding-left: 12px !important;
+    padding-right: 8px !important;
+    text-align: center;
+}
+
+/* Control de la cabecera (toggle checkbox/X) */
+.select-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--atlas-primary);
+    transition: background 0.15s ease, color 0.15s ease;
+    user-select: none;
+    vertical-align: middle;
+}
+.select-toggle:hover {
+    background: var(--atlas-active-bg-soft);
+}
+.select-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--atlas-active-bg);
+}
+.select-toggle .select-toggle-box {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--atlas-primary);
+    border-radius: 4px;
+    background: #fff;
+    display: inline-block;
+}
+.select-toggle--clear {
+    color: var(--atlas-primary);
+    font-size: 18px;
+}
+.select-toggle--clear i {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Checkbox por fila de factura (estilo Atlas) */
+.row-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    vertical-align: middle;
+}
+.row-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.row-checkbox-box {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--atlas-primary);
+    border-radius: 4px;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.row-checkbox input[type="checkbox"]:checked + .row-checkbox-box {
+    background: var(--atlas-primary);
+    border-color: var(--atlas-primary);
+}
+.row-checkbox input[type="checkbox"]:checked + .row-checkbox-box::after {
+    content: "";
+    display: block;
+    width: 5px;
+    height: 9px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+}
+.row-checkbox input[type="checkbox"]:focus-visible + .row-checkbox-box {
+    box-shadow: 0 0 0 2px var(--atlas-active-bg);
+}
+
+/* Resalte sutil de fila seleccionada */
+.data-table tbody tr.row-selected,
+.data-table tbody tr.row-selected:nth-child(even),
+.data-table tbody tr.row-selected:nth-child(odd) {
+    background-color: var(--atlas-active-bg-soft);
+}
+.data-table tbody tr.row-selected:hover {
+    background-color: var(--atlas-active-bg);
+}
+
 @media (max-width: 720px) {
     .filters-row--with-cargar {
         flex-direction: column;
