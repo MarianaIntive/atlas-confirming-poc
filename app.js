@@ -308,9 +308,12 @@ function renderParticipants() {
             <td style="font-weight:600;">${p.lineaCredito > 0 ? formatCurrency(p.lineaCredito, 'GS') : '—'}</td>
             <td>${p.tasaInteres}%</td>
             <td style="text-align:center;">${atlasIcon}</td>
-            <td>
-                <button class="btn-secondary btn-sm" onclick="openAbmModal(${p.id})">
-                    <i class="ph ph-pencil-simple"></i> Editar
+            <td class="abm-actions-cell">
+                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openAbmModal(${p.id})" title="Editar ente" aria-label="Editar ente">
+                    <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteParticipant(${p.id})" title="Eliminar ente" aria-label="Eliminar ente">
+                    <i class="ph ph-x"></i>
                 </button>
             </td>
         `;
@@ -351,9 +354,12 @@ function renderAbmUsers() {
             <td>${u.telefono}</td>
             <td><strong>${enteRazon}</strong></td>
             <td>${tipoBadge}</td>
-            <td>
-                <button type="button" class="btn-secondary btn-sm" onclick="showCustomAlert('Edición de usuario: demostración.', 'Usuario')">
-                    <i class="ph ph-pencil-simple"></i> Editar
+            <td class="abm-actions-cell">
+                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="showCustomAlert('Edición de usuario: demostración.', 'Usuario')" title="Editar usuario" aria-label="Editar usuario">
+                    <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmUser(${u.id})" title="Eliminar usuario" aria-label="Eliminar usuario">
+                    <i class="ph ph-x"></i>
                 </button>
             </td>
         `;
@@ -375,9 +381,12 @@ function renderAbmRoles() {
             <td>${r.dominio}</td>
             <td><strong>${r.rol}</strong></td>
             <td style="font-size:12px;color:#6b7280;max-width:360px;">${summary}</td>
-            <td>
-                <button type="button" class="btn-secondary btn-sm" onclick="showCustomAlert('Edición de rol: demostración.', 'Rol')">
-                    <i class="ph ph-pencil-simple"></i> Editar
+            <td class="abm-actions-cell">
+                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="showCustomAlert('Edición de rol: demostración.', 'Rol')" title="Editar rol" aria-label="Editar rol">
+                    <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmRole(${r.id})" title="Eliminar rol" aria-label="Eliminar rol">
+                    <i class="ph ph-x"></i>
                 </button>
             </td>
         `;
@@ -1094,6 +1103,54 @@ function submitRoleModal() {
     showCustomAlert(
         `Rol "${rol}" en dominio "${dominio}" con ${perms.length} permiso(s) asignado(s) guardado correctamente (simulación).`,
         'Rol registrado'
+    );
+}
+
+
+// ====== ABM - Eliminación con confirmación ======
+
+function deleteParticipant(id) {
+    const p = participants.find(x => x.id === id);
+    if (!p) return;
+    showCustomConfirm(
+        `¿Confirma eliminar el ente "${p.razon}" (${p.tipo})? Esta acción no se puede deshacer.`,
+        () => {
+            participants = participants.filter(x => x.id !== id);
+            renderParticipants();
+            renderAbmUsers();
+            populateOperatingEntitySelect();
+            renderOperatingEntityPanel();
+            showCustomAlert(`El ente "${p.razon}" fue eliminado.`, 'Ente eliminado');
+        },
+        'Eliminar Ente'
+    );
+}
+
+function deleteAbmUser(id) {
+    const u = abmUsers.find(x => x.id === id);
+    if (!u) return;
+    showCustomConfirm(
+        `¿Confirma eliminar al usuario "${u.nombre} ${u.apellido}" (${u.email})? Esta acción no se puede deshacer.`,
+        () => {
+            abmUsers = abmUsers.filter(x => x.id !== id);
+            renderAbmUsers();
+            showCustomAlert(`El usuario "${u.nombre} ${u.apellido}" fue eliminado.`, 'Usuario eliminado');
+        },
+        'Eliminar Usuario'
+    );
+}
+
+function deleteAbmRole(id) {
+    const r = abmRoles.find(x => x.id === id);
+    if (!r) return;
+    showCustomConfirm(
+        `¿Confirma eliminar el rol "${r.rol}" del dominio "${r.dominio}"? Esta acción no se puede deshacer.`,
+        () => {
+            abmRoles = abmRoles.filter(x => x.id !== id);
+            renderAbmRoles();
+            showCustomAlert(`El rol "${r.rol}" fue eliminado.`, 'Rol eliminado');
+        },
+        'Eliminar Rol'
     );
 }
 

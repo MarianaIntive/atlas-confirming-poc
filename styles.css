@@ -1840,6 +1840,55 @@ textarea.input-text {
     padding: 12px 0;
 }
 
+/* ====== ABM: botones de acción icon-only (Editar / Eliminar) ====== */
+.abm-actions-cell {
+    white-space: nowrap;
+}
+.btn-icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0 2px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    vertical-align: middle;
+}
+.btn-icon-action i {
+    font-size: 18px;
+    line-height: 1;
+}
+.btn-icon-action--edit {
+    color: var(--text-dark);
+    border-color: #d4d4d4;
+    background: #fff;
+}
+.btn-icon-action--edit:hover {
+    background: var(--atlas-active-bg-soft);
+    color: var(--atlas-primary);
+    border-color: var(--border-atlas);
+}
+.btn-icon-action--delete {
+    color: var(--danger);
+    border-color: #f1c5c5;
+    background: #fff;
+}
+.btn-icon-action--delete:hover {
+    background: var(--danger-light);
+    color: #7a0e0e;
+    border-color: var(--danger);
+}
+.btn-icon-action:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--atlas-active-bg);
+}
+
 @media (max-width: 720px) {
     .filters-row--with-cargar {
         flex-direction: column;
