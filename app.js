@@ -70,11 +70,14 @@ const selectedInvoiceIds = new Set();
 const HABILITAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.BLOQUEADA]);
 const HABILITAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para habilitar';
 const HABILITAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para habilitar';
-// Estados desde los cuales una factura puede pasar a "Bloqueada" mediante la acción masiva
-// (camino simétrico "usuario bloquea factura" en la máquina de estados).
+// Solo facturas en "Pendiente" (ERP) u "Habilitada" pueden bloquearse de forma masiva.
 const BLOQUEAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.HABILITADA]);
-const BLOQUEAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para bloquear';
-const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para bloquear';
+function isInvoiceEligibleForBulkBloquear(inv) {
+    return BLOQUEAR_VALID_STATES.has(inv.estado);
+}
+const BLOQUEAR_INVALID_TOOLTIP =
+    'Solo pueden bloquearse facturas en estado Habilitada o Pendiente';
+const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas en estado Habilitada o Pendiente';
 
 function getSelectedOperatingEntityRazon() {
     const sel = document.getElementById('operating-entity-select');
@@ -821,7 +824,7 @@ function bloquearSelectedInvoices() {
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     if (selectedInvoices.length === 0) return;
-    const allValid = selectedInvoices.every(i => BLOQUEAR_VALID_STATES.has(i.estado));
+    const allValid = selectedInvoices.every(isInvoiceEligibleForBulkBloquear);
     if (!allValid) return;
 
     const count = selectedInvoices.length;
