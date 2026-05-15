@@ -544,6 +544,20 @@ function estadoToBadgeClass(estado) {
 
 // ====== LOGICA DE CONFIRMING (CORE) ======
 
+// Eliminar factura: delegación en el tbody (evita onclick="deleteInvoice(JSON…)" que rompe
+// las comillas del atributo HTML y deja el botón sin handler válido).
+(function initInvoicesTableDeleteDelegation() {
+    const tbody = document.getElementById('invoices-tbody');
+    if (!tbody) return;
+    tbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('button.invoice-delete-icon-btn');
+        if (!btn || !tbody.contains(btn)) return;
+        const id = btn.getAttribute('data-invoice-id');
+        if (id == null || id === '') return;
+        deleteInvoice(id);
+    });
+})();
+
 function renderInvoices(filter = 'all', searchQuery = '') {
     const tbody = document.getElementById('invoices-tbody');
     tbody.innerHTML = '';
@@ -600,11 +614,11 @@ function renderInvoices(filter = 'all', searchQuery = '') {
                 actionButtons = '';
         }
 
+        const safeId = invoiceIdToHtmlAttr(inv.id);
         const deleteInvoiceBtn =
-            `<button type="button" class="invoice-delete-icon-btn" onclick="deleteInvoice(${JSON.stringify(inv.id)})" title="Eliminar factura" aria-label="Eliminar factura"><i class="ph ph-x"></i></button>`;
+            `<button type="button" class="invoice-delete-icon-btn" data-invoice-id="${safeId}" title="Eliminar factura" aria-label="Eliminar factura"><i class="ph ph-x"></i></button>`;
 
         const isChecked = selectedInvoiceIds.has(inv.id);
-        const safeId = invoiceIdToHtmlAttr(inv.id);
 
         const tr = document.createElement('tr');
         if (isChecked) tr.classList.add('row-selected');
