@@ -1678,6 +1678,25 @@ textarea.input-text {
     box-shadow: none;
 }
 
+.btn-secondary.is-disabled,
+.btn-secondary[aria-disabled="true"],
+.btn-bloquear.is-disabled,
+.btn-bloquear[aria-disabled="true"] {
+    background-color: #e8e8e8;
+    color: #9a9a9a;
+    border-color: #d0d0d0;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.9;
+}
+.btn-secondary.is-disabled:hover,
+.btn-secondary[aria-disabled="true"]:hover,
+.btn-bloquear.is-disabled:hover,
+.btn-bloquear[aria-disabled="true"]:hover {
+    background-color: #e8e8e8;
+    box-shadow: none;
+}
+
 /* ====== Columna de selección masiva de facturas ====== */
 .col-select {
     width: 44px;
