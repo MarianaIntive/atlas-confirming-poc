@@ -24,6 +24,21 @@ let participants = [
 
 let nextParticipantId = 9;
 let editingParticipantId = null;
+
+let abmUsers = [
+    { id: 1, nombre: 'Ana', apellido: 'Gómez', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1 },
+    { id: 2, nombre: 'Carlos', apellido: 'Vera', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2 },
+    { id: 3, nombre: 'Laura', apellido: 'Benítez', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4 },
+];
+let nextAbmUserId = 4;
+
+let abmRoles = [
+    { id: 1, dominio: 'Banco', rol: 'ADMIN', permisos: ['Ver ABM', 'Editar ABM', 'Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Aprobar Desembolsos', 'Revertir Adelantos'] },
+    { id: 2, dominio: 'EGP', rol: 'Supervisor', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Ver Info Financiera Ente'] },
+    { id: 3, dominio: 'Proveedor', rol: 'Operador', permisos: ['Ver Confirming', 'Ver Facturas'] },
+];
+let nextAbmRoleId = 4;
+
 let currentSimulationInvoice = null;
 let confirmCallback = null;
 
@@ -70,6 +85,8 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     initDashboardChart();
     renderInvoices();
     renderParticipants();
+    renderAbmUsers();
+    renderAbmRoles();
     populateOperatingEntitySelect();
 });
 
@@ -93,7 +110,11 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
         if (pageTitleEl) pageTitleEl.textContent = pageTitle;
         document.getElementById('app-view')?.classList.remove('sidebar-mobile-open');
         if (targetId === 'dashboard-view') initDashboardChart();
-        if (targetId === 'abm-view') renderParticipants();
+        if (targetId === 'abm-view') {
+            renderParticipants();
+            renderAbmUsers();
+            renderAbmRoles();
+        }
     });
 });
 
@@ -216,7 +237,79 @@ function renderParticipants() {
     });
 }
 
+function switchAbmTab(tabKey) {
+    const valid = ['entes', 'usuarios', 'roles'];
+    if (!valid.includes(tabKey)) return;
+    document.querySelectorAll('.abm-tab').forEach(btn => {
+        const on = btn.dataset.abmTab === tabKey;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.abm-tab-panel').forEach(panel => {
+        const on = panel.id === `abm-panel-${tabKey}`;
+        panel.classList.toggle('active', on);
+    });
+    closeAbmAddMenu();
+}
+
+function renderAbmUsers() {
+    const tbody = document.getElementById('abm-users-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    abmUsers.forEach(u => {
+        const ente = participants.find(p => p.id === u.enteId);
+        const enteRazon = ente ? ente.razon : '—';
+        const tipoBadge = !ente ? '—' : (ente.tipo === 'EGP'
+            ? '<span class="badge-egp">EGP</span>'
+            : '<span class="badge-proveedor">Proveedor</span>');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.nombre}</td>
+            <td>${u.apellido}</td>
+            <td style="font-size:13px;color:#6b7280;">${u.email}</td>
+            <td>${u.telefono}</td>
+            <td><strong>${enteRazon}</strong></td>
+            <td>${tipoBadge}</td>
+            <td>
+                <button type="button" class="btn-secondary btn-sm" onclick="showCustomAlert('Edición de usuario: demostración.', 'Usuario')">
+                    <i class="ph ph-pencil-simple"></i> Editar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderAbmRoles() {
+    const tbody = document.getElementById('abm-roles-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    abmRoles.forEach(r => {
+        const n = r.permisos.length;
+        const summary = n === 0
+            ? 'Sin permisos'
+            : `${n} — ${r.permisos.slice(0, 2).join(', ')}${n > 2 ? '…' : ''}`;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${r.dominio}</td>
+            <td><strong>${r.rol}</strong></td>
+            <td style="font-size:12px;color:#6b7280;max-width:360px;">${summary}</td>
+            <td>
+                <button type="button" class="btn-secondary btn-sm" onclick="showCustomAlert('Edición de rol: demostración.', 'Rol')">
+                    <i class="ph ph-pencil-simple"></i> Editar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+document.querySelectorAll('.abm-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchAbmTab(btn.dataset.abmTab));
+});
+
 function openAbmModal(participantId = null) {
+    switchAbmTab('entes');
     editingParticipantId = participantId;
     const form = document.getElementById('abm-form');
     form.reset();
@@ -302,6 +395,7 @@ function submitParticipant() {
 
     closeModal('abm-modal');
     renderParticipants();
+    renderAbmUsers();
     populateOperatingEntitySelect();
 }
 
@@ -612,6 +706,16 @@ function submitUserModal() {
     }
     const ente = participants.find(p => String(p.id) === enteId);
     closeModal('user-modal');
+    abmUsers.push({
+        id: nextAbmUserId++,
+        nombre,
+        apellido,
+        email,
+        telefono,
+        enteId: parseInt(enteId, 10),
+    });
+    renderAbmUsers();
+    switchAbmTab('usuarios');
     showCustomAlert(
         `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} guardado correctamente (simulación).`,
         'Usuario registrado'
@@ -634,6 +738,14 @@ function submitRoleModal() {
     }
     const perms = [...document.querySelectorAll('#role-form input[name="role-perm"]:checked')].map(c => c.value);
     closeModal('role-modal');
+    abmRoles.push({
+        id: nextAbmRoleId++,
+        dominio,
+        rol,
+        permisos: perms,
+    });
+    renderAbmRoles();
+    switchAbmTab('roles');
     showCustomAlert(
         `Rol "${rol}" en dominio "${dominio}" con ${perms.length} permiso(s) asignado(s) guardado correctamente (simulación).`,
         'Rol registrado'

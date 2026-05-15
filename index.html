@@ -241,39 +241,88 @@
 
                 <!-- ABM VIEW -->
                 <section id="abm-view" class="page-view">
-                    <div class="section-header">
-                        <h3>Participantes Registrados</h3>
+                    <div class="section-header abm-view-header">
+                        <h3 class="abm-view-title">Administración (ABM)</h3>
                         <div class="abm-add-dropdown" id="abm-add-dropdown">
                             <button type="button" class="btn-add-only" id="abm-add-toggle" aria-expanded="false" aria-haspopup="true" title="Agregar" onclick="event.stopPropagation(); toggleAbmAddMenu();">+</button>
                             <div id="abm-add-menu" class="dropdown-menu-abm hidden" role="menu">
-                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); openAbmModal();">Nuevo Ente</button>
-                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); openUserModal();">Nuevo Usuario</button>
-                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); openRoleModal();">Nuevo Rol</button>
+                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('entes'); openAbmModal();">Nuevo Ente</button>
+                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('usuarios'); openUserModal();">Nuevo Usuario</button>
+                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('roles'); openRoleModal();">Nuevo Rol</button>
                             </div>
                         </div>
                     </div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <th>RUC</th>
-                                    <th>Razón Social</th>
-                                    <th>Email</th>
-                                    <th>Monedas</th>
-                                    <th>Línea de Crédito</th>
-                                    <th>TNA %</th>
-                                    <th>Cliente Atlas</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="participants-tbody">
-                            </tbody>
-                        </table>
+
+                    <div class="abm-tabbed-block">
+                    <nav class="abm-tabs-bar" role="tablist" aria-label="Tipo de registro ABM">
+                        <button type="button" class="abm-tab active" role="tab" aria-selected="true" aria-controls="abm-panel-entes" id="abm-tab-entes" data-abm-tab="entes">Entes</button>
+                        <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-usuarios" id="abm-tab-usuarios" data-abm-tab="usuarios">Usuarios</button>
+                        <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-roles" id="abm-tab-roles" data-abm-tab="roles">Roles</button>
+                    </nav>
+
+                    <div id="abm-panel-entes" class="abm-tab-panel active" role="tabpanel" aria-labelledby="abm-tab-entes">
+                        <p class="abm-panel-caption">Entes registrados</p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>RUC</th>
+                                        <th>Razón Social</th>
+                                        <th>Email</th>
+                                        <th>Monedas</th>
+                                        <th>Línea de Crédito</th>
+                                        <th>TNA %</th>
+                                        <th>Cliente Atlas</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="participants-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="abm-panel-usuarios" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-usuarios">
+                        <p class="abm-panel-caption">Usuarios del portal</p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Apellido</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Ente asociado</th>
+                                        <th>Tipo ente</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="abm-users-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="abm-panel-roles" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-roles">
+                        <p class="abm-panel-caption">Roles y permisos</p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Dominio</th>
+                                        <th>Rol</th>
+                                        <th>Permisos asignados</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="abm-roles-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     </div>
                 </section>
-
-                <!-- REPORTS VIEW -->
                 <section id="reports-view" class="page-view">
                     <div class="reports-header">
                         <p>Simulación de visibilidad de reportes según rol. Seleccione el rol para ver su tablero específico.</p>
