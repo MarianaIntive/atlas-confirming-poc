@@ -563,7 +563,7 @@ function renderInvoices(filter = 'all', searchQuery = '') {
     pruneSelectionsToExistingInvoices();
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9"><div class="table-empty">No se encontraron facturas con los filtros aplicados.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10"><div class="table-empty">No se encontraron facturas con los filtros aplicados.</div></td></tr>`;
         updateInvoiceSelectionUI(filtered);
         return;
     }
@@ -601,10 +601,7 @@ function renderInvoices(filter = 'all', searchQuery = '') {
         }
 
         const deleteInvoiceBtn =
-            `<button type="button" class="btn-icon-action btn-icon-action--delete invoice-row-delete-btn" onclick="deleteInvoice(${JSON.stringify(inv.id)})" title="Eliminar factura" aria-label="Eliminar factura"><i class="ph ph-x"></i></button>`;
-        actionButtons = actionButtons
-            ? `${actionButtons}<span class="action-btns-sep" aria-hidden="true"></span>${deleteInvoiceBtn}`
-            : deleteInvoiceBtn;
+            `<button type="button" class="invoice-delete-icon-btn" onclick="deleteInvoice(${JSON.stringify(inv.id)})" title="Eliminar factura" aria-label="Eliminar factura"><i class="ph ph-x"></i></button>`;
 
         const isChecked = selectedInvoiceIds.has(inv.id);
         const safeId = invoiceIdToHtmlAttr(inv.id);
@@ -625,6 +622,7 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             <td>${inv.vto}</td>
             <td style="font-weight: 600;">${formatCurrency(inv.monto, inv.moneda)}</td>
             <td><span class="status-badge ${estadoToBadgeClass(inv.estado)}">${inv.estado}</span></td>
+            <td class="col-inv-delete">${deleteInvoiceBtn}</td>
             <td class="action-btns">${actionButtons}</td>
         `;
         tbody.appendChild(tr);

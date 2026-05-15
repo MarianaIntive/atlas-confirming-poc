@@ -880,17 +880,44 @@ select.select-input {
     gap: 8px;
     flex-wrap: wrap;
 }
-.action-btns .invoice-row-delete-btn {
-    flex-shrink: 0;
+
+/* Columna dedicada: eliminar (secundario, palette negros) — a la izquierda de Acciones */
+.col-inv-delete {
+    width: 48px;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    text-align: center;
+    vertical-align: middle;
 }
-/* Separación visual antes del Eliminar cuando hay otros controles */
-.action-btns-sep {
-    display: inline-block;
-    width: 1px;
-    height: 22px;
-    margin: 0 2px;
-    background: var(--border-light, #e5e7eb);
-    flex-shrink: 0;
+.invoice-delete-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    border-radius: var(--radius);
+    border: 1px solid #3d3d3d;
+    background: #fafafa;
+    color: #1f1f1f;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    vertical-align: middle;
+}
+.invoice-delete-icon-btn i {
+    font-size: 17px;
+}
+.invoice-delete-icon-btn:hover {
+    background: #252525;
+    color: #fafafa;
+    border-color: #0d0d0d;
+}
+.invoice-delete-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(15, 15, 15, 0.25);
 }
 .btn-sm {
     padding: 7px 12px;
