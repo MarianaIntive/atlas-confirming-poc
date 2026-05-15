@@ -1623,6 +1623,25 @@ textarea.input-text {
     background-color: #2a2a2a;
 }
 
+/* Bloquear deshabilitado: el estilo oscuro de .btn-bloquear no debe tapar el aspecto "grisado" */
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled,
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"] {
+    pointer-events: none;
+    background-color: #bdbdbd;
+    color: #4a4a4a;
+    border-color: #9a9a9a;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.96;
+}
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled:hover,
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"]:hover {
+    background-color: #bdbdbd;
+    color: #4a4a4a;
+    border-color: #9a9a9a;
+    box-shadow: none;
+}
+
 /* Indicadores de fila para estados intermedios / sin acción operable */
 .row-action-hint {
     display: inline-flex;
@@ -1673,6 +1692,10 @@ textarea.input-text {
 }
 .btn-tooltip-wrapper > .btn-primary {
     pointer-events: auto;
+}
+.btn-tooltip-wrapper > .btn-primary.is-disabled,
+.btn-tooltip-wrapper > .btn-primary[aria-disabled="true"] {
+    pointer-events: none;
 }
 
 /* Estado deshabilitado para .btn-primary (sin usar el atributo disabled,
