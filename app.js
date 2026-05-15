@@ -600,6 +600,12 @@ function renderInvoices(filter = 'all', searchQuery = '') {
                 actionButtons = '';
         }
 
+        const deleteInvoiceBtn =
+            `<button type="button" class="btn-icon-action btn-icon-action--delete invoice-row-delete-btn" onclick="deleteInvoice(${JSON.stringify(inv.id)})" title="Eliminar factura" aria-label="Eliminar factura"><i class="ph ph-x"></i></button>`;
+        actionButtons = actionButtons
+            ? `${actionButtons}<span class="action-btns-sep" aria-hidden="true"></span>${deleteInvoiceBtn}`
+            : deleteInvoiceBtn;
+
         const isChecked = selectedInvoiceIds.has(inv.id);
         const safeId = invoiceIdToHtmlAttr(inv.id);
 
@@ -1138,6 +1144,21 @@ function renderCurrentConfirmingFilters() {
     const status = document.getElementById('filter-status')?.value || 'all';
     const query = document.getElementById('search-invoice')?.value || '';
     renderInvoices(status, query);
+}
+
+function deleteInvoice(invoiceId) {
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (!inv) return;
+    showCustomConfirm(
+        `¿Confirma eliminar la factura ${inv.id} (${inv.egp} – ${inv.prov})? Esta acción no se puede deshacer.`,
+        () => {
+            invoices = invoices.filter(i => i.id !== invoiceId);
+            selectedInvoiceIds.delete(invoiceId);
+            renderCurrentConfirmingFilters();
+            showCustomAlert('La factura fue eliminada correctamente.', 'Factura eliminada');
+        },
+        'Eliminar factura'
+    );
 }
 
 

@@ -876,8 +876,21 @@ select.select-input {
 }
 .action-btns {
     display: flex;
+    align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+.action-btns .invoice-row-delete-btn {
+    flex-shrink: 0;
+}
+/* Separación visual antes del Eliminar cuando hay otros controles */
+.action-btns-sep {
+    display: inline-block;
+    width: 1px;
+    height: 22px;
+    margin: 0 2px;
+    background: var(--border-light, #e5e7eb);
+    flex-shrink: 0;
 }
 .btn-sm {
     padding: 7px 12px;
