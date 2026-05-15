@@ -804,7 +804,7 @@ function updateBulkActionButtonState({ btnId, wrapperId, validStates, invalidToo
 // seleccionadas (todas en estado Pendiente o Bloqueada) a estado Habilitada.
 function habilitarSelectedInvoices() {
     const btn = document.getElementById('btn-habilitar-facturas');
-    if (!btn || btn.classList.contains('is-disabled')) return;
+    if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     if (selectedInvoices.length === 0) return;
@@ -835,7 +835,7 @@ function habilitarSelectedInvoices() {
 // (camino "usuario bloquea factura" en la máquina de estados).
 function bloquearSelectedInvoices() {
     const btn = document.getElementById('btn-bloquear-facturas');
-    if (!btn || btn.classList.contains('is-disabled')) return;
+    if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     if (selectedInvoices.length === 0) return;

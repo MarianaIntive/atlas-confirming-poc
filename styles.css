@@ -1650,6 +1650,32 @@ textarea.input-text {
     background-color: #2a2a2a;
 }
 
+/* Bloquear inhabilitado: mismo “apagado” que Habilitar (.btn-primary.is-disabled).
+   .btn-bloquear/.btn-secondary solos ganan al genérico is-disabled, por eso reglas acotadas y específicas. */
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled,
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"] {
+    pointer-events: none;
+    background-color: #bfbfbf;
+    color: #f3f3f3;
+    border-color: #b0b0b0;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.88;
+    text-shadow: none;
+}
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled:hover,
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"]:hover {
+    background-color: #bfbfbf;
+    color: #f3f3f3;
+    border-color: #b0b0b0;
+    box-shadow: none;
+}
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled i,
+.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"] i {
+    color: inherit;
+    opacity: 0.95;
+}
+
 /* Indicadores de fila para estados intermedios / sin acción operable */
 .row-action-hint {
     display: inline-flex;
@@ -1700,6 +1726,10 @@ textarea.input-text {
 }
 .btn-tooltip-wrapper > .btn-primary {
     pointer-events: auto;
+}
+.btn-tooltip-wrapper > .btn-primary.is-disabled,
+.btn-tooltip-wrapper > .btn-primary[aria-disabled="true"] {
+    pointer-events: none;
 }
 
 /* Estado deshabilitado para .btn-primary (sin usar el atributo disabled,
