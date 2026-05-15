@@ -52,6 +52,75 @@ function getSelectedOperatingEntityRazon() {
     return p ? p.razon : null;
 }
 
+function getSelectedOperatingEntity() {
+    const sel = document.getElementById('operating-entity-select');
+    if (!sel || sel.value === '') return null;
+    return participants.find(x => String(x.id) === sel.value) || null;
+}
+
+// Renderiza (o vacía) el panel informativo del ente seleccionado.
+// Cuando se elige "Todos los entes" el panel queda oculto y la tabla recupera su posición.
+function renderOperatingEntityPanel() {
+    const panel = document.getElementById('operating-entity-panel');
+    if (!panel) return;
+    const ente = getSelectedOperatingEntity();
+
+    if (!ente) {
+        panel.innerHTML = '';
+        panel.classList.add('hidden');
+        return;
+    }
+
+    const tipoBadge = ente.tipo === 'EGP'
+        ? '<span class="badge-egp">EGP</span>'
+        : '<span class="badge-proveedor">Proveedor</span>';
+
+    const lineaCreditoTxt = ente.lineaCredito > 0
+        ? formatCurrency(ente.lineaCredito, 'GS')
+        : '—';
+
+    const monedasHtml = (ente.monedas || []).map(m =>
+        `<span class="badge-moneda ${m.toLowerCase()}">${m}</span>`
+    ).join(' ') || '—';
+
+    panel.innerHTML = `
+        <div class="ente-panel-header">
+            <div class="ente-panel-title-block">
+                <p class="ente-panel-eyebrow">Ente seleccionado</p>
+                <h3 class="ente-panel-title">${ente.razon} ${tipoBadge}</h3>
+            </div>
+            <div class="ente-panel-monedas" title="Monedas habilitadas">${monedasHtml}</div>
+        </div>
+        <div class="ente-panel-grid">
+            <div class="ente-panel-cell">
+                <span class="ente-panel-label">Razón Social</span>
+                <span class="ente-panel-value">${ente.razon}</span>
+            </div>
+            <div class="ente-panel-cell">
+                <span class="ente-panel-label">RUC</span>
+                <span class="ente-panel-value">${ente.ruc}</span>
+            </div>
+            <div class="ente-panel-cell">
+                <span class="ente-panel-label">Límite Crediticio</span>
+                <span class="ente-panel-value ente-panel-value--strong">${lineaCreditoTxt}</span>
+            </div>
+            <div class="ente-panel-cell">
+                <span class="ente-panel-label">Tasa de Interés (TNA)</span>
+                <span class="ente-panel-value">${ente.tasaInteres}%</span>
+            </div>
+            <div class="ente-panel-cell">
+                <span class="ente-panel-label">Comisión</span>
+                <span class="ente-panel-value">${ente.tasaComision}%</span>
+            </div>
+            <div class="ente-panel-cell">
+                <span class="ente-panel-label">IVA</span>
+                <span class="ente-panel-value">${ente.iva}%</span>
+            </div>
+        </div>
+    `;
+    panel.classList.remove('hidden');
+}
+
 function populateOperatingEntitySelect() {
     const sel = document.getElementById('operating-entity-select');
     if (!sel) return;
@@ -91,6 +160,7 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     renderAbmUsers();
     renderAbmRoles();
     populateOperatingEntitySelect();
+    renderOperatingEntityPanel();
 });
 
 document.getElementById('logout-btn').addEventListener('click', (e) => {
@@ -129,6 +199,7 @@ document.getElementById('operating-entity-select')?.addEventListener('change', (
     const status = document.getElementById('filter-status')?.value || 'all';
     const query = document.getElementById('search-invoice')?.value || '';
     renderInvoices(status, query);
+    renderOperatingEntityPanel();
 });
 
 function switchReportTab(tabId) {
@@ -400,6 +471,7 @@ function submitParticipant() {
     renderParticipants();
     renderAbmUsers();
     populateOperatingEntitySelect();
+    renderOperatingEntityPanel();
 }
 
 function handleFileSelect(input) {

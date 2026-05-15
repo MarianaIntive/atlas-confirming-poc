@@ -1477,6 +1477,90 @@ textarea.input-text {
     align-items: flex-start;
 }
 
+/* ====== Panel informativo del ente seleccionado (vista Confirming) ====== */
+.ente-panel {
+    background: linear-gradient(135deg, #fff 0%, var(--atlas-active-bg-soft) 100%);
+    border: 1px solid var(--border-atlas);
+    border-left: 4px solid var(--atlas-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    animation: fadeIn 0.25s ease;
+}
+.ente-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed rgba(144, 29, 45, 0.25);
+}
+.ente-panel-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.ente-panel-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+}
+.ente-panel-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--atlas-primary);
+    font-weight: 700;
+    font-family: var(--font-heading);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.ente-panel-monedas {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.ente-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px 22px;
+}
+.ente-panel-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.ente-panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+}
+.ente-panel-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    word-break: break-word;
+}
+.ente-panel-value--strong {
+    color: var(--atlas-primary);
+    font-weight: 700;
+    font-size: 15px;
+}
+
 /* Botones específicos de aprobación de desembolso */
 .btn-rechazar {
     background-color: #6b1620;
