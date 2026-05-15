@@ -1,13 +1,31 @@
 // ====== ESTADO DE LA APP (MOCK DATA) ======
 
-// Datos iniciales de facturas
+// Máquina de estados de facturas (replica el diagrama de la POC).
+// Estos valores son los que viajan en `invoice.estado`.
+const INVOICE_STATES = {
+    PENDIENTE: 'Pendiente',                                // Intermedio: ERP recibe la factura. Bloqueada para adelantos.
+    HABILITADA: 'Habilitada',                              // Operable: usuario puede simular/solicitar adelanto.
+    BLOQUEADA: 'Bloqueada',                                // Final: no operable.
+    PENDIENTE_APROBACION_BANCO: 'Pendiente aprobación banco', // Esperando que el banco apruebe/rechace el desembolso.
+    PENDIENTE_DESEMBOLSO: 'Pendiente de desembolso',       // Intermedio: API CORE BANKING está desembolsando.
+    PENDIENTE_REVERSION: 'Pendiente de Reversión',         // Intermedio: rechazada por banco, en reversión.
+    FINANCIADA: 'Financiada',                              // Final operativo: adelanto otorgado.
+    PAGADA: 'Pagada',                                      // Final: cobrada al EGP.
+    MORA: 'Mora',                                          // Final: vencida sin cobro.
+    VENCIDA: 'Vencida',                                    // Final: factura vencida sin haber operado adelanto.
+};
+
+// Datos iniciales de facturas (cubren todos los estados de la máquina de estados)
 let invoices = [
-    { id: '001-001-0001234', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-01', vto: '2026-06-30', moneda: 'GS', monto: 15000000, estado: 'Habilitada' },
-    { id: '001-002-0005432', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-04-15', vto: '2026-05-15', moneda: 'GS', monto: 8500000, estado: 'Pagada' },
-    { id: '001-001-0000987', egp: 'Cervepar', prov: 'Limpieza Total SRL', emision: '2026-03-01', vto: '2026-04-01', moneda: 'GS', monto: 3200000, estado: 'Mora' },
-    { id: '001-001-0005678', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-02', vto: '2026-07-02', moneda: 'USD', monto: 2500, estado: 'Bloqueada' },
-    { id: '001-003-0001111', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-04-20', vto: '2026-06-20', moneda: 'GS', monto: 50000000, estado: 'Financiada' },
-    { id: '001-001-0002222', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-25', vto: '2026-05-25', moneda: 'USD', monto: 1200, estado: 'Pendiente aprobación banco' }
+    { id: '001-001-0001234', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-01', vto: '2026-06-30', moneda: 'GS', monto: 15000000, estado: INVOICE_STATES.HABILITADA },
+    { id: '001-002-0005432', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-04-15', vto: '2026-05-15', moneda: 'GS', monto: 8500000, estado: INVOICE_STATES.PAGADA },
+    { id: '001-001-0000987', egp: 'Cervepar', prov: 'Limpieza Total SRL', emision: '2026-03-01', vto: '2026-04-01', moneda: 'GS', monto: 3200000, estado: INVOICE_STATES.MORA },
+    { id: '001-001-0005678', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-02', vto: '2026-07-02', moneda: 'USD', monto: 2500, estado: INVOICE_STATES.BLOQUEADA },
+    { id: '001-003-0001111', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-04-20', vto: '2026-06-20', moneda: 'GS', monto: 50000000, estado: INVOICE_STATES.FINANCIADA },
+    { id: '001-001-0002222', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-25', vto: '2026-05-25', moneda: 'USD', monto: 1200, estado: INVOICE_STATES.PENDIENTE_APROBACION_BANCO },
+    { id: '001-004-0003333', egp: 'Retail S.A.', prov: 'Logistica Integral', emision: '2026-05-10', vto: '2026-07-10', moneda: 'GS', monto: 4200000, estado: INVOICE_STATES.PENDIENTE },
+    { id: '001-005-0004444', egp: 'Cervepar', prov: 'Servicios IT', emision: '2026-05-12', vto: '2026-07-12', moneda: 'GS', monto: 6750000, estado: INVOICE_STATES.PENDIENTE },
+    { id: '001-006-0005555', egp: 'Tigo Paraguay', prov: 'Tech Solutions S.A.', emision: '2026-02-15', vto: '2026-03-15', moneda: 'GS', monto: 2100000, estado: INVOICE_STATES.VENCIDA },
 ];
 
 // Participantes (EGPs y Proveedores)
@@ -48,9 +66,15 @@ let confirmCallback = null;
 // Selección masiva de facturas (persiste entre cambios de filtro / búsqueda)
 const selectedInvoiceIds = new Set();
 // Estados desde los cuales una factura puede pasar a "Habilitada" mediante la acción masiva
-const HABILITAR_VALID_STATES = new Set(['Pendiente aprobación banco', 'Bloqueada']);
+// (camino "usuario habilita o bloquea factura" en la máquina de estados).
+const HABILITAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.BLOQUEADA]);
 const HABILITAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para habilitar';
 const HABILITAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para habilitar';
+// Estados desde los cuales una factura puede pasar a "Bloqueada" mediante la acción masiva
+// (camino simétrico "usuario bloquea factura" en la máquina de estados).
+const BLOQUEAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.HABILITADA]);
+const BLOQUEAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para bloquear';
+const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para bloquear';
 
 function getSelectedOperatingEntityRazon() {
     const sel = document.getElementById('operating-entity-select');
@@ -503,16 +527,19 @@ function handleFileSelect(input) {
 
 
 function estadoToBadgeClass(estado) {
-    if (estado === 'Pendiente aprobación banco') return 'status-pendiente-aprobacion-banco';
     const map = {
-        Habilitada: 'habilitada',
-        Financiada: 'financiada',
-        Pagada: 'pagada',
-        Mora: 'mora',
-        Bloqueada: 'bloqueada',
+        [INVOICE_STATES.PENDIENTE]: 'status-pendiente',
+        [INVOICE_STATES.HABILITADA]: 'status-habilitada',
+        [INVOICE_STATES.BLOQUEADA]: 'status-bloqueada',
+        [INVOICE_STATES.PENDIENTE_APROBACION_BANCO]: 'status-pendiente-aprobacion-banco',
+        [INVOICE_STATES.PENDIENTE_DESEMBOLSO]: 'status-pendiente-desembolso',
+        [INVOICE_STATES.PENDIENTE_REVERSION]: 'status-pendiente-reversion',
+        [INVOICE_STATES.FINANCIADA]: 'status-financiada',
+        [INVOICE_STATES.PAGADA]: 'status-pagada',
+        [INVOICE_STATES.MORA]: 'status-mora',
+        [INVOICE_STATES.VENCIDA]: 'status-vencida',
     };
-    const slug = map[estado];
-    return slug ? `status-${slug}` : 'status-bloqueada';
+    return map[estado] || 'status-bloqueada';
 }
 
 // ====== LOGICA DE CONFIRMING (CORE) ======
@@ -543,14 +570,34 @@ function renderInvoices(filter = 'all', searchQuery = '') {
 
     filtered.forEach(inv => {
         let actionButtons = '';
-        if (inv.estado === 'Habilitada') {
-            actionButtons = `<button class="btn-primary btn-sm" onclick="openSimulation('${inv.id}')"><i class="ph ph-calculator"></i> Simular</button>`;
-        } else if (inv.estado === 'Financiada') {
-            actionButtons = `<button class="btn-secondary btn-sm text-danger" onclick="revertInvoice('${inv.id}')"><i class="ph ph-arrow-u-up-left"></i> Revertir</button>`;
-        } else if (inv.estado === 'Bloqueada') {
-            actionButtons = `<span style="font-size: 12px; color: #9ca3af;"><i class="ph ph-lock"></i> No operable</span>`;
-        } else if (inv.estado === 'Pendiente aprobación banco') {
-            actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openApprovalModal('${inv.id}')"><i class="ph ph-check-circle"></i> Aprobar Desembolso</button>`;
+        switch (inv.estado) {
+            case INVOICE_STATES.HABILITADA:
+                actionButtons = `<button class="btn-primary btn-sm" onclick="openSimulation('${inv.id}')"><i class="ph ph-calculator"></i> Simular</button>`;
+                break;
+            case INVOICE_STATES.FINANCIADA:
+                actionButtons = `<button class="btn-secondary btn-sm text-danger" onclick="revertInvoice('${inv.id}')"><i class="ph ph-arrow-u-up-left"></i> Revertir</button>`;
+                break;
+            case INVOICE_STATES.PENDIENTE_APROBACION_BANCO:
+                actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openApprovalModal('${inv.id}')"><i class="ph ph-check-circle"></i> Aprobar Desembolso</button>`;
+                break;
+            case INVOICE_STATES.PENDIENTE:
+                actionButtons = `<span class="row-action-hint"><i class="ph ph-hourglass-medium"></i> Use Habilitar / Bloquear</span>`;
+                break;
+            case INVOICE_STATES.PENDIENTE_DESEMBOLSO:
+                actionButtons = `<span class="row-action-hint row-action-hint--processing"><i class="ph ph-spinner ph-spin"></i> CORE BANKING desembolsando…</span>`;
+                break;
+            case INVOICE_STATES.PENDIENTE_REVERSION:
+                actionButtons = `<span class="row-action-hint row-action-hint--processing"><i class="ph ph-spinner ph-spin"></i> Revirtiendo operación…</span>`;
+                break;
+            case INVOICE_STATES.BLOQUEADA:
+                actionButtons = `<span class="row-action-hint"><i class="ph ph-lock"></i> No operable</span>`;
+                break;
+            case INVOICE_STATES.VENCIDA:
+                actionButtons = `<span class="row-action-hint row-action-hint--danger"><i class="ph ph-clock-counter-clockwise"></i> Vencida</span>`;
+                break;
+            default:
+                // Pagada / Mora / cualquier otro final: sin acciones operables
+                actionButtons = '';
         }
 
         const isChecked = selectedInvoiceIds.has(inv.id);
@@ -687,30 +734,50 @@ function updateSelectAllToggle(filteredInvoices) {
     }
 }
 
-// Habilita / deshabilita el botón Habilitar según la selección actual.
+// Habilita / deshabilita los botones de acción masiva (Habilitar / Bloquear) según
+// la selección actual.
 function updateHabilitarButtonState() {
-    const btn = document.getElementById('btn-habilitar-facturas');
-    const wrapper = document.getElementById('btn-habilitar-wrapper');
+    updateBulkActionButtonState({
+        btnId: 'btn-habilitar-facturas',
+        wrapperId: 'btn-habilitar-wrapper',
+        validStates: HABILITAR_VALID_STATES,
+        invalidTooltip: HABILITAR_INVALID_TOOLTIP,
+        emptyTooltip: HABILITAR_EMPTY_TOOLTIP,
+        verb: 'Habilitar',
+    });
+    updateBulkActionButtonState({
+        btnId: 'btn-bloquear-facturas',
+        wrapperId: 'btn-bloquear-wrapper',
+        validStates: BLOQUEAR_VALID_STATES,
+        invalidTooltip: BLOQUEAR_INVALID_TOOLTIP,
+        emptyTooltip: BLOQUEAR_EMPTY_TOOLTIP,
+        verb: 'Bloquear',
+    });
+}
+
+function updateBulkActionButtonState({ btnId, wrapperId, validStates, invalidTooltip, emptyTooltip, verb }) {
+    const btn = document.getElementById(btnId);
+    const wrapper = document.getElementById(wrapperId);
     if (!btn || !wrapper) return;
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     const count = selectedInvoices.length;
-    const allValid = count > 0 && selectedInvoices.every(i => HABILITAR_VALID_STATES.has(i.estado));
+    const allValid = count > 0 && selectedInvoices.every(i => validStates.has(i.estado));
 
     if (count === 0) {
         btn.classList.add('is-disabled');
         btn.setAttribute('aria-disabled', 'true');
         btn.removeAttribute('title');
-        wrapper.setAttribute('title', HABILITAR_EMPTY_TOOLTIP);
+        wrapper.setAttribute('title', emptyTooltip);
     } else if (!allValid) {
         btn.classList.add('is-disabled');
         btn.setAttribute('aria-disabled', 'true');
         btn.removeAttribute('title');
-        wrapper.setAttribute('title', HABILITAR_INVALID_TOOLTIP);
+        wrapper.setAttribute('title', invalidTooltip);
     } else {
         btn.classList.remove('is-disabled');
         btn.setAttribute('aria-disabled', 'false');
-        btn.setAttribute('title', `Habilitar ${count} factura${count === 1 ? '' : 's'} seleccionada${count === 1 ? '' : 's'}`);
+        btn.setAttribute('title', `${verb} ${count} factura${count === 1 ? '' : 's'} seleccionada${count === 1 ? '' : 's'}`);
         wrapper.removeAttribute('title');
     }
 }
@@ -734,7 +801,7 @@ function habilitarSelectedInvoices() {
         : `¿Confirma habilitar ${count} facturas seleccionadas (${idsPreview}${more})? Todas pasarán al estado "Habilitada".`;
 
     showCustomConfirm(msg, () => {
-        selectedInvoices.forEach(inv => { inv.estado = 'Habilitada'; });
+        selectedInvoices.forEach(inv => { inv.estado = INVOICE_STATES.HABILITADA; });
         selectedInvoiceIds.clear();
         renderCurrentConfirmingFilters();
         showCustomAlert(
@@ -744,6 +811,37 @@ function habilitarSelectedInvoices() {
             'Habilitación exitosa'
         );
     }, 'Habilitar facturas');
+}
+
+// Acción simétrica al Habilitar: bloquea facturas en estado Pendiente o Habilitada
+// (camino "usuario bloquea factura" en la máquina de estados).
+function bloquearSelectedInvoices() {
+    const btn = document.getElementById('btn-bloquear-facturas');
+    if (!btn || btn.classList.contains('is-disabled')) return;
+
+    const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
+    if (selectedInvoices.length === 0) return;
+    const allValid = selectedInvoices.every(i => BLOQUEAR_VALID_STATES.has(i.estado));
+    if (!allValid) return;
+
+    const count = selectedInvoices.length;
+    const idsPreview = selectedInvoices.slice(0, 5).map(i => i.id).join(', ');
+    const more = count > 5 ? ` y ${count - 5} más` : '';
+    const msg = count === 1
+        ? `¿Confirma bloquear la factura ${idsPreview}? Pasará al estado "Bloqueada".`
+        : `¿Confirma bloquear ${count} facturas seleccionadas (${idsPreview}${more})? Todas pasarán al estado "Bloqueada".`;
+
+    showCustomConfirm(msg, () => {
+        selectedInvoices.forEach(inv => { inv.estado = INVOICE_STATES.BLOQUEADA; });
+        selectedInvoiceIds.clear();
+        renderCurrentConfirmingFilters();
+        showCustomAlert(
+            count === 1
+                ? `La factura fue bloqueada correctamente.`
+                : `${count} facturas fueron bloqueadas correctamente.`,
+            'Bloqueo exitoso'
+        );
+    }, 'Bloquear facturas');
 }
 
 document.getElementById('filter-status').addEventListener('change', (e) => {
@@ -945,43 +1043,95 @@ function recalculateSimulation() {
 // Recalcular al cambiar la moneda en simulación
 document.getElementById('sim-moneda').addEventListener('change', recalculateSimulation);
 
+// === Flujo "usuario simula o solicita adelanto" en la máquina de estados ===
+// Habilitada → (usuario ejecuta adelanto) → Pendiente aprobación banco
+// (luego el banco aprueba/rechaza desde la nueva acción "Aprobar Desembolso")
 document.getElementById('btn-execute-adelanto').addEventListener('click', () => {
-    if (currentSimulationInvoice) {
-        currentSimulationInvoice.estado = 'Financiada';
-        renderCurrentConfirmingFilters();
-        closeModal('simulate-modal');
-        currentSimulationInvoice = null;
-        showCustomAlert('La operación ha sido confirmada. El monto neto será acreditado según los plazos establecidos.', 'Adelanto Ejecutado');
-    }
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_BANCO;
+    renderCurrentConfirmingFilters();
+    closeModal('simulate-modal');
+    currentSimulationInvoice = null;
+    showCustomAlert(
+        `La solicitud de adelanto para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue enviada al banco. La factura queda en estado "Pendiente aprobación banco" hasta que el banco apruebe o rechace el desembolso.`,
+        'Solicitud enviada al banco'
+    );
 });
 
+// === Flujo "banco aprueba la TX" → Pendiente de desembolso → (CORE BANKING) → Financiada ===
+// Con probabilidad de error simulado, la API CORE BANKING puede fallar el desembolso y la
+// factura vuelve al estado "Pendiente aprobación banco" (flecha ERROR del diagrama).
 document.getElementById('btn-aprobar-desembolso')?.addEventListener('click', () => {
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
-    inv.estado = 'Financiada';
+    inv.estado = INVOICE_STATES.PENDIENTE_DESEMBOLSO;
     renderCurrentConfirmingFilters();
     closeModal('simulate-modal');
     currentSimulationInvoice = null;
     currentSimulationMode = 'simulate';
     showCustomAlert(
-        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue aprobado. La factura pasa a estado Financiada.`,
-        'Desembolso Aprobado'
+        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue aprobado por el banco. La API CORE BANKING está procesando el desembolso.`,
+        'Desembolso aprobado'
     );
+    scheduleCoreBankingDisbursement(inv.id);
 });
 
+// === Flujo "banco rechaza la TX" → Pendiente de Reversión → (auto) → Bloqueada ===
 document.getElementById('btn-rechazar-desembolso')?.addEventListener('click', () => {
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
-    inv.estado = 'Bloqueada';
+    inv.estado = INVOICE_STATES.PENDIENTE_REVERSION;
     renderCurrentConfirmingFilters();
     closeModal('simulate-modal');
     currentSimulationInvoice = null;
     currentSimulationMode = 'simulate';
     showCustomAlert(
-        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue rechazado. La factura vuelve a estado Bloqueada.`,
-        'Desembolso Rechazado'
+        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue rechazado por el banco. Se está procesando la reversión.`,
+        'Desembolso rechazado'
     );
+    scheduleReversionToBlocked(inv.id);
 });
+
+// ====== Transiciones automáticas (simulan agentes externos del diagrama) ======
+
+// Simula la API CORE BANKING. Mayoría de las veces concreta el desembolso (Pendiente
+// de desembolso → Financiada). Con baja probabilidad simula un ERROR y la factura vuelve
+// a "Pendiente aprobación banco" (flecha roja del diagrama) para reintentar.
+const CORE_BANKING_DELAY_MS = 2500;
+const CORE_BANKING_ERROR_RATE = 0.15;
+function scheduleCoreBankingDisbursement(invoiceId) {
+    setTimeout(() => {
+        const inv = invoices.find(i => i.id === invoiceId);
+        if (!inv || inv.estado !== INVOICE_STATES.PENDIENTE_DESEMBOLSO) return;
+        if (Math.random() < CORE_BANKING_ERROR_RATE) {
+            inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_BANCO;
+            renderCurrentConfirmingFilters();
+            showCustomAlert(
+                `La API CORE BANKING reportó un ERROR al desembolsar la factura ${inv.id}. La factura vuelve a "Pendiente aprobación banco" para reintentar la operación.`,
+                'Error de desembolso'
+            );
+        } else {
+            inv.estado = INVOICE_STATES.FINANCIADA;
+            renderCurrentConfirmingFilters();
+            showCustomAlert(
+                `Desembolso completado por CORE BANKING. La factura ${inv.id} pasa a estado "Financiada".`,
+                'Adelanto acreditado'
+            );
+        }
+    }, CORE_BANKING_DELAY_MS);
+}
+
+// Reversión automática (Pendiente de Reversión → Bloqueada) tras el rechazo del banco.
+const REVERSION_DELAY_MS = 1800;
+function scheduleReversionToBlocked(invoiceId) {
+    setTimeout(() => {
+        const inv = invoices.find(i => i.id === invoiceId);
+        if (!inv || inv.estado !== INVOICE_STATES.PENDIENTE_REVERSION) return;
+        inv.estado = INVOICE_STATES.BLOQUEADA;
+        renderCurrentConfirmingFilters();
+    }, REVERSION_DELAY_MS);
+}
 
 // Helper para refrescar la grilla respetando los filtros y búsqueda actuales
 function renderCurrentConfirmingFilters() {
@@ -999,7 +1149,7 @@ function revertInvoice(invoiceId) {
     const msg = `¿Está seguro que desea REVERTIR la operación de la factura ${inv.id} (${inv.egp}) por un monto de ${formatCurrency(inv.monto, inv.moneda)}? Esta acción anulará el adelanto y volverá el estado a Habilitada.`;
 
     showCustomConfirm(msg, () => {
-        inv.estado = 'Habilitada';
+        inv.estado = INVOICE_STATES.HABILITADA;
         renderCurrentConfirmingFilters();
         showCustomAlert('La operación ha sido revertida. La factura vuelve a estar en estado Habilitada.', 'Reversión exitosa');
     }, "Revertir Operación");
@@ -1183,7 +1333,7 @@ function downloadInvoiceTemplate() {
         '2026-06-30',
         'GS',
         15000000,
-        'Habilitada'
+        'Pendiente'
     ];
     const ws = XLSX.utils.aoa_to_sheet([BULK_INVOICE_HEADERS, sampleRow]);
     // Ancho de columnas legible
@@ -1389,12 +1539,14 @@ function formatDateISO(d) {
 }
 
 // Mapea estados desde la planilla a los valores internos válidos.
-// Cualquier otro texto (o vacío) se asume como "Habilitada".
+// La carga masiva sólo permite los 3 estados de entrada de la máquina de estados:
+// Pendiente / Habilitada / Bloqueada. Cualquier otro texto (o vacío) se asume "Pendiente"
+// (arribo desde "API ERP recibe facturas").
 function normalizeBulkEstado(estadoTexto) {
     const k = normalizeKey(estadoTexto);
-    if (k === 'pendiente' || k === 'pendienteaprobacionbanco') return 'Pendiente aprobación banco';
-    if (k === 'bloqueada') return 'Bloqueada';
-    return 'Habilitada';
+    if (k === 'habilitada') return INVOICE_STATES.HABILITADA;
+    if (k === 'bloqueada') return INVOICE_STATES.BLOQUEADA;
+    return INVOICE_STATES.PENDIENTE;
 }
 
 // Renderiza el modal de resultado del bulk upload.

@@ -202,12 +202,16 @@
                                     <label class="filter-field-label" for="filter-status">Estado</label>
                                     <select id="filter-status" class="select-input">
                                         <option value="all">Todos los Estados</option>
+                                        <option value="Pendiente">Pendiente</option>
                                         <option value="Habilitada">Habilitada</option>
+                                        <option value="Bloqueada">Bloqueada</option>
+                                        <option value="Pendiente aprobación banco">Pendiente aprobación banco</option>
+                                        <option value="Pendiente de desembolso">Pendiente de desembolso</option>
+                                        <option value="Pendiente de Reversión">Pendiente de Reversión</option>
                                         <option value="Financiada">Financiada</option>
                                         <option value="Pagada">Pagada</option>
                                         <option value="Mora">Mora</option>
-                                        <option value="Bloqueada">Bloqueada</option>
-                                        <option value="Pendiente aprobación banco">Pendiente aprobación banco</option>
+                                        <option value="Vencida">Vencida</option>
                                     </select>
                                 </div>
                             </div>
@@ -217,6 +221,11 @@
                                     <span id="btn-habilitar-wrapper" class="btn-tooltip-wrapper">
                                         <button type="button" id="btn-habilitar-facturas" class="btn-primary is-disabled" onclick="habilitarSelectedInvoices()">
                                             <i class="ph ph-check-square-offset"></i> Habilitar
+                                        </button>
+                                    </span>
+                                    <span id="btn-bloquear-wrapper" class="btn-tooltip-wrapper">
+                                        <button type="button" id="btn-bloquear-facturas" class="btn-secondary btn-bloquear is-disabled" onclick="bloquearSelectedInvoices()">
+                                            <i class="ph ph-prohibit"></i> Bloquear
                                         </button>
                                     </span>
                                     <button type="button" id="btn-cargar-factura-confirming" class="btn-primary" onclick="openModal('new-invoice-modal')">
@@ -519,8 +528,8 @@
                     <div class="form-group">
                         <label>Estado Inicial</label>
                         <select id="ni-estado" class="select-input">
-                            <option value="Pendiente aprobación banco">Pendiente</option>
-                            <option value="Habilitada" selected>Habilitada</option>
+                            <option value="Pendiente" selected>Pendiente</option>
+                            <option value="Habilitada">Habilitada</option>
                             <option value="Bloqueada">Bloqueada</option>
                         </select>
                     </div>
