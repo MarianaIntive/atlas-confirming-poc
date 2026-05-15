@@ -844,6 +844,7 @@ select.select-input {
     text-transform: none;
     letter-spacing: 0;
 }
+.action-btns {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
@@ -1474,6 +1475,15 @@ textarea.input-text {
 .permission-row {
     width: 100%;
     align-items: flex-start;
+}
+
+/* Botones específicos de aprobación de desembolso */
+.btn-rechazar {
+    background-color: #6b1620;
+    border-color: #5a121b;
+}
+.btn-rechazar:hover {
+    background-color: #4a0f17;
 }
 
 @media (max-width: 720px) {

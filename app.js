@@ -40,6 +40,9 @@ let abmRoles = [
 let nextAbmRoleId = 4;
 
 let currentSimulationInvoice = null;
+// 'simulate' = flujo normal de simulación de adelanto (Habilitada → Financiada)
+// 'approve'  = flujo de aprobación de desembolso pendiente (Pendiente aprobación banco → Financiada / Bloqueada)
+let currentSimulationMode = 'simulate';
 let confirmCallback = null;
 
 function getSelectedOperatingEntityRazon() {
@@ -454,6 +457,8 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             actionButtons = `<button class="btn-secondary btn-sm text-danger" onclick="revertInvoice('${inv.id}')"><i class="ph ph-arrow-u-up-left"></i> Revertir</button>`;
         } else if (inv.estado === 'Bloqueada') {
             actionButtons = `<span style="font-size: 12px; color: #9ca3af;"><i class="ph ph-lock"></i> No operable</span>`;
+        } else if (inv.estado === 'Pendiente aprobación banco') {
+            actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openApprovalModal('${inv.id}')"><i class="ph ph-check-circle"></i> Aprobar Desembolso</button>`;
         }
 
         const tr = document.createElement('tr');
@@ -527,17 +532,27 @@ function submitNewInvoice() {
 
     closeModal('new-invoice-modal');
     document.getElementById('new-invoice-form').reset();
-    renderInvoices();
+    renderCurrentConfirmingFilters();
     showCustomAlert('La factura ha sido registrada exitosamente.', 'Factura Registrada');
 }
 
 
 // Simulación de Adelanto
 function openSimulation(invoiceId) {
+    openSimulationModal(invoiceId, 'simulate');
+}
+
+// Aprobación de desembolso pendiente (reutiliza el modal de simulación)
+function openApprovalModal(invoiceId) {
+    openSimulationModal(invoiceId, 'approve');
+}
+
+function openSimulationModal(invoiceId, mode = 'simulate') {
     const inv = invoices.find(i => i.id === invoiceId);
     if (!inv) return;
 
     currentSimulationInvoice = inv;
+    currentSimulationMode = mode;
 
     // Buscar el EGP en participants para obtener su configuración de monedas y tasas
     const egpConfig = participants.find(p => p.razon === inv.egp && p.tipo === 'EGP');
@@ -546,21 +561,55 @@ function openSimulation(invoiceId) {
     const simMonedaSelect = document.getElementById('sim-moneda');
     simMonedaSelect.value = inv.moneda;
 
-    if (isMultimoneda) {
-        // Habilitar el selector y cargar ambas opciones
-        simMonedaSelect.disabled = false;
-        simMonedaSelect.title = 'Este EGP opera en múltiples monedas';
-    } else {
-        // Moneda única: mostrar la de la factura y deshabilitar
+    const simMonto = document.getElementById('sim-monto');
+
+    if (mode === 'approve') {
+        // En modo aprobación los datos son sólo informativos
         simMonedaSelect.disabled = true;
-        simMonedaSelect.title = 'Moneda única habilitada para este participante';
+        simMonedaSelect.title = 'Moneda definida en la factura a aprobar';
+        simMonto.disabled = true;
+        simMonto.title = 'Monto del adelanto pendiente de aprobación';
+    } else {
+        if (isMultimoneda) {
+            simMonedaSelect.disabled = false;
+            simMonedaSelect.title = 'Este EGP opera en múltiples monedas';
+        } else {
+            simMonedaSelect.disabled = true;
+            simMonedaSelect.title = 'Moneda única habilitada para este participante';
+        }
+        simMonto.disabled = false;
+        simMonto.title = '';
     }
 
-    document.getElementById('sim-monto').value = inv.monto;
-    document.getElementById('sim-monto').max = inv.monto;
+    simMonto.value = inv.monto;
+    simMonto.max = inv.monto;
 
+    applySimulationModalMode();
     recalculateSimulation();
     openModal('simulate-modal');
+}
+
+// Configura título, leyendas y footer del modal según el modo activo
+function applySimulationModalMode() {
+    const titleEl = document.getElementById('simulate-modal-title');
+    const sectionTitleEl = document.getElementById('simulate-section-title');
+    const btnExecute = document.getElementById('btn-execute-adelanto');
+    const btnAprobar = document.getElementById('btn-aprobar-desembolso');
+    const btnRechazar = document.getElementById('btn-rechazar-desembolso');
+
+    if (currentSimulationMode === 'approve') {
+        if (titleEl) titleEl.textContent = 'Aprobación de Desembolso';
+        if (sectionTitleEl) sectionTitleEl.textContent = 'Datos del adelanto a otorgar';
+        if (btnExecute) btnExecute.classList.add('hidden');
+        if (btnAprobar) btnAprobar.classList.remove('hidden');
+        if (btnRechazar) btnRechazar.classList.remove('hidden');
+    } else {
+        if (titleEl) titleEl.textContent = 'Simulación de Adelanto';
+        if (sectionTitleEl) sectionTitleEl.textContent = 'Datos a adelantar';
+        if (btnExecute) btnExecute.classList.remove('hidden');
+        if (btnAprobar) btnAprobar.classList.add('hidden');
+        if (btnRechazar) btnRechazar.classList.add('hidden');
+    }
 }
 
 function recalculateSimulation() {
@@ -629,12 +678,47 @@ document.getElementById('sim-moneda').addEventListener('change', recalculateSimu
 document.getElementById('btn-execute-adelanto').addEventListener('click', () => {
     if (currentSimulationInvoice) {
         currentSimulationInvoice.estado = 'Financiada';
-        renderInvoices();
+        renderCurrentConfirmingFilters();
         closeModal('simulate-modal');
         currentSimulationInvoice = null;
         showCustomAlert('La operación ha sido confirmada. El monto neto será acreditado según los plazos establecidos.', 'Adelanto Ejecutado');
     }
 });
+
+document.getElementById('btn-aprobar-desembolso')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = 'Financiada';
+    renderCurrentConfirmingFilters();
+    closeModal('simulate-modal');
+    currentSimulationInvoice = null;
+    currentSimulationMode = 'simulate';
+    showCustomAlert(
+        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue aprobado. La factura pasa a estado Financiada.`,
+        'Desembolso Aprobado'
+    );
+});
+
+document.getElementById('btn-rechazar-desembolso')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = 'Bloqueada';
+    renderCurrentConfirmingFilters();
+    closeModal('simulate-modal');
+    currentSimulationInvoice = null;
+    currentSimulationMode = 'simulate';
+    showCustomAlert(
+        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue rechazado. La factura vuelve a estado Bloqueada.`,
+        'Desembolso Rechazado'
+    );
+});
+
+// Helper para refrescar la grilla respetando los filtros y búsqueda actuales
+function renderCurrentConfirmingFilters() {
+    const status = document.getElementById('filter-status')?.value || 'all';
+    const query = document.getElementById('search-invoice')?.value || '';
+    renderInvoices(status, query);
+}
 
 
 // Reversión de Adelanto
@@ -646,7 +730,7 @@ function revertInvoice(invoiceId) {
 
     showCustomConfirm(msg, () => {
         inv.estado = 'Habilitada';
-        renderInvoices();
+        renderCurrentConfirmingFilters();
         showCustomAlert('La operación ha sido revertida. La factura vuelve a estar en estado Habilitada.', 'Reversión exitosa');
     }, "Revertir Operación");
 }
