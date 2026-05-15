@@ -1704,6 +1704,142 @@ textarea.input-text {
     background-color: var(--atlas-active-bg);
 }
 
+/* ====== Carga masiva de facturas (modal Cargar Factura) ====== */
+.bulk-upload-panel {
+    background: var(--atlas-active-bg-soft);
+    border: 1px solid var(--border-atlas);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+}
+.bulk-upload-panel-header {
+    margin-bottom: 12px;
+}
+.bulk-upload-panel-title {
+    margin-bottom: 4px;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.bulk-upload-panel-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin: 0;
+}
+.bulk-upload-panel-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.bulk-upload-btn {
+    flex: 1 1 200px;
+    justify-content: center;
+}
+.bulk-upload-divider {
+    margin-top: 4px;
+}
+
+/* Modal de resultado de carga masiva */
+.bulk-result-summary {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px 10px;
+    flex-wrap: wrap;
+}
+.bulk-result-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 11px;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.bulk-result-pill--ok {
+    background: var(--success-light);
+    color: #0f766e;
+}
+.bulk-result-pill--warn {
+    background: var(--danger-light);
+    color: #991b1b;
+}
+.bulk-result-section {
+    border: 1px solid #eee;
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+.bulk-result-section--ok {
+    border-left: 4px solid var(--success);
+    background: #f0fdfa;
+}
+.bulk-result-section--err {
+    border-left: 4px solid var(--danger);
+    background: #fef2f2;
+}
+.bulk-result-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    font-size: 13px;
+    color: var(--text-dark);
+}
+.bulk-result-section-title i {
+    font-size: 18px;
+}
+.bulk-result-section--ok .bulk-result-section-title i {
+    color: var(--success);
+}
+.bulk-result-section--err .bulk-result-section-title i {
+    color: var(--danger);
+}
+.bulk-result-list {
+    margin: 0;
+    padding-left: 22px;
+    font-size: 13px;
+    color: var(--text-dark);
+}
+.bulk-result-list li {
+    margin: 2px 0;
+    word-break: break-word;
+}
+.bulk-result-list--scroll {
+    max-height: 180px;
+    overflow-y: auto;
+}
+.bulk-result-list code {
+    background: #f3f3f3;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+}
+.bulk-result-ellipsis {
+    list-style: none;
+    margin-left: -22px;
+    padding-left: 0;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 12px;
+    margin-top: 4px;
+}
+.bulk-result-empty {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 12px 0;
+}
+
 @media (max-width: 720px) {
     .filters-row--with-cargar {
         flex-direction: column;

@@ -1096,3 +1096,326 @@ function submitRoleModal() {
         'Rol registrado'
     );
 }
+
+
+// ====== Carga masiva de facturas (.xls / .xlsx / .csv) ======
+
+const BULK_INVOICE_HEADERS = [
+    'Nro. Factura',
+    'Empresa (EGP)',
+    'Proveedor',
+    'Fecha emisión',
+    'Fecha vencimiento',
+    'Moneda',
+    'Monto',
+    'Estado inicial'
+];
+
+// Genera y descarga un .xlsx con la fila de cabeceras estandarizadas para que
+// el usuario complete el detalle de las facturas a cargar masivamente.
+function downloadInvoiceTemplate() {
+    if (typeof XLSX === 'undefined') {
+        showCustomAlert('No se pudo generar el template (librería de Excel no disponible).', 'Descarga fallida');
+        return;
+    }
+    const sampleRow = [
+        '001-001-0001234',
+        'Retail S.A.',
+        'Tech Solutions S.A.',
+        '2026-05-01',
+        '2026-06-30',
+        'GS',
+        15000000,
+        'Habilitada'
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([BULK_INVOICE_HEADERS, sampleRow]);
+    // Ancho de columnas legible
+    ws['!cols'] = [
+        { wch: 20 }, { wch: 22 }, { wch: 22 }, { wch: 16 },
+        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 18 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Facturas');
+    XLSX.writeFile(wb, 'template-facturas.xlsx');
+}
+
+function triggerBulkInvoiceUpload() {
+    const input = document.getElementById('bulk-invoice-file-input');
+    if (!input) return;
+    input.value = '';
+    input.click();
+}
+
+async function handleBulkInvoiceFile(input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (typeof XLSX === 'undefined') {
+        showCustomAlert('No se pudo procesar el archivo (librería de Excel no disponible).', 'Carga fallida');
+        return;
+    }
+
+    let rows;
+    try {
+        const buffer = await file.arrayBuffer();
+        let wb;
+        const isCsv = /\.csv$/i.test(file.name);
+        if (isCsv) {
+            // Decodificamos explícitamente como UTF-8 para preservar acentos en cabeceras.
+            const text = new TextDecoder('utf-8').decode(buffer);
+            wb = XLSX.read(text, { type: 'string', cellDates: true });
+        } else {
+            wb = XLSX.read(buffer, { cellDates: true });
+        }
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        if (!ws) throw new Error('El archivo no contiene hojas');
+        // defval garantiza claves vacías como '' y no como undefined
+        rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+    } catch (err) {
+        showCustomAlert(`No se pudo leer el archivo: ${err.message || err}`, 'Carga fallida');
+        return;
+    } finally {
+        input.value = '';
+    }
+
+    const result = processBulkInvoiceRows(rows);
+    showBulkUploadResult(result);
+
+    if (result.loaded.length > 0) {
+        renderCurrentConfirmingFilters();
+    }
+}
+
+// Procesa un array de objetos (uno por fila del Excel/CSV) y devuelve
+// { loaded: [...ids], failedIncomplete: [...], failedCurrency: [...] }.
+function processBulkInvoiceRows(rows) {
+    const loaded = [];
+    const failedIncomplete = [];
+    const failedCurrency = [];
+
+    rows.forEach((raw, idx) => {
+        const row = normalizeBulkRow(raw);
+        const rowLabel = row.id || `(fila ${idx + 2})`;
+
+        const required = ['id', 'egp', 'prov', 'emision', 'vto', 'moneda', 'monto'];
+        const missing = required.some(k => row[k] === '' || row[k] == null);
+        if (missing || !Number.isFinite(row.monto) || row.monto <= 0) {
+            failedIncomplete.push(rowLabel);
+            return;
+        }
+
+        // Validar moneda contra las habilitadas para el ente (si el ente existe en participants)
+        const egpConfig = participants.find(p => p.razon === row.egp && p.tipo === 'EGP');
+        if (egpConfig && Array.isArray(egpConfig.monedas) && egpConfig.monedas.length > 0
+            && !egpConfig.monedas.includes(row.moneda)) {
+            failedCurrency.push({
+                id: rowLabel,
+                moneda: row.moneda,
+                ente: egpConfig.razon,
+                permitidas: egpConfig.monedas.join(', ')
+            });
+            return;
+        }
+
+        invoices.unshift({
+            id: row.id,
+            egp: row.egp,
+            prov: row.prov,
+            emision: row.emision,
+            vto: row.vto,
+            moneda: row.moneda,
+            monto: row.monto,
+            estado: row.estado
+        });
+        loaded.push(row.id);
+    });
+
+    return { loaded, failedIncomplete, failedCurrency };
+}
+
+// Normaliza una fila cualquiera (claves variables, mayúsculas, espacios) hacia
+// un objeto con campos estándar.
+function normalizeBulkRow(raw) {
+    const lookup = {};
+    Object.keys(raw || {}).forEach(k => {
+        lookup[normalizeKey(k)] = raw[k];
+    });
+
+    const get = (...keys) => {
+        for (const k of keys) {
+            const v = lookup[normalizeKey(k)];
+            if (v !== undefined && v !== '') return v;
+        }
+        return '';
+    };
+
+    const id = String(get('Nro. Factura', 'Nro Factura', 'NroFactura', 'Numero Factura', 'Número Factura') || '').trim();
+    const egp = String(get('Empresa (EGP)', 'Empresa', 'EGP') || '').trim();
+    const prov = String(get('Proveedor') || '').trim();
+    const emision = parseBulkDate(get('Fecha emisión', 'Fecha emision', 'Emisión', 'Emision'));
+    const vto = parseBulkDate(get('Fecha vencimiento', 'Vencimiento'));
+    let moneda = String(get('Moneda') || '').trim().toUpperCase();
+    if (moneda === 'GUARANIES' || moneda === 'GUARANÍES' || moneda === 'PYG') moneda = 'GS';
+    if (moneda === 'DOLAR' || moneda === 'DÓLAR' || moneda === 'DOLARES' || moneda === 'DÓLARES') moneda = 'USD';
+    const montoRaw = get('Monto');
+    const monto = parseBulkNumber(montoRaw);
+
+    let estado = String(get('Estado inicial', 'Estado') || '').trim();
+    estado = normalizeBulkEstado(estado);
+
+    return { id, egp, prov, emision, vto, moneda, monto, estado };
+}
+
+function normalizeKey(s) {
+    return String(s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+}
+
+function parseBulkNumber(v) {
+    if (typeof v === 'number') return v;
+    if (v == null || v === '') return NaN;
+    const s = String(v).trim().replace(/\s/g, '');
+    // Acepta "1.500.000,50" (es) o "1,500,000.50" (en) o "1500000.50"
+    const hasComma = s.includes(',');
+    const hasDot = s.includes('.');
+    let cleaned = s;
+    if (hasComma && hasDot) {
+        // Asume el último separador como decimal
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+            cleaned = s.replace(/\./g, '').replace(',', '.');
+        } else {
+            cleaned = s.replace(/,/g, '');
+        }
+    } else if (hasComma) {
+        cleaned = s.replace(/\./g, '').replace(',', '.');
+    } else {
+        cleaned = s.replace(/,/g, '');
+    }
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : NaN;
+}
+
+function parseBulkDate(v) {
+    if (v == null || v === '') return '';
+    if (v instanceof Date && !isNaN(v.getTime())) {
+        return formatDateISO(v);
+    }
+    const s = String(v).trim();
+    // ISO YYYY-MM-DD o YYYY/MM/DD
+    let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])}`;
+    // DD/MM/YYYY o DD-MM-YYYY (formato es-PY)
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${pad2(m[2])}-${pad2(m[1])}`;
+    // M/D/YY o MM/DD/YY (formato corto que produce SheetJS al exportar CSV)
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+    if (m) {
+        const yyyy = `20${m[3]}`;
+        return `${yyyy}-${pad2(m[1])}-${pad2(m[2])}`;
+    }
+    // Excel serial number como fallback (ej. 45810)
+    if (/^\d+(\.\d+)?$/.test(s)) {
+        const serial = parseFloat(s);
+        const epoch = new Date(Date.UTC(1899, 11, 30));
+        const d = new Date(epoch.getTime() + serial * 86400000);
+        if (!isNaN(d.getTime())) return formatDateISO(d);
+    }
+    return '';
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function formatDateISO(d) {
+    return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+}
+
+// Mapea estados desde la planilla a los valores internos válidos.
+// Cualquier otro texto (o vacío) se asume como "Habilitada".
+function normalizeBulkEstado(estadoTexto) {
+    const k = normalizeKey(estadoTexto);
+    if (k === 'pendiente' || k === 'pendienteaprobacionbanco') return 'Pendiente aprobación banco';
+    if (k === 'bloqueada') return 'Bloqueada';
+    return 'Habilitada';
+}
+
+// Renderiza el modal de resultado del bulk upload.
+// Cargadas: tope de visualización 15 + "y N más".
+// Falladas (por motivo): se muestran todas, con scroll si son muchas.
+function showBulkUploadResult(result) {
+    const body = document.getElementById('bulk-upload-result-body');
+    const title = document.getElementById('bulk-upload-result-title');
+    if (!body || !title) return;
+
+    const totalProcessed = result.loaded.length + result.failedIncomplete.length + result.failedCurrency.length;
+    const allOk = result.failedIncomplete.length === 0 && result.failedCurrency.length === 0;
+
+    title.textContent = result.loaded.length > 0
+        ? (allOk ? 'Carga masiva exitosa' : 'Carga masiva con observaciones')
+        : 'Carga masiva sin facturas registradas';
+
+    const sections = [];
+    sections.push(`
+        <p class="bulk-result-summary">Se procesaron <strong>${totalProcessed}</strong> filas:
+            <span class="bulk-result-pill bulk-result-pill--ok">${result.loaded.length} cargadas</span>
+            ${result.failedIncomplete.length > 0 ? `<span class="bulk-result-pill bulk-result-pill--warn">${result.failedIncomplete.length} incompletas</span>` : ''}
+            ${result.failedCurrency.length > 0 ? `<span class="bulk-result-pill bulk-result-pill--warn">${result.failedCurrency.length} con moneda inválida</span>` : ''}
+        </p>
+    `);
+
+    if (result.loaded.length > 0) {
+        const cap = 15;
+        const visible = result.loaded.slice(0, cap);
+        const extra = result.loaded.length - cap;
+        const items = visible.map(id => `<li>${escapeHtml(id)}</li>`).join('');
+        const ellipsis = extra > 0 ? `<li class="bulk-result-ellipsis">… y ${extra} factura${extra === 1 ? '' : 's'} más</li>` : '';
+        sections.push(`
+            <div class="bulk-result-section bulk-result-section--ok">
+                <p class="bulk-result-section-title"><i class="ph ph-check-circle"></i> Facturas cargadas (${result.loaded.length})</p>
+                <ul class="bulk-result-list">${items}${ellipsis}</ul>
+            </div>
+        `);
+    }
+
+    if (result.failedIncomplete.length > 0) {
+        const items = result.failedIncomplete.map(id => `<li>${escapeHtml(id)}</li>`).join('');
+        sections.push(`
+            <div class="bulk-result-section bulk-result-section--err">
+                <p class="bulk-result-section-title"><i class="ph ph-warning-circle"></i> No cargadas — información incompleta (${result.failedIncomplete.length})</p>
+                <ul class="bulk-result-list bulk-result-list--scroll">${items}</ul>
+            </div>
+        `);
+    }
+
+    if (result.failedCurrency.length > 0) {
+        const items = result.failedCurrency.map(f =>
+            `<li><strong>${escapeHtml(f.id)}</strong> — moneda <code>${escapeHtml(f.moneda || '—')}</code> no habilitada para ${escapeHtml(f.ente)} (permitidas: ${escapeHtml(f.permitidas)})</li>`
+        ).join('');
+        sections.push(`
+            <div class="bulk-result-section bulk-result-section--err">
+                <p class="bulk-result-section-title"><i class="ph ph-currency-circle-dollar"></i> No cargadas — moneda no habilitada por el ente (${result.failedCurrency.length})</p>
+                <ul class="bulk-result-list bulk-result-list--scroll">${items}</ul>
+            </div>
+        `);
+    }
+
+    if (totalProcessed === 0) {
+        sections.push('<p class="bulk-result-empty">El archivo no contiene filas para procesar.</p>');
+    }
+
+    body.innerHTML = sections.join('');
+
+    // Cierra el modal de carga (si está abierto) para no taparle el resultado al usuario
+    const newInvoiceModal = document.getElementById('new-invoice-modal');
+    if (newInvoiceModal && newInvoiceModal.classList.contains('active')) {
+        closeModal('new-invoice-modal');
+    }
+    openModal('bulk-upload-result-modal');
+}
+
+function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
