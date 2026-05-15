@@ -70,11 +70,13 @@ const selectedInvoiceIds = new Set();
 const HABILITAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.BLOQUEADA]);
 const HABILITAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para habilitar';
 const HABILITAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para habilitar';
-// Estados desde los cuales una factura puede pasar a "Bloqueada" mediante la acción masiva
-// (camino simétrico "usuario bloquea factura" en la máquina de estados).
-const BLOQUEAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.HABILITADA]);
-const BLOQUEAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para bloquear';
-const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para bloquear';
+function isInvoiceEligibleForBulkBloquear(inv) {
+    const e = inv.estado;
+    return e === INVOICE_STATES.PENDIENTE || e === INVOICE_STATES.HABILITADA;
+}
+const BLOQUEAR_INVALID_TOOLTIP =
+    'Solo pueden bloquearse facturas en estado Habilitada o Pendiente (ingreso ERP)';
+const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas en estado Habilitada o Pendiente para bloquear';
 
 function getSelectedOperatingEntityRazon() {
     const sel = document.getElementById('operating-entity-select');
@@ -746,7 +748,7 @@ function updateHabilitarButtonState() {
     updateBulkActionButtonState({
         btnId: 'btn-habilitar-facturas',
         wrapperId: 'btn-habilitar-wrapper',
-        validStates: HABILITAR_VALID_STATES,
+        validPred: i => HABILITAR_VALID_STATES.has(i.estado),
         invalidTooltip: HABILITAR_INVALID_TOOLTIP,
         emptyTooltip: HABILITAR_EMPTY_TOOLTIP,
         verb: 'Habilitar',
@@ -754,21 +756,21 @@ function updateHabilitarButtonState() {
     updateBulkActionButtonState({
         btnId: 'btn-bloquear-facturas',
         wrapperId: 'btn-bloquear-wrapper',
-        validStates: BLOQUEAR_VALID_STATES,
+        validPred: isInvoiceEligibleForBulkBloquear,
         invalidTooltip: BLOQUEAR_INVALID_TOOLTIP,
         emptyTooltip: BLOQUEAR_EMPTY_TOOLTIP,
         verb: 'Bloquear',
     });
 }
 
-function updateBulkActionButtonState({ btnId, wrapperId, validStates, invalidTooltip, emptyTooltip, verb }) {
+function updateBulkActionButtonState({ btnId, wrapperId, validPred, invalidTooltip, emptyTooltip, verb }) {
     const btn = document.getElementById(btnId);
     const wrapper = document.getElementById(wrapperId);
     if (!btn || !wrapper) return;
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     const count = selectedInvoices.length;
-    const allValid = count > 0 && selectedInvoices.every(i => validStates.has(i.estado));
+    const allValid = count > 0 && selectedInvoices.every(validPred);
 
     if (count === 0) {
         btn.classList.add('is-disabled');
@@ -792,7 +794,7 @@ function updateBulkActionButtonState({ btnId, wrapperId, validStates, invalidToo
 // seleccionadas (todas en estado Pendiente o Bloqueada) a estado Habilitada.
 function habilitarSelectedInvoices() {
     const btn = document.getElementById('btn-habilitar-facturas');
-    if (!btn || btn.classList.contains('is-disabled')) return;
+    if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     if (selectedInvoices.length === 0) return;
@@ -823,11 +825,11 @@ function habilitarSelectedInvoices() {
 // (camino "usuario bloquea factura" en la máquina de estados).
 function bloquearSelectedInvoices() {
     const btn = document.getElementById('btn-bloquear-facturas');
-    if (!btn || btn.classList.contains('is-disabled')) return;
+    if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
 
     const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
     if (selectedInvoices.length === 0) return;
-    const allValid = selectedInvoices.every(i => BLOQUEAR_VALID_STATES.has(i.estado));
+    const allValid = selectedInvoices.every(isInvoiceEligibleForBulkBloquear);
     if (!allValid) return;
 
     const count = selectedInvoices.length;
