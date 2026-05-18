@@ -68,13 +68,36 @@ const selectedInvoiceIds = new Set();
 // Estados desde los cuales una factura puede pasar a "Habilitada" mediante la acción masiva
 // (camino "usuario habilita o bloquea factura" en la máquina de estados).
 const HABILITAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.BLOQUEADA]);
-const HABILITAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para habilitar';
-const HABILITAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para habilitar';
-// Estados desde los cuales una factura puede pasar a "Bloqueada" mediante la acción masiva
-// (camino simétrico "usuario bloquea factura" en la máquina de estados).
+const HABILITAR_INVALID_TOOLTIP =
+    'Solo pueden habilitarse facturas en estado Bloqueada o Pendiente';
+const HABILITAR_EMPTY_TOOLTIP = 'Seleccione facturas en estado Bloqueada o Pendiente para habilitar';
 const BLOQUEAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.HABILITADA]);
-const BLOQUEAR_INVALID_TOOLTIP = 'Una o más facturas están en un estado invalido para bloquear';
-const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione una o más facturas para bloquear';
+const BLOQUEAR_INVALID_TOOLTIP =
+    'Solo pueden bloquearse facturas en estado Habilitada o Pendiente';
+const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione facturas en estado Habilitada o Pendiente para bloquear';
+
+function isInvoiceEligibleForBulkHabilitar(inv) {
+    const e = inv.estado;
+    return e === INVOICE_STATES.PENDIENTE || e === INVOICE_STATES.BLOQUEADA;
+}
+function isInvoiceEligibleForBulkBloquear(inv) {
+    const e = inv.estado;
+    return e === INVOICE_STATES.PENDIENTE || e === INVOICE_STATES.HABILITADA;
+}
+
+function getSelectedInvoices() {
+    return invoices.filter(i => selectedInvoiceIds.has(i.id));
+}
+
+/** Resuelve el id real de factura desde el checkbox (data-invoice-id puede estar escapado en HTML). */
+function resolveInvoiceIdFromCheckboxInput(input) {
+    const attrVal = input.getAttribute('data-invoice-id');
+    if (!attrVal) return null;
+    const direct = invoices.find(i => i.id === attrVal);
+    if (direct) return direct.id;
+    const matched = invoices.find(i => invoiceIdToHtmlAttr(i.id) === attrVal);
+    return matched ? matched.id : null;
+}
 
 function getSelectedOperatingEntityRazon() {
     const sel = document.getElementById('operating-entity-select');
@@ -685,7 +708,7 @@ function getCurrentFilteredInvoices() {
 // ===== Selección masiva: handlers =====
 
 function onInvoiceCheckboxChange(input) {
-    const id = input.dataset.invoiceId;
+    const id = resolveInvoiceIdFromCheckboxInput(input);
     if (!id) return;
     if (input.checked) {
         selectedInvoiceIds.add(id);
@@ -758,7 +781,7 @@ function updateHabilitarButtonState() {
     updateBulkActionButtonState({
         btnId: 'btn-habilitar-facturas',
         wrapperId: 'btn-habilitar-wrapper',
-        validStates: HABILITAR_VALID_STATES,
+        validPred: isInvoiceEligibleForBulkHabilitar,
         invalidTooltip: HABILITAR_INVALID_TOOLTIP,
         emptyTooltip: HABILITAR_EMPTY_TOOLTIP,
         verb: 'Habilitar',
@@ -766,37 +789,34 @@ function updateHabilitarButtonState() {
     updateBulkActionButtonState({
         btnId: 'btn-bloquear-facturas',
         wrapperId: 'btn-bloquear-wrapper',
-        validStates: BLOQUEAR_VALID_STATES,
+        validPred: isInvoiceEligibleForBulkBloquear,
         invalidTooltip: BLOQUEAR_INVALID_TOOLTIP,
         emptyTooltip: BLOQUEAR_EMPTY_TOOLTIP,
         verb: 'Bloquear',
     });
 }
 
-function updateBulkActionButtonState({ btnId, wrapperId, validStates, invalidTooltip, emptyTooltip, verb }) {
+function updateBulkActionButtonState({ btnId, wrapperId, validPred, invalidTooltip, emptyTooltip, verb }) {
     const btn = document.getElementById(btnId);
     const wrapper = document.getElementById(wrapperId);
     if (!btn || !wrapper) return;
 
-    const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
+    const selectedInvoices = getSelectedInvoices();
     const count = selectedInvoices.length;
-    const allValid = count > 0 && selectedInvoices.every(i => validStates.has(i.estado));
+    const allValid = count > 0 && selectedInvoices.every(validPred);
 
-    if (count === 0) {
-        btn.classList.add('is-disabled');
-        btn.setAttribute('aria-disabled', 'true');
-        btn.removeAttribute('title');
-        wrapper.setAttribute('title', emptyTooltip);
-    } else if (!allValid) {
-        btn.classList.add('is-disabled');
-        btn.setAttribute('aria-disabled', 'true');
-        btn.removeAttribute('title');
-        wrapper.setAttribute('title', invalidTooltip);
-    } else {
+    if (allValid) {
         btn.classList.remove('is-disabled');
-        btn.setAttribute('aria-disabled', 'false');
+        btn.removeAttribute('aria-disabled');
         btn.setAttribute('title', `${verb} ${count} factura${count === 1 ? '' : 's'} seleccionada${count === 1 ? '' : 's'}`);
         wrapper.removeAttribute('title');
+        wrapper.classList.remove('btn-tooltip-wrapper--inactive');
+    } else {
+        btn.classList.add('is-disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.removeAttribute('title');
+        wrapper.classList.add('btn-tooltip-wrapper--inactive');
+        wrapper.setAttribute('title', count === 0 ? emptyTooltip : invalidTooltip);
     }
 }
 
@@ -806,10 +826,9 @@ function habilitarSelectedInvoices() {
     const btn = document.getElementById('btn-habilitar-facturas');
     if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
 
-    const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
+    const selectedInvoices = getSelectedInvoices();
     if (selectedInvoices.length === 0) return;
-    const allValid = selectedInvoices.every(i => HABILITAR_VALID_STATES.has(i.estado));
-    if (!allValid) return;
+    if (!selectedInvoices.every(isInvoiceEligibleForBulkHabilitar)) return;
 
     const count = selectedInvoices.length;
     const idsPreview = selectedInvoices.slice(0, 5).map(i => i.id).join(', ');
@@ -837,10 +856,9 @@ function bloquearSelectedInvoices() {
     const btn = document.getElementById('btn-bloquear-facturas');
     if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
 
-    const selectedInvoices = invoices.filter(i => selectedInvoiceIds.has(i.id));
+    const selectedInvoices = getSelectedInvoices();
     if (selectedInvoices.length === 0) return;
-    const allValid = selectedInvoices.every(i => BLOQUEAR_VALID_STATES.has(i.estado));
-    if (!allValid) return;
+    if (!selectedInvoices.every(isInvoiceEligibleForBulkBloquear)) return;
 
     const count = selectedInvoices.length;
     const idsPreview = selectedInvoices.slice(0, 5).map(i => i.id).join(', ');

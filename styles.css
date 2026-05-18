@@ -1640,40 +1640,34 @@ textarea.input-text {
     background-color: #4a0f17;
 }
 
-/* Acción masiva "Bloquear" — variante secundaria, alineada con Habilitar */
-.btn-bloquear {
-    background-color: #4d4d4d;
+/* Habilitar / Bloquear masivos: mismo rojo Atlas que "+ Cargar Factura" cuando están activos */
+.filters-row-cargar-actions .bulk-action-btn.btn-primary:not(.is-disabled) {
+    background-color: var(--atlas-primary);
     color: #fff;
-    border: 1px solid #3d3d3d;
+    border: none;
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 1;
+    box-shadow: none;
 }
-.btn-bloquear:hover {
-    background-color: #2a2a2a;
+.filters-row-cargar-actions .bulk-action-btn.btn-primary:not(.is-disabled):hover {
+    background-color: var(--atlas-primary-deep);
+    box-shadow: var(--shadow);
 }
-
-/* Bloquear inhabilitado: mismo “apagado” que Habilitar (.btn-primary.is-disabled).
-   .btn-bloquear/.btn-secondary solos ganan al genérico is-disabled, por eso reglas acotadas y específicas. */
-.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled,
-.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"] {
+.filters-row-cargar-actions .bulk-action-btn.btn-primary.is-disabled,
+.filters-row-cargar-actions .bulk-action-btn.btn-primary[aria-disabled="true"] {
     pointer-events: none;
     background-color: #bfbfbf;
     color: #f3f3f3;
-    border-color: #b0b0b0;
+    border: none;
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.88;
-    text-shadow: none;
 }
-.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled:hover,
-.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"]:hover {
+.filters-row-cargar-actions .bulk-action-btn.btn-primary.is-disabled:hover,
+.filters-row-cargar-actions .bulk-action-btn.btn-primary[aria-disabled="true"]:hover {
     background-color: #bfbfbf;
-    color: #f3f3f3;
-    border-color: #b0b0b0;
     box-shadow: none;
-}
-.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear.is-disabled i,
-.filters-row-cargar-actions .btn-tooltip-wrapper > .btn-secondary.btn-bloquear[aria-disabled="true"] i {
-    color: inherit;
-    opacity: 0.95;
 }
 
 /* Indicadores de fila para estados intermedios / sin acción operable */
@@ -1722,30 +1716,17 @@ textarea.input-text {
 }
 .btn-tooltip-wrapper {
     display: inline-flex;
+    cursor: default;
+}
+.btn-tooltip-wrapper--inactive {
     cursor: help;
 }
-.btn-tooltip-wrapper > .btn-primary {
+.btn-tooltip-wrapper > .btn-primary.bulk-action-btn:not(.is-disabled) {
     pointer-events: auto;
 }
-.btn-tooltip-wrapper > .btn-primary.is-disabled,
-.btn-tooltip-wrapper > .btn-primary[aria-disabled="true"] {
+.btn-tooltip-wrapper > .btn-primary.bulk-action-btn.is-disabled,
+.btn-tooltip-wrapper > .btn-primary.bulk-action-btn[aria-disabled="true"] {
     pointer-events: none;
-}
-
-/* Estado deshabilitado para .btn-primary (sin usar el atributo disabled,
-   así el tooltip funciona en todos los browsers). */
-.btn-primary.is-disabled,
-.btn-primary[aria-disabled="true"] {
-    background-color: #bfbfbf;
-    color: #f3f3f3;
-    cursor: not-allowed;
-    box-shadow: none;
-    opacity: 0.85;
-}
-.btn-primary.is-disabled:hover,
-.btn-primary[aria-disabled="true"]:hover {
-    background-color: #bfbfbf;
-    box-shadow: none;
 }
 
 /* ====== Columna de selección masiva de facturas ====== */
