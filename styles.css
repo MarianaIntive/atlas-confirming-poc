@@ -837,6 +837,17 @@ select.select-input {
     background: #fef3c7;
     color: #92400e;
 }
+.status-pendiente-aprobacion-egp {
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 9px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
+    max-width: 160px;
+    text-transform: none;
+    letter-spacing: 0;
+}
 .status-pendiente-aprobacion-banco {
     background: #fce7f3;
     color: #9d174d;
@@ -862,6 +873,17 @@ select.select-input {
 .status-pendiente-reversion {
     background: #fee2e2;
     color: #991b1b;
+    font-size: 9px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
+    max-width: 160px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.status-pendiente-aprobacion-supervisor {
+    background: #f3e8ff;
+    color: #6b21a8;
     font-size: 9px;
     line-height: 1.25;
     white-space: normal;
@@ -1073,6 +1095,20 @@ select.select-input {
 .premium-modal .modal-header h3 {
     color: var(--atlas-primary);
     font-size: 1.1rem;
+}
+.simulate-mode-hint {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #4b5563;
+    background: #f8fafc;
+    border-left: 3px solid var(--atlas-primary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+.simulate-modal-footer {
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 .config-section {
     margin-bottom: 18px;

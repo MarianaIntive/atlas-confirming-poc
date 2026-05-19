@@ -205,7 +205,9 @@
                                         <option value="Pendiente">Pendiente</option>
                                         <option value="Habilitada">Habilitada</option>
                                         <option value="Bloqueada">Bloqueada</option>
+                                        <option value="Pendiente aprobación EGP">Pendiente aprobación EGP</option>
                                         <option value="Pendiente aprobación banco">Pendiente aprobación banco</option>
+                                        <option value="Pendiente aprobación Supervisor">Pendiente aprobación Supervisor</option>
                                         <option value="Pendiente de desembolso">Pendiente de desembolso</option>
                                         <option value="Pendiente de Reversión">Pendiente de Reversión</option>
                                         <option value="Financiada">Financiada</option>
@@ -569,20 +571,23 @@
                     </div>
                 </div>
 
+                <p id="simulate-mode-hint" class="simulate-mode-hint"></p>
                 <div class="ticket-section" id="simulation-ticket">
                     <!-- Se inyecta por JS -->
                 </div>
 
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer simulate-modal-footer">
                 <button class="btn-secondary" onclick="closeModal('simulate-modal')">Cancelar</button>
-                <button class="btn-secondary btn-rechazar hidden" id="btn-rechazar-desembolso">
-                    <i class="ph ph-x-circle"></i> Rechazar
-                </button>
-                <button class="btn-primary hidden" id="btn-aprobar-desembolso">
-                    <i class="ph ph-check-circle"></i> Aprobar
-                </button>
-                <button class="btn-primary" id="btn-execute-adelanto">Ejecutar Adelanto</button>
+                <button class="btn-primary hidden" id="btn-execute-adelanto">Ejecutar Adelanto</button>
+                <button class="btn-primary hidden" id="btn-aprobar-egp"><i class="ph ph-check-circle"></i> EGP Aprueba</button>
+                <button class="btn-secondary btn-rechazar hidden" id="btn-rechazar-egp-motivo"><i class="ph ph-calendar"></i> Rechazar c/ motivo</button>
+                <button class="btn-secondary btn-rechazar hidden" id="btn-rechazar-egp-sin-motivo"><i class="ph ph-x-circle"></i> Rechazar s/ motivo</button>
+                <button class="btn-primary hidden" id="btn-aprobar-desembolso"><i class="ph ph-check-circle"></i> Banco Aprueba</button>
+                <button class="btn-secondary btn-rechazar hidden" id="btn-rechazar-desembolso"><i class="ph ph-x-circle"></i> Banco Rechaza</button>
+                <button class="btn-primary hidden" id="btn-operador-aprueba-reversion"><i class="ph ph-user-check"></i> Operador Aprueba</button>
+                <button class="btn-primary hidden" id="btn-supervisor-aprueba-reversion"><i class="ph ph-shield-check"></i> Supervisor Aprueba</button>
+                <button class="btn-secondary btn-rechazar hidden" id="btn-supervisor-rechaza-reversion"><i class="ph ph-x-circle"></i> Supervisor Rechaza</button>
             </div>
         </div>
     </div>

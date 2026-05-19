@@ -1,18 +1,20 @@
 // ====== ESTADO DE LA APP (MOCK DATA) ======
 
-// Máquina de estados de facturas (replica el diagrama de la POC).
-// Estos valores son los que viajan en `invoice.estado`.
+// Máquina de estados de facturas — flujo normal + flujo reversión (diagramas POC).
+// Campos opcionales en invoice: reversionSameDay (boolean) durante flujo de reversión EGP.
 const INVOICE_STATES = {
-    PENDIENTE: 'Pendiente',                                // Intermedio: ERP recibe la factura. Bloqueada para adelantos.
-    HABILITADA: 'Habilitada',                              // Operable: usuario puede simular/solicitar adelanto.
-    BLOQUEADA: 'Bloqueada',                                // Final: no operable.
-    PENDIENTE_APROBACION_BANCO: 'Pendiente aprobación banco', // Esperando que el banco apruebe/rechace el desembolso.
-    PENDIENTE_DESEMBOLSO: 'Pendiente de desembolso',       // Intermedio: API CORE BANKING está desembolsando.
-    PENDIENTE_REVERSION: 'Pendiente de Reversión',         // Intermedio: rechazada por banco, en reversión.
-    FINANCIADA: 'Financiada',                              // Final operativo: adelanto otorgado.
-    PAGADA: 'Pagada',                                      // Final: cobrada al EGP.
-    MORA: 'Mora',                                          // Final: vencida sin cobro.
-    VENCIDA: 'Vencida',                                    // Final: factura vencida sin haber operado adelanto.
+    PENDIENTE: 'Pendiente',
+    HABILITADA: 'Habilitada',
+    BLOQUEADA: 'Bloqueada',
+    PENDIENTE_APROBACION_EGP: 'Pendiente aprobación EGP',
+    PENDIENTE_APROBACION_BANCO: 'Pendiente aprobación banco',
+    PENDIENTE_DESEMBOLSO: 'Pendiente de desembolso',
+    PENDIENTE_REVERSION: 'Pendiente de Reversión',
+    PENDIENTE_APROBACION_SUPERVISOR: 'Pendiente aprobación Supervisor',
+    FINANCIADA: 'Financiada',
+    PAGADA: 'Pagada',
+    MORA: 'Mora',
+    VENCIDA: 'Vencida',
 };
 
 // Datos iniciales de facturas (cubren todos los estados de la máquina de estados)
@@ -23,6 +25,9 @@ let invoices = [
     { id: '001-001-0005678', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-02', vto: '2026-07-02', moneda: 'USD', monto: 2500, estado: INVOICE_STATES.BLOQUEADA },
     { id: '001-003-0001111', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-04-20', vto: '2026-06-20', moneda: 'GS', monto: 50000000, estado: INVOICE_STATES.FINANCIADA },
     { id: '001-001-0002222', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-25', vto: '2026-05-25', moneda: 'USD', monto: 1200, estado: INVOICE_STATES.PENDIENTE_APROBACION_BANCO },
+    { id: '001-007-0006666', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-08', vto: '2026-07-08', moneda: 'GS', monto: 9800000, estado: INVOICE_STATES.PENDIENTE_APROBACION_EGP },
+    { id: '001-008-0007777', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-10', vto: '2026-05-10', moneda: 'USD', monto: 3400, estado: INVOICE_STATES.PENDIENTE_REVERSION, reversionSameDay: false },
+    { id: '001-009-0008888', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-03-20', vto: '2026-04-20', moneda: 'GS', monto: 12000000, estado: INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR },
     { id: '001-004-0003333', egp: 'Retail S.A.', prov: 'Logistica Integral', emision: '2026-05-10', vto: '2026-07-10', moneda: 'GS', monto: 4200000, estado: INVOICE_STATES.PENDIENTE },
     { id: '001-005-0004444', egp: 'Cervepar', prov: 'Servicios IT', emision: '2026-05-12', vto: '2026-07-12', moneda: 'GS', monto: 6750000, estado: INVOICE_STATES.PENDIENTE },
     { id: '001-006-0005555', egp: 'Tigo Paraguay', prov: 'Tech Solutions S.A.', emision: '2026-02-15', vto: '2026-03-15', moneda: 'GS', monto: 2100000, estado: INVOICE_STATES.VENCIDA },
@@ -58,8 +63,7 @@ let abmRoles = [
 let nextAbmRoleId = 4;
 
 let currentSimulationInvoice = null;
-// 'simulate' = flujo normal de simulación de adelanto (Habilitada → Financiada)
-// 'approve'  = flujo de aprobación de desembolso pendiente (Pendiente aprobación banco → Financiada / Bloqueada)
+// simulate | approve-egp | approve-bank | reversion-operador | reversion-supervisor
 let currentSimulationMode = 'simulate';
 let confirmCallback = null;
 
@@ -554,9 +558,11 @@ function estadoToBadgeClass(estado) {
         [INVOICE_STATES.PENDIENTE]: 'status-pendiente',
         [INVOICE_STATES.HABILITADA]: 'status-habilitada',
         [INVOICE_STATES.BLOQUEADA]: 'status-bloqueada',
+        [INVOICE_STATES.PENDIENTE_APROBACION_EGP]: 'status-pendiente-aprobacion-egp',
         [INVOICE_STATES.PENDIENTE_APROBACION_BANCO]: 'status-pendiente-aprobacion-banco',
         [INVOICE_STATES.PENDIENTE_DESEMBOLSO]: 'status-pendiente-desembolso',
         [INVOICE_STATES.PENDIENTE_REVERSION]: 'status-pendiente-reversion',
+        [INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR]: 'status-pendiente-aprobacion-supervisor',
         [INVOICE_STATES.FINANCIADA]: 'status-financiada',
         [INVOICE_STATES.PAGADA]: 'status-pagada',
         [INVOICE_STATES.MORA]: 'status-mora',
@@ -614,8 +620,11 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             case INVOICE_STATES.FINANCIADA:
                 actionButtons = `<button class="btn-secondary btn-sm text-danger" onclick="revertInvoice('${inv.id}')"><i class="ph ph-arrow-u-up-left"></i> Revertir</button>`;
                 break;
+            case INVOICE_STATES.PENDIENTE_APROBACION_EGP:
+                actionButtons = `<button class="btn-primary btn-sm" onclick="openEgpApprovalModal('${inv.id}')"><i class="ph ph-buildings"></i> Aprobar EGP</button>`;
+                break;
             case INVOICE_STATES.PENDIENTE_APROBACION_BANCO:
-                actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openApprovalModal('${inv.id}')"><i class="ph ph-check-circle"></i> Aprobar Desembolso</button>`;
+                actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openBankApprovalModal('${inv.id}')"><i class="ph ph-bank"></i> Aprobar Banco</button>`;
                 break;
             case INVOICE_STATES.PENDIENTE:
                 actionButtons = `<span class="row-action-hint"><i class="ph ph-hourglass-medium"></i> Use Habilitar / Bloquear</span>`;
@@ -624,7 +633,10 @@ function renderInvoices(filter = 'all', searchQuery = '') {
                 actionButtons = `<span class="row-action-hint row-action-hint--processing"><i class="ph ph-spinner ph-spin"></i> CORE BANKING desembolsando…</span>`;
                 break;
             case INVOICE_STATES.PENDIENTE_REVERSION:
-                actionButtons = `<span class="row-action-hint row-action-hint--processing"><i class="ph ph-spinner ph-spin"></i> Revirtiendo operación…</span>`;
+                actionButtons = `<button class="btn-primary btn-sm" onclick="openReversionOperadorModal('${inv.id}')"><i class="ph ph-user-check"></i> Operador aprueba</button>`;
+                break;
+            case INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR:
+                actionButtons = `<button class="btn-primary btn-sm" onclick="openReversionSupervisorModal('${inv.id}')"><i class="ph ph-shield-check"></i> Supervisor</button>`;
                 break;
             case INVOICE_STATES.BLOQUEADA:
                 actionButtons = `<span class="row-action-hint"><i class="ph ph-lock"></i> No operable</span>`;
@@ -946,9 +958,25 @@ function openSimulation(invoiceId) {
     openSimulationModal(invoiceId, 'simulate');
 }
 
-// Aprobación de desembolso pendiente (reutiliza el modal de simulación)
+function openEgpApprovalModal(invoiceId) {
+    openSimulationModal(invoiceId, 'approve-egp');
+}
+
+function openBankApprovalModal(invoiceId) {
+    openSimulationModal(invoiceId, 'approve-bank');
+}
+
+/** @deprecated usar openBankApprovalModal */
 function openApprovalModal(invoiceId) {
-    openSimulationModal(invoiceId, 'approve');
+    openBankApprovalModal(invoiceId);
+}
+
+function openReversionOperadorModal(invoiceId) {
+    openSimulationModal(invoiceId, 'reversion-operador');
+}
+
+function openReversionSupervisorModal(invoiceId) {
+    openSimulationModal(invoiceId, 'reversion-supervisor');
 }
 
 function openSimulationModal(invoiceId, mode = 'simulate') {
@@ -967,12 +995,12 @@ function openSimulationModal(invoiceId, mode = 'simulate') {
 
     const simMonto = document.getElementById('sim-monto');
 
-    if (mode === 'approve') {
-        // En modo aprobación los datos son sólo informativos
+    const readOnlyModes = ['approve-egp', 'approve-bank', 'reversion-operador', 'reversion-supervisor'];
+    if (readOnlyModes.includes(mode)) {
         simMonedaSelect.disabled = true;
-        simMonedaSelect.title = 'Moneda definida en la factura a aprobar';
+        simMonedaSelect.title = 'Moneda definida en la factura';
         simMonto.disabled = true;
-        simMonto.title = 'Monto del adelanto pendiente de aprobación';
+        simMonto.title = 'Monto del adelanto';
     } else {
         if (isMultimoneda) {
             simMonedaSelect.disabled = false;
@@ -994,25 +1022,65 @@ function openSimulationModal(invoiceId, mode = 'simulate') {
 }
 
 // Configura título, leyendas y footer del modal según el modo activo
+function setModalFooterBtnVisible(id, visible) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !visible);
+}
+
 function applySimulationModalMode() {
     const titleEl = document.getElementById('simulate-modal-title');
     const sectionTitleEl = document.getElementById('simulate-section-title');
-    const btnExecute = document.getElementById('btn-execute-adelanto');
-    const btnAprobar = document.getElementById('btn-aprobar-desembolso');
-    const btnRechazar = document.getElementById('btn-rechazar-desembolso');
+    const hintEl = document.getElementById('simulate-mode-hint');
+    const inv = currentSimulationInvoice;
+    const mode = currentSimulationMode;
 
-    if (currentSimulationMode === 'approve') {
-        if (titleEl) titleEl.textContent = 'Aprobación de Desembolso';
-        if (sectionTitleEl) sectionTitleEl.textContent = 'Datos del adelanto a otorgar';
-        if (btnExecute) btnExecute.classList.add('hidden');
-        if (btnAprobar) btnAprobar.classList.remove('hidden');
-        if (btnRechazar) btnRechazar.classList.remove('hidden');
+    const allFooterIds = [
+        'btn-execute-adelanto',
+        'btn-aprobar-desembolso',
+        'btn-rechazar-desembolso',
+        'btn-aprobar-egp',
+        'btn-rechazar-egp-motivo',
+        'btn-rechazar-egp-sin-motivo',
+        'btn-operador-aprueba-reversion',
+        'btn-supervisor-aprueba-reversion',
+        'btn-supervisor-rechaza-reversion',
+    ];
+    allFooterIds.forEach(id => setModalFooterBtnVisible(id, false));
+
+    if (mode === 'approve-egp') {
+        if (titleEl) titleEl.textContent = 'Aprobación EGP';
+        if (sectionTitleEl) sectionTitleEl.textContent = 'Adelanto pendiente de aprobación por el EGP';
+        if (hintEl) hintEl.textContent = 'El EGP puede aprobar (pasa a banco), rechazar con motivo (vuelve a Habilitada) o rechazar sin motivo (Bloqueada).';
+        setModalFooterBtnVisible('btn-aprobar-egp', true);
+        setModalFooterBtnVisible('btn-rechazar-egp-motivo', true);
+        setModalFooterBtnVisible('btn-rechazar-egp-sin-motivo', true);
+    } else if (mode === 'approve-bank') {
+        if (titleEl) titleEl.textContent = 'Aprobación Banco';
+        if (sectionTitleEl) sectionTitleEl.textContent = 'Desembolso pendiente de aprobación bancaria';
+        if (hintEl) hintEl.textContent = 'El banco aprueba la transacción (desembolso) o la rechaza (factura Bloqueada).';
+        setModalFooterBtnVisible('btn-aprobar-desembolso', true);
+        setModalFooterBtnVisible('btn-rechazar-desembolso', true);
+    } else if (mode === 'reversion-operador') {
+        const sameDay = inv?.reversionSameDay !== false;
+        if (titleEl) titleEl.textContent = 'Reversión — Operador';
+        if (sectionTitleEl) sectionTitleEl.textContent = 'Pendiente de Reversión';
+        if (hintEl) {
+            hintEl.textContent = sameDay
+                ? 'Sameday: al aprobar, la factura vuelve directamente a Habilitada.'
+                : 'Día anterior: al aprobar, pasa a Pendiente aprobación Supervisor.';
+        }
+        setModalFooterBtnVisible('btn-operador-aprueba-reversion', true);
+    } else if (mode === 'reversion-supervisor') {
+        if (titleEl) titleEl.textContent = 'Reversión — Supervisor';
+        if (sectionTitleEl) sectionTitleEl.textContent = 'Pendiente aprobación Supervisor';
+        if (hintEl) hintEl.textContent = 'El supervisor aprueba (Habilitada) o rechaza (Bloqueada).';
+        setModalFooterBtnVisible('btn-supervisor-aprueba-reversion', true);
+        setModalFooterBtnVisible('btn-supervisor-rechaza-reversion', true);
     } else {
         if (titleEl) titleEl.textContent = 'Simulación de Adelanto';
         if (sectionTitleEl) sectionTitleEl.textContent = 'Datos a adelantar';
-        if (btnExecute) btnExecute.classList.remove('hidden');
-        if (btnAprobar) btnAprobar.classList.add('hidden');
-        if (btnRechazar) btnRechazar.classList.add('hidden');
+        if (hintEl) hintEl.textContent = 'Al ejecutar, la solicitud pasa a Pendiente aprobación EGP.';
+        setModalFooterBtnVisible('btn-execute-adelanto', true);
     }
 }
 
@@ -1079,55 +1147,132 @@ function recalculateSimulation() {
 // Recalcular al cambiar la moneda en simulación
 document.getElementById('sim-moneda').addEventListener('change', recalculateSimulation);
 
-// === Flujo "usuario simula o solicita adelanto" en la máquina de estados ===
-// Habilitada → (usuario ejecuta adelanto) → Pendiente aprobación banco
-// (luego el banco aprueba/rechaza desde la nueva acción "Aprobar Desembolso")
+// === Flujo normal: Habilitada → Pendiente aprobación EGP (simular / solicitar adelanto) ===
 document.getElementById('btn-execute-adelanto').addEventListener('click', () => {
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
-    inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_BANCO;
+    inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_EGP;
     renderCurrentConfirmingFilters();
     closeModal('simulate-modal');
     currentSimulationInvoice = null;
     showCustomAlert(
-        `La solicitud de adelanto para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue enviada al banco. La factura queda en estado "Pendiente aprobación banco" hasta que el banco apruebe o rechace el desembolso.`,
-        'Solicitud enviada al banco'
+        `La solicitud de adelanto para la factura ${inv.id} fue enviada al EGP. Estado: "Pendiente aprobación EGP".`,
+        'Solicitud enviada al EGP'
     );
 });
 
-// === Flujo "banco aprueba la TX" → Pendiente de desembolso → (CORE BANKING) → Financiada ===
-// Con probabilidad de error simulado, la API CORE BANKING puede fallar el desembolso y la
-// factura vuelve al estado "Pendiente aprobación banco" (flecha ERROR del diagrama).
+// EGP aprueba → Pendiente aprobación banco
+document.getElementById('btn-aprobar-egp')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_BANCO;
+    finishSimulationModalAction(
+        `El EGP aprobó el adelanto de la factura ${inv.id}. Pasa a "Pendiente aprobación banco".`,
+        'EGP aprobó'
+    );
+});
+
+// EGP rechaza con motivo → Habilitada (actualiza fecha de pago)
+document.getElementById('btn-rechazar-egp-motivo')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    const newVto = window.prompt(
+        `EGP rechaza con motivo. Indique la nueva fecha de pago (AAAA-MM-DD) para la factura ${inv.id}:`,
+        inv.vto
+    );
+    if (newVto == null || newVto.trim() === '') return;
+    inv.vto = newVto.trim();
+    inv.estado = INVOICE_STATES.HABILITADA;
+    finishSimulationModalAction(
+        `El EGP rechazó con motivo. La factura ${inv.id} vuelve a Habilitada (vencimiento actualizado a ${inv.vto}).`,
+        'EGP rechazó con motivo'
+    );
+});
+
+// EGP rechaza sin motivo → Bloqueada
+document.getElementById('btn-rechazar-egp-sin-motivo')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = INVOICE_STATES.BLOQUEADA;
+    finishSimulationModalAction(
+        `El EGP rechazó sin motivo. La factura ${inv.id} pasa a estado Bloqueada.`,
+        'EGP rechazó'
+    );
+});
+
+// Banco aprueba → Pendiente de desembolso → CORE BANKING
 document.getElementById('btn-aprobar-desembolso')?.addEventListener('click', () => {
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
     inv.estado = INVOICE_STATES.PENDIENTE_DESEMBOLSO;
-    renderCurrentConfirmingFilters();
-    closeModal('simulate-modal');
-    currentSimulationInvoice = null;
-    currentSimulationMode = 'simulate';
-    showCustomAlert(
-        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue aprobado por el banco. La API CORE BANKING está procesando el desembolso.`,
-        'Desembolso aprobado'
+    finishSimulationModalAction(
+        `El banco aprobó la TX de la factura ${inv.id}. CORE BANKING está desembolsando.`,
+        'Banco aprobó'
     );
     scheduleCoreBankingDisbursement(inv.id);
 });
 
-// === Flujo "banco rechaza la TX" → Pendiente de Reversión → (auto) → Bloqueada ===
+// Banco rechaza → Bloqueada
 document.getElementById('btn-rechazar-desembolso')?.addEventListener('click', () => {
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
-    inv.estado = INVOICE_STATES.PENDIENTE_REVERSION;
+    inv.estado = INVOICE_STATES.BLOQUEADA;
+    finishSimulationModalAction(
+        `El banco rechazó la transacción. La factura ${inv.id} pasa a estado Bloqueada.`,
+        'Banco rechazó'
+    );
+});
+
+// Reversión: operador aprueba (sameday → Habilitada | a pasado → Supervisor)
+document.getElementById('btn-operador-aprueba-reversion')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    const sameDay = inv.reversionSameDay !== false;
+    if (sameDay) {
+        inv.estado = INVOICE_STATES.HABILITADA;
+        delete inv.reversionSameDay;
+        finishSimulationModalAction(
+            `Operador aprobó la reversión (sameday). La factura ${inv.id} vuelve a Habilitada.`,
+            'Reversión aprobada'
+        );
+    } else {
+        inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR;
+        finishSimulationModalAction(
+            `Operador aprobó la reversión (día anterior). La factura ${inv.id} pasa a Pendiente aprobación Supervisor.`,
+            'Pendiente supervisor'
+        );
+    }
+});
+
+document.getElementById('btn-supervisor-aprueba-reversion')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = INVOICE_STATES.HABILITADA;
+    delete inv.reversionSameDay;
+    finishSimulationModalAction(
+        `Supervisor aprobó la reversión. La factura ${inv.id} vuelve a Habilitada.`,
+        'Supervisor aprobó'
+    );
+});
+
+document.getElementById('btn-supervisor-rechaza-reversion')?.addEventListener('click', () => {
+    if (!currentSimulationInvoice) return;
+    const inv = currentSimulationInvoice;
+    inv.estado = INVOICE_STATES.BLOQUEADA;
+    delete inv.reversionSameDay;
+    finishSimulationModalAction(
+        `Supervisor rechazó la reversión. La factura ${inv.id} pasa a estado Bloqueada.`,
+        'Supervisor rechazó'
+    );
+});
+
+function finishSimulationModalAction(message, title) {
     renderCurrentConfirmingFilters();
     closeModal('simulate-modal');
     currentSimulationInvoice = null;
     currentSimulationMode = 'simulate';
-    showCustomAlert(
-        `El desembolso para la factura ${inv.id} (${inv.egp} – ${inv.prov}) fue rechazado por el banco. Se está procesando la reversión.`,
-        'Desembolso rechazado'
-    );
-    scheduleReversionToBlocked(inv.id);
-});
+    showCustomAlert(message, title);
+}
 
 // ====== Transiciones automáticas (simulan agentes externos del diagrama) ======
 
@@ -1158,17 +1303,6 @@ function scheduleCoreBankingDisbursement(invoiceId) {
     }, CORE_BANKING_DELAY_MS);
 }
 
-// Reversión automática (Pendiente de Reversión → Bloqueada) tras el rechazo del banco.
-const REVERSION_DELAY_MS = 1800;
-function scheduleReversionToBlocked(invoiceId) {
-    setTimeout(() => {
-        const inv = invoices.find(i => i.id === invoiceId);
-        if (!inv || inv.estado !== INVOICE_STATES.PENDIENTE_REVERSION) return;
-        inv.estado = INVOICE_STATES.BLOQUEADA;
-        renderCurrentConfirmingFilters();
-    }, REVERSION_DELAY_MS);
-}
-
 // Helper para refrescar la grilla respetando los filtros y búsqueda actuales
 function renderCurrentConfirmingFilters() {
     const status = document.getElementById('filter-status')?.value || 'all';
@@ -1192,18 +1326,27 @@ function deleteInvoice(invoiceId) {
 }
 
 
-// Reversión de Adelanto
+// Flujo reversión: EGP revierte adelanto (no desembolsado / no pagado) → Pendiente de Reversión
 function revertInvoice(invoiceId) {
     const inv = invoices.find(i => i.id === invoiceId);
-    if (!inv) return;
+    if (!inv || inv.estado !== INVOICE_STATES.FINANCIADA) return;
 
-    const msg = `¿Está seguro que desea REVERTIR la operación de la factura ${inv.id} (${inv.egp}) por un monto de ${formatCurrency(inv.monto, inv.moneda)}? Esta acción anulará el adelanto y volverá el estado a Habilitada.`;
+    const msg = `¿Confirma que el EGP revierte el adelanto de la factura ${inv.id} (${formatCurrency(inv.monto, inv.moneda)})? Debe estar no desembolsado y no pagado. La factura pasará a "Pendiente de Reversión".`;
 
     showCustomConfirm(msg, () => {
-        inv.estado = INVOICE_STATES.HABILITADA;
+        const sameDay = window.confirm(
+            '¿La reversión es del mismo día (sameday)?\n\nAceptar = Sí (operador puede volver a Habilitada).\nCancelar = Día anterior (requiere supervisor).'
+        );
+        inv.reversionSameDay = sameDay;
+        inv.estado = INVOICE_STATES.PENDIENTE_REVERSION;
         renderCurrentConfirmingFilters();
-        showCustomAlert('La operación ha sido revertida. La factura vuelve a estar en estado Habilitada.', 'Reversión exitosa');
-    }, "Revertir Operación");
+        showCustomAlert(
+            sameDay
+                ? `Factura ${inv.id} en "Pendiente de Reversión" (sameday). Use "Operador aprueba" en la grilla.`
+                : `Factura ${inv.id} en "Pendiente de Reversión" (día anterior). Tras operador, pasará a supervisor.`,
+            'Reversión iniciada'
+        );
+    }, 'Revertir adelanto (EGP)');
 }
 
 function toggleAbmAddMenu() {
