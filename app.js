@@ -1,7 +1,6 @@
 // ====== ESTADO DE LA APP (MOCK DATA) ======
 
-// Máquina de estados de facturas — flujo normal + flujo reversión (diagramas POC).
-// Campos opcionales en invoice: reversionSameDay (boolean) durante flujo de reversión EGP.
+// Máquina de estados — flujo normal (diagrama POC). Solo estos estados existen en la lógica.
 const INVOICE_STATES = {
     PENDIENTE: 'Pendiente',
     HABILITADA: 'Habilitada',
@@ -9,28 +8,57 @@ const INVOICE_STATES = {
     PENDIENTE_APROBACION_EGP: 'Pendiente aprobación EGP',
     PENDIENTE_APROBACION_BANCO: 'Pendiente aprobación banco',
     PENDIENTE_DESEMBOLSO: 'Pendiente de desembolso',
-    PENDIENTE_REVERSION: 'Pendiente de Reversión',
-    PENDIENTE_APROBACION_SUPERVISOR: 'Pendiente aprobación Supervisor',
     FINANCIADA: 'Financiada',
-    PAGADA: 'Pagada',
-    MORA: 'Mora',
     VENCIDA: 'Vencida',
+    NO_ELEGIBLE: 'NO ELEGIBLE',
 };
 
-// Datos iniciales de facturas (cubren todos los estados de la máquina de estados)
+// Pestañas de visualización Confirming
+const INVOICE_VIEW_TABS = {
+    VIGENTES: 'vigentes',
+    NO_VIGENTES: 'no-vigentes',
+    NO_OPERABLES: 'no-operables',
+};
+const INVOICE_STATES_BY_VIEW_TAB = {
+    [INVOICE_VIEW_TABS.VIGENTES]: new Set([
+        INVOICE_STATES.PENDIENTE,
+        INVOICE_STATES.HABILITADA,
+        INVOICE_STATES.BLOQUEADA,
+        INVOICE_STATES.PENDIENTE_APROBACION_EGP,
+        INVOICE_STATES.PENDIENTE_DESEMBOLSO,
+        INVOICE_STATES.PENDIENTE_APROBACION_BANCO, // MVP2 — operativa, visible en vigentes
+    ]),
+    [INVOICE_VIEW_TABS.NO_VIGENTES]: new Set([
+        INVOICE_STATES.FINANCIADA,
+        INVOICE_STATES.VENCIDA,
+    ]),
+    [INVOICE_VIEW_TABS.NO_OPERABLES]: new Set([
+        INVOICE_STATES.NO_ELEGIBLE,
+    ]),
+};
+
+let currentInvoiceViewTab = INVOICE_VIEW_TABS.VIGENTES;
+
+// Mock: al menos 2 facturas por cada estado de la máquina
 let invoices = [
-    { id: '001-001-0001234', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-01', vto: '2026-06-30', moneda: 'GS', monto: 15000000, estado: INVOICE_STATES.HABILITADA },
-    { id: '001-002-0005432', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-04-15', vto: '2026-05-15', moneda: 'GS', monto: 8500000, estado: INVOICE_STATES.PAGADA },
-    { id: '001-001-0000987', egp: 'Cervepar', prov: 'Limpieza Total SRL', emision: '2026-03-01', vto: '2026-04-01', moneda: 'GS', monto: 3200000, estado: INVOICE_STATES.MORA },
-    { id: '001-001-0005678', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-02', vto: '2026-07-02', moneda: 'USD', monto: 2500, estado: INVOICE_STATES.BLOQUEADA },
-    { id: '001-003-0001111', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-04-20', vto: '2026-06-20', moneda: 'GS', monto: 50000000, estado: INVOICE_STATES.FINANCIADA },
-    { id: '001-001-0002222', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-25', vto: '2026-05-25', moneda: 'USD', monto: 1200, estado: INVOICE_STATES.PENDIENTE_APROBACION_BANCO },
-    { id: '001-007-0006666', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-08', vto: '2026-07-08', moneda: 'GS', monto: 9800000, estado: INVOICE_STATES.PENDIENTE_APROBACION_EGP },
-    { id: '001-008-0007777', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-10', vto: '2026-05-10', moneda: 'USD', monto: 3400, estado: INVOICE_STATES.PENDIENTE_REVERSION, reversionSameDay: false },
-    { id: '001-009-0008888', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-03-20', vto: '2026-04-20', moneda: 'GS', monto: 12000000, estado: INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR },
-    { id: '001-004-0003333', egp: 'Retail S.A.', prov: 'Logistica Integral', emision: '2026-05-10', vto: '2026-07-10', moneda: 'GS', monto: 4200000, estado: INVOICE_STATES.PENDIENTE },
-    { id: '001-005-0004444', egp: 'Cervepar', prov: 'Servicios IT', emision: '2026-05-12', vto: '2026-07-12', moneda: 'GS', monto: 6750000, estado: INVOICE_STATES.PENDIENTE },
-    { id: '001-006-0005555', egp: 'Tigo Paraguay', prov: 'Tech Solutions S.A.', emision: '2026-02-15', vto: '2026-03-15', moneda: 'GS', monto: 2100000, estado: INVOICE_STATES.VENCIDA },
+    { id: '001-001-0001001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-01', vto: '2026-07-01', moneda: 'GS', monto: 12000000, estado: INVOICE_STATES.PENDIENTE },
+    { id: '001-002-0001002', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-05-03', vto: '2026-07-03', moneda: 'GS', monto: 5400000, estado: INVOICE_STATES.PENDIENTE },
+    { id: '001-001-0002001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-01', vto: '2026-06-30', moneda: 'GS', monto: 15000000, estado: INVOICE_STATES.HABILITADA },
+    { id: '001-001-0002002', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-05', vto: '2026-07-05', moneda: 'GS', monto: 8800000, estado: INVOICE_STATES.HABILITADA },
+    { id: '001-001-0003001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-02', vto: '2026-07-02', moneda: 'USD', monto: 2500, estado: INVOICE_STATES.BLOQUEADA },
+    { id: '001-003-0003002', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-04-20', vto: '2026-06-20', moneda: 'USD', monto: 1800, estado: INVOICE_STATES.BLOQUEADA },
+    { id: '001-001-0004001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-08', vto: '2026-07-08', moneda: 'GS', monto: 9800000, estado: INVOICE_STATES.PENDIENTE_APROBACION_EGP },
+    { id: '001-003-0004002', egp: 'Cervepar', prov: 'Servicios IT', emision: '2026-05-09', vto: '2026-07-09', moneda: 'GS', monto: 11200000, estado: INVOICE_STATES.PENDIENTE_APROBACION_EGP },
+    { id: '001-002-0005001', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-04-25', vto: '2026-06-25', moneda: 'GS', monto: 22000000, estado: INVOICE_STATES.PENDIENTE_APROBACION_BANCO },
+    { id: '001-002-0005002', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-04-28', vto: '2026-06-28', moneda: 'GS', monto: 7600000, estado: INVOICE_STATES.PENDIENTE_APROBACION_BANCO },
+    { id: '001-001-0006001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-10', vto: '2026-07-10', moneda: 'GS', monto: 6500000, estado: INVOICE_STATES.PENDIENTE_DESEMBOLSO },
+    { id: '001-003-0006002', egp: 'Cervepar', prov: 'Agencia Creativa', emision: '2026-05-11', vto: '2026-07-11', moneda: 'USD', monto: 4200, estado: INVOICE_STATES.PENDIENTE_DESEMBOLSO },
+    { id: '001-003-0007001', egp: 'Tigo Paraguay', prov: 'Servicios IT', emision: '2026-04-20', vto: '2026-06-20', moneda: 'GS', monto: 50000000, estado: INVOICE_STATES.FINANCIADA },
+    { id: '001-001-0007002', egp: 'Retail S.A.', prov: 'Logistica Integral', emision: '2026-03-15', vto: '2026-05-15', moneda: 'GS', monto: 9200000, estado: INVOICE_STATES.FINANCIADA },
+    { id: '001-002-0008001', egp: 'Tigo Paraguay', prov: 'Tech Solutions S.A.', emision: '2026-02-15', vto: '2026-03-15', moneda: 'GS', monto: 2100000, estado: INVOICE_STATES.VENCIDA },
+    { id: '001-003-0008002', egp: 'Cervepar', prov: 'Limpieza Total SRL', emision: '2026-01-10', vto: '2026-02-10', moneda: 'GS', monto: 3100000, estado: INVOICE_STATES.VENCIDA },
+    { id: '001-001-0009001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-18', vto: '2026-06-05', moneda: 'GS', monto: 4500000, estado: INVOICE_STATES.NO_ELEGIBLE },
+    { id: '001-002-0009002', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-05-17', vto: '2026-06-08', moneda: 'GS', monto: 2800000, estado: INVOICE_STATES.NO_ELEGIBLE },
 ];
 
 // Participantes (EGPs y Proveedores)
@@ -62,8 +90,20 @@ let abmRoles = [
 ];
 let nextAbmRoleId = 4;
 
+// Notificaciones del sistema (disparadas por avance en la máquina de estados)
+let abmNotifications = [
+    { id: 1, nombre: 'Factura cargada — Pendiente', estadoDisparador: INVOICE_STATES.PENDIENTE, dominio: 'EGP', rol: 'Supervisor', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Factura en estado Pendiente: lista para Habilitar o Bloquear por el aprobador EGP.' },
+    { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, dominio: 'EGP', rol: 'Supervisor', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
+    { id: 3, nombre: 'Desembolso en curso', estadoDisparador: INVOICE_STATES.PENDIENTE_DESEMBOLSO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Factura en Pendiente de desembolso: CORE BANKING procesando el pago.' },
+    { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
+    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'Operador', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
+    { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, dominio: 'EGP', rol: 'Supervisor', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
+];
+let nextAbmNotificationId = 7;
+let editingNotificationId = null;
+
 let currentSimulationInvoice = null;
-// simulate | approve-egp | approve-bank | reversion-operador | reversion-supervisor
+// simulate | approve-egp | approve-bank | bulk-simulate
 let currentSimulationMode = 'simulate';
 let confirmCallback = null;
 
@@ -79,6 +119,8 @@ const BLOQUEAR_VALID_STATES = new Set([INVOICE_STATES.PENDIENTE, INVOICE_STATES.
 const BLOQUEAR_INVALID_TOOLTIP =
     'Solo pueden bloquearse facturas en estado Habilitada o Pendiente';
 const BLOQUEAR_EMPTY_TOOLTIP = 'Seleccione facturas en estado Habilitada o Pendiente para bloquear';
+const SIMULAR_INVALID_TOOLTIP = 'Seleccione 2 o más facturas Habilitada con mismo EGP, Proveedor y Moneda';
+const SIMULAR_EMPTY_TOOLTIP = 'Seleccione al menos 2 facturas Habilitada (misma combinatoria) para simular';
 
 function isInvoiceEligibleForBulkHabilitar(inv) {
     const e = inv.estado;
@@ -91,6 +133,50 @@ function isInvoiceEligibleForBulkBloquear(inv) {
 
 function getSelectedInvoices() {
     return invoices.filter(i => selectedInvoiceIds.has(i.id));
+}
+
+function invoiceBelongsToCurrentViewTab(inv) {
+    const allowed = INVOICE_STATES_BY_VIEW_TAB[currentInvoiceViewTab];
+    return allowed ? allowed.has(inv.estado) : true;
+}
+
+function getSelectionAnchorCombo() {
+    const selected = getSelectedInvoices();
+    if (selected.length === 0) return null;
+    const first = selected[0];
+    return { egp: first.egp, prov: first.prov, moneda: first.moneda };
+}
+
+function invoiceMatchesSelectionCombo(inv, combo) {
+    if (!combo) return true;
+    return inv.egp === combo.egp && inv.prov === combo.prov && inv.moneda === combo.moneda;
+}
+
+function canSelectInvoiceForCheckbox(inv) {
+    return invoiceMatchesSelectionCombo(inv, getSelectionAnchorCombo());
+}
+
+function countSelectedHabilitadaInvoices() {
+    return getSelectedInvoices().filter(i => i.estado === INVOICE_STATES.HABILITADA).length;
+}
+
+function isBulkSimulateActive() {
+    return countSelectedHabilitadaInvoices() >= 2;
+}
+
+function getEgpConfigForInvoice(inv) {
+    return participants.find(p => p.razon === inv.egp && p.tipo === 'EGP');
+}
+
+function switchInvoiceViewTab(tabKey) {
+    if (!Object.values(INVOICE_VIEW_TABS).includes(tabKey)) return;
+    currentInvoiceViewTab = tabKey;
+    document.querySelectorAll('.confirming-invoice-tab').forEach(btn => {
+        const on = btn.dataset.invoiceTab === tabKey;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    renderCurrentConfirmingFilters();
 }
 
 /** Resuelve el id real de factura desde el checkbox (data-invoice-id puede estar escapado en HTML). */
@@ -217,6 +303,7 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     renderParticipants();
     renderAbmUsers();
     renderAbmRoles();
+    renderAbmNotifications();
     populateOperatingEntitySelect();
     renderOperatingEntityPanel();
 });
@@ -245,6 +332,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             renderParticipants();
             renderAbmUsers();
             renderAbmRoles();
+            renderAbmNotifications();
         }
     });
 });
@@ -373,7 +461,7 @@ function renderParticipants() {
 }
 
 function switchAbmTab(tabKey) {
-    const valid = ['entes', 'usuarios', 'roles'];
+    const valid = ['entes', 'usuarios', 'roles', 'notificaciones'];
     if (!valid.includes(tabKey)) return;
     document.querySelectorAll('.abm-tab').forEach(btn => {
         const on = btn.dataset.abmTab === tabKey;
@@ -445,8 +533,109 @@ function renderAbmRoles() {
     });
 }
 
+function renderAbmNotifications() {
+    const tbody = document.getElementById('abm-notifications-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    abmNotifications.forEach(n => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${n.nombre}</strong></td>
+            <td><span class="status-badge status-pendiente" style="text-transform:none;font-size:10px;">${n.estadoDisparador}</span></td>
+            <td>${n.dominio}</td>
+            <td>${n.rol}</td>
+            <td style="font-size:12px;color:#6b7280;max-width:200px;word-break:break-all;">${n.emails}</td>
+            <td style="font-size:12px;color:#6b7280;max-width:280px;">${n.mensaje}</td>
+            <td>${n.activa ? '<span class="badge-egp">Activa</span>' : '<span class="badge-proveedor">Inactiva</span>'}</td>
+            <td class="abm-actions-cell">
+                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openNotificationModal(${n.id})" title="Editar notificación" aria-label="Editar notificación">
+                    <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmNotification(${n.id})" title="Eliminar notificación" aria-label="Eliminar notificación">
+                    <i class="ph ph-x"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function openNotificationModal(id = null) {
+    editingNotificationId = id;
+    const title = document.getElementById('notification-modal-title');
+    const form = document.getElementById('notification-form');
+    form.reset();
+    const estadoSel = document.getElementById('notif-estado');
+    if (estadoSel) {
+        estadoSel.innerHTML = Object.values(INVOICE_STATES).map(s =>
+            `<option value="${s}">${s}</option>`
+        ).join('');
+    }
+    if (id != null) {
+        const n = abmNotifications.find(x => x.id === id);
+        if (!n) return;
+        if (title) title.textContent = 'Editar Notificación';
+        document.getElementById('notif-nombre').value = n.nombre;
+        document.getElementById('notif-estado').value = n.estadoDisparador;
+        document.getElementById('notif-dominio').value = n.dominio;
+        document.getElementById('notif-rol').value = n.rol;
+        document.getElementById('notif-emails').value = n.emails;
+        document.getElementById('notif-mensaje').value = n.mensaje;
+        document.getElementById('notif-activa').checked = n.activa;
+    } else {
+        if (title) title.textContent = 'Nueva Notificación';
+        document.getElementById('notif-activa').checked = true;
+        document.getElementById('notif-estado').value = INVOICE_STATES.PENDIENTE;
+    }
+    openModal('notification-modal');
+}
+
+function submitNotificationForm() {
+    const nombre = document.getElementById('notif-nombre').value.trim();
+    const estadoDisparador = document.getElementById('notif-estado').value;
+    const dominio = document.getElementById('notif-dominio').value;
+    const rol = document.getElementById('notif-rol').value.trim();
+    const emails = document.getElementById('notif-emails').value.trim();
+    const mensaje = document.getElementById('notif-mensaje').value.trim();
+    const activa = document.getElementById('notif-activa').checked;
+    if (!nombre || !rol || !emails || !mensaje) {
+        showCustomAlert('Complete nombre, rol, emails y mensaje.', 'Datos incompletos');
+        return;
+    }
+    const payload = { nombre, estadoDisparador, dominio, rol, emails, mensaje, activa };
+    if (editingNotificationId != null) {
+        const idx = abmNotifications.findIndex(x => x.id === editingNotificationId);
+        if (idx >= 0) abmNotifications[idx] = { ...abmNotifications[idx], ...payload };
+        showCustomAlert('Notificación actualizada.', 'ABM Notificaciones');
+    } else {
+        abmNotifications.push({ id: nextAbmNotificationId++, ...payload });
+        showCustomAlert('Notificación creada.', 'ABM Notificaciones');
+    }
+    editingNotificationId = null;
+    closeModal('notification-modal');
+    renderAbmNotifications();
+}
+
+function deleteAbmNotification(id) {
+    const n = abmNotifications.find(x => x.id === id);
+    if (!n) return;
+    showCustomConfirm(
+        `¿Confirma eliminar la notificación "${n.nombre}"?`,
+        () => {
+            abmNotifications = abmNotifications.filter(x => x.id !== id);
+            renderAbmNotifications();
+            showCustomAlert('Notificación eliminada.', 'ABM Notificaciones');
+        },
+        'Eliminar notificación'
+    );
+}
+
 document.querySelectorAll('.abm-tab').forEach(btn => {
     btn.addEventListener('click', () => switchAbmTab(btn.dataset.abmTab));
+});
+
+document.querySelectorAll('.confirming-invoice-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchInvoiceViewTab(btn.dataset.invoiceTab));
 });
 
 function openAbmModal(participantId = null) {
@@ -561,12 +750,9 @@ function estadoToBadgeClass(estado) {
         [INVOICE_STATES.PENDIENTE_APROBACION_EGP]: 'status-pendiente-aprobacion-egp',
         [INVOICE_STATES.PENDIENTE_APROBACION_BANCO]: 'status-pendiente-aprobacion-banco',
         [INVOICE_STATES.PENDIENTE_DESEMBOLSO]: 'status-pendiente-desembolso',
-        [INVOICE_STATES.PENDIENTE_REVERSION]: 'status-pendiente-reversion',
-        [INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR]: 'status-pendiente-aprobacion-supervisor',
         [INVOICE_STATES.FINANCIADA]: 'status-financiada',
-        [INVOICE_STATES.PAGADA]: 'status-pagada',
-        [INVOICE_STATES.MORA]: 'status-mora',
         [INVOICE_STATES.VENCIDA]: 'status-vencida',
+        [INVOICE_STATES.NO_ELEGIBLE]: 'status-no-elegible',
     };
     return map[estado] || 'status-bloqueada';
 }
@@ -592,17 +778,18 @@ function renderInvoices(filter = 'all', searchQuery = '') {
     tbody.innerHTML = '';
 
     const enteRazon = getSelectedOperatingEntityRazon();
+    const bulkSimActive = isBulkSimulateActive();
 
     const filtered = invoices.filter(inv => {
+        const matchTab = invoiceBelongsToCurrentViewTab(inv);
         const matchStatus = filter === 'all' || inv.estado === filter;
         const matchSearch = inv.id.includes(searchQuery) ||
                             inv.egp.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             inv.prov.toLowerCase().includes(searchQuery.toLowerCase());
         const matchEnte = !enteRazon || inv.egp === enteRazon || inv.prov === enteRazon;
-        return matchStatus && matchSearch && matchEnte;
+        return matchTab && matchStatus && matchSearch && matchEnte;
     });
 
-    // Limpia selecciones que apuntan a facturas que ya no existen
     pruneSelectionsToExistingInvoices();
 
     if (filtered.length === 0) {
@@ -613,12 +800,12 @@ function renderInvoices(filter = 'all', searchQuery = '') {
 
     filtered.forEach(inv => {
         let actionButtons = '';
+        const rowSimDisabled = bulkSimActive && inv.estado === INVOICE_STATES.HABILITADA;
         switch (inv.estado) {
             case INVOICE_STATES.HABILITADA:
-                actionButtons = `<button class="btn-primary btn-sm" onclick="openSimulation('${inv.id}')"><i class="ph ph-calculator"></i> Simular</button>`;
-                break;
-            case INVOICE_STATES.FINANCIADA:
-                actionButtons = `<button class="btn-secondary btn-sm text-danger" onclick="revertInvoice('${inv.id}')"><i class="ph ph-arrow-u-up-left"></i> Revertir</button>`;
+                actionButtons = rowSimDisabled
+                    ? `<button type="button" class="btn-primary btn-sm is-disabled" aria-disabled="true" title="Use Simular de la cabecera para selección múltiple"><i class="ph ph-calculator"></i> Simular</button>`
+                    : `<button class="btn-primary btn-sm" onclick="openSimulation('${inv.id}')"><i class="ph ph-calculator"></i> Simular</button>`;
                 break;
             case INVOICE_STATES.PENDIENTE_APROBACION_EGP:
                 actionButtons = `<button class="btn-primary btn-sm" onclick="openEgpApprovalModal('${inv.id}')"><i class="ph ph-buildings"></i> Aprobar EGP</button>`;
@@ -632,20 +819,19 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             case INVOICE_STATES.PENDIENTE_DESEMBOLSO:
                 actionButtons = `<span class="row-action-hint row-action-hint--processing"><i class="ph ph-spinner ph-spin"></i> CORE BANKING desembolsando…</span>`;
                 break;
-            case INVOICE_STATES.PENDIENTE_REVERSION:
-                actionButtons = `<button class="btn-primary btn-sm" onclick="openReversionOperadorModal('${inv.id}')"><i class="ph ph-user-check"></i> Operador aprueba</button>`;
-                break;
-            case INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR:
-                actionButtons = `<button class="btn-primary btn-sm" onclick="openReversionSupervisorModal('${inv.id}')"><i class="ph ph-shield-check"></i> Supervisor</button>`;
-                break;
             case INVOICE_STATES.BLOQUEADA:
                 actionButtons = `<span class="row-action-hint"><i class="ph ph-lock"></i> No operable</span>`;
                 break;
             case INVOICE_STATES.VENCIDA:
                 actionButtons = `<span class="row-action-hint row-action-hint--danger"><i class="ph ph-clock-counter-clockwise"></i> Vencida</span>`;
                 break;
+            case INVOICE_STATES.NO_ELEGIBLE:
+                actionButtons = `<span class="row-action-hint row-action-hint--danger"><i class="ph ph-prohibit"></i> No elegible</span>`;
+                break;
+            case INVOICE_STATES.FINANCIADA:
+                actionButtons = `<span class="row-action-hint"><i class="ph ph-check-circle"></i> Financiada</span>`;
+                break;
             default:
-                // Pagada / Mora / cualquier otro final: sin acciones operables
                 actionButtons = '';
         }
 
@@ -654,13 +840,16 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             `<button type="button" class="invoice-delete-icon-btn" data-invoice-id="${safeId}" title="Eliminar factura" aria-label="Eliminar factura"><i class="ph ph-x"></i></button>`;
 
         const isChecked = selectedInvoiceIds.has(inv.id);
+        const checkboxSelectable = canSelectInvoiceForCheckbox(inv);
+        const checkboxDisabled = !checkboxSelectable && !isChecked;
 
         const tr = document.createElement('tr');
         if (isChecked) tr.classList.add('row-selected');
+        if (checkboxDisabled) tr.classList.add('row-select-locked');
         tr.innerHTML = `
             <td class="col-select">
-                <label class="row-checkbox" title="Seleccionar factura ${inv.id}">
-                    <input type="checkbox" ${isChecked ? 'checked' : ''} data-invoice-id="${safeId}" onchange="onInvoiceCheckboxChange(this)">
+                <label class="row-checkbox ${checkboxDisabled ? 'row-checkbox--disabled' : ''}" title="${checkboxDisabled ? 'No coincide con EGP / Proveedor / Moneda de la selección' : `Seleccionar factura ${inv.id}`}">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} ${checkboxDisabled ? 'disabled' : ''} data-invoice-id="${safeId}" onchange="onInvoiceCheckboxChange(this)">
                     <span class="row-checkbox-box" aria-hidden="true"></span>
                 </label>
             </td>
@@ -701,6 +890,7 @@ function pruneSelectionsToExistingInvoices() {
 function updateInvoiceSelectionUI(filteredInvoices) {
     updateSelectAllToggle(filteredInvoices || getCurrentFilteredInvoices());
     updateHabilitarButtonState();
+    updateSimularButtonState();
 }
 
 function getCurrentFilteredInvoices() {
@@ -708,12 +898,13 @@ function getCurrentFilteredInvoices() {
     const query = document.getElementById('search-invoice')?.value || '';
     const enteRazon = getSelectedOperatingEntityRazon();
     return invoices.filter(inv => {
+        const matchTab = invoiceBelongsToCurrentViewTab(inv);
         const matchStatus = filter === 'all' || inv.estado === filter;
         const matchSearch = inv.id.includes(query) ||
                             inv.egp.toLowerCase().includes(query.toLowerCase()) ||
                             inv.prov.toLowerCase().includes(query.toLowerCase());
         const matchEnte = !enteRazon || inv.egp === enteRazon || inv.prov === enteRazon;
-        return matchStatus && matchSearch && matchEnte;
+        return matchTab && matchStatus && matchSearch && matchEnte;
     });
 }
 
@@ -723,13 +914,16 @@ function onInvoiceCheckboxChange(input) {
     const id = resolveInvoiceIdFromCheckboxInput(input);
     if (!id) return;
     if (input.checked) {
+        const inv = invoices.find(i => i.id === id);
+        if (inv && !canSelectInvoiceForCheckbox(inv)) {
+            input.checked = false;
+            return;
+        }
         selectedInvoiceIds.add(id);
     } else {
         selectedInvoiceIds.delete(id);
     }
-    const tr = input.closest('tr');
-    if (tr) tr.classList.toggle('row-selected', input.checked);
-    updateInvoiceSelectionUI();
+    renderCurrentConfirmingFilters();
 }
 
 function onSelectAllToggleClick() {
@@ -748,7 +942,7 @@ function onSelectAllToggleKey(e) {
 }
 
 function selectAllVisibleInvoices() {
-    const visible = getCurrentFilteredInvoices();
+    const visible = getCurrentFilteredInvoices().filter(canSelectInvoiceForCheckbox);
     visible.forEach(inv => selectedInvoiceIds.add(inv.id));
     renderCurrentConfirmingFilters();
 }
@@ -806,6 +1000,65 @@ function updateHabilitarButtonState() {
         emptyTooltip: BLOQUEAR_EMPTY_TOOLTIP,
         verb: 'Bloquear',
     });
+}
+
+function updateSimularButtonState() {
+    const btn = document.getElementById('btn-simular-facturas');
+    const wrapper = document.getElementById('btn-simular-wrapper');
+    if (!btn || !wrapper) return;
+
+    const selected = getSelectedInvoices();
+    const habilitadas = selected.filter(i => i.estado === INVOICE_STATES.HABILITADA);
+    const count = habilitadas.length;
+    const sameCombo = count > 0 && habilitadas.every(i =>
+        i.egp === habilitadas[0].egp &&
+        i.prov === habilitadas[0].prov &&
+        i.moneda === habilitadas[0].moneda
+    );
+    const allValid = count >= 2 && sameCombo && selected.every(i => i.estado === INVOICE_STATES.HABILITADA);
+
+    if (allValid) {
+        btn.classList.remove('is-disabled');
+        btn.removeAttribute('aria-disabled');
+        btn.setAttribute('title', `Simular adelanto de ${count} facturas (${habilitadas[0].egp} – ${habilitadas[0].prov} – ${habilitadas[0].moneda})`);
+        wrapper.removeAttribute('title');
+        wrapper.classList.remove('btn-tooltip-wrapper--inactive');
+    } else {
+        btn.classList.add('is-disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.removeAttribute('title');
+        wrapper.classList.add('btn-tooltip-wrapper--inactive');
+        if (count === 0 || selected.length === 0) {
+            wrapper.setAttribute('title', SIMULAR_EMPTY_TOOLTIP);
+        } else {
+            wrapper.setAttribute('title', SIMULAR_INVALID_TOOLTIP);
+        }
+    }
+}
+
+function simularSelectedInvoices() {
+    const btn = document.getElementById('btn-simular-facturas');
+    if (!btn || btn.classList.contains('is-disabled') || btn.getAttribute('aria-disabled') === 'true') return;
+
+    const selected = getSelectedInvoices().filter(i => i.estado === INVOICE_STATES.HABILITADA);
+    if (selected.length < 2) return;
+    const combo = selected[0];
+    if (!selected.every(i => i.egp === combo.egp && i.prov === combo.prov && i.moneda === combo.moneda)) return;
+
+    const total = selected.reduce((s, i) => s + i.monto, 0);
+    const idsPreview = selected.slice(0, 5).map(i => i.id).join(', ');
+    const more = selected.length > 5 ? ` y ${selected.length - 5} más` : '';
+    const msg = `¿Confirma simular y solicitar adelanto para ${selected.length} facturas (${idsPreview}${more})?\n\nEGP: ${combo.egp}\nProveedor: ${combo.prov}\nMoneda: ${combo.moneda}\nMonto total: ${formatCurrency(total, combo.moneda)}\n\nTodas pasarán a "Pendiente aprobación EGP".`;
+
+    showCustomConfirm(msg, () => {
+        selected.forEach(inv => { inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_EGP; });
+        selectedInvoiceIds.clear();
+        renderCurrentConfirmingFilters();
+        showCustomAlert(
+            `${selected.length} facturas enviadas a aprobación EGP.`,
+            'Simulación masiva'
+        );
+    }, 'Simular adelanto masivo');
 }
 
 function updateBulkActionButtonState({ btnId, wrapperId, validPred, invalidTooltip, emptyTooltip, verb }) {
@@ -971,14 +1224,6 @@ function openApprovalModal(invoiceId) {
     openBankApprovalModal(invoiceId);
 }
 
-function openReversionOperadorModal(invoiceId) {
-    openSimulationModal(invoiceId, 'reversion-operador');
-}
-
-function openReversionSupervisorModal(invoiceId) {
-    openSimulationModal(invoiceId, 'reversion-supervisor');
-}
-
 function openSimulationModal(invoiceId, mode = 'simulate') {
     const inv = invoices.find(i => i.id === invoiceId);
     if (!inv) return;
@@ -995,7 +1240,7 @@ function openSimulationModal(invoiceId, mode = 'simulate') {
 
     const simMonto = document.getElementById('sim-monto');
 
-    const readOnlyModes = ['approve-egp', 'approve-bank', 'reversion-operador', 'reversion-supervisor'];
+    const readOnlyModes = ['approve-egp', 'approve-bank'];
     if (readOnlyModes.includes(mode)) {
         simMonedaSelect.disabled = true;
         simMonedaSelect.title = 'Moneda definida en la factura';
@@ -1041,16 +1286,18 @@ function applySimulationModalMode() {
         'btn-aprobar-egp',
         'btn-rechazar-egp-motivo',
         'btn-rechazar-egp-sin-motivo',
-        'btn-operador-aprueba-reversion',
-        'btn-supervisor-aprueba-reversion',
-        'btn-supervisor-rechaza-reversion',
     ];
     allFooterIds.forEach(id => setModalFooterBtnVisible(id, false));
 
     if (mode === 'approve-egp') {
         if (titleEl) titleEl.textContent = 'Aprobación EGP';
         if (sectionTitleEl) sectionTitleEl.textContent = 'Adelanto pendiente de aprobación por el EGP';
-        if (hintEl) hintEl.textContent = 'El EGP puede aprobar (pasa a banco), rechazar con motivo (vuelve a Habilitada) o rechazar sin motivo (Bloqueada).';
+        const auto = getEgpConfigForInvoice(inv)?.desembolsoAuto;
+        if (hintEl) {
+            hintEl.textContent = auto
+                ? 'EGP con desembolso automático: al aprobar, el banco aprueba la TX y pasa a Pendiente de desembolso.'
+                : 'EGP sin desembolso automático: al aprobar, pasa a Pendiente aprobación banco (MVP2).';
+        }
         setModalFooterBtnVisible('btn-aprobar-egp', true);
         setModalFooterBtnVisible('btn-rechazar-egp-motivo', true);
         setModalFooterBtnVisible('btn-rechazar-egp-sin-motivo', true);
@@ -1060,22 +1307,6 @@ function applySimulationModalMode() {
         if (hintEl) hintEl.textContent = 'El banco aprueba la transacción (desembolso) o la rechaza (factura Bloqueada).';
         setModalFooterBtnVisible('btn-aprobar-desembolso', true);
         setModalFooterBtnVisible('btn-rechazar-desembolso', true);
-    } else if (mode === 'reversion-operador') {
-        const sameDay = inv?.reversionSameDay !== false;
-        if (titleEl) titleEl.textContent = 'Reversión — Operador';
-        if (sectionTitleEl) sectionTitleEl.textContent = 'Pendiente de Reversión';
-        if (hintEl) {
-            hintEl.textContent = sameDay
-                ? 'Sameday: al aprobar, la factura vuelve directamente a Habilitada.'
-                : 'Día anterior: al aprobar, pasa a Pendiente aprobación Supervisor.';
-        }
-        setModalFooterBtnVisible('btn-operador-aprueba-reversion', true);
-    } else if (mode === 'reversion-supervisor') {
-        if (titleEl) titleEl.textContent = 'Reversión — Supervisor';
-        if (sectionTitleEl) sectionTitleEl.textContent = 'Pendiente aprobación Supervisor';
-        if (hintEl) hintEl.textContent = 'El supervisor aprueba (Habilitada) o rechaza (Bloqueada).';
-        setModalFooterBtnVisible('btn-supervisor-aprueba-reversion', true);
-        setModalFooterBtnVisible('btn-supervisor-rechaza-reversion', true);
     } else {
         if (titleEl) titleEl.textContent = 'Simulación de Adelanto';
         if (sectionTitleEl) sectionTitleEl.textContent = 'Datos a adelantar';
@@ -1161,15 +1392,25 @@ document.getElementById('btn-execute-adelanto').addEventListener('click', () => 
     );
 });
 
-// EGP aprueba → Pendiente aprobación banco
+// EGP aprueba → desembolso automático (flag SI) o Pendiente aprobación banco (flag NO)
 document.getElementById('btn-aprobar-egp')?.addEventListener('click', () => {
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
-    inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_BANCO;
-    finishSimulationModalAction(
-        `El EGP aprobó el adelanto de la factura ${inv.id}. Pasa a "Pendiente aprobación banco".`,
-        'EGP aprobó'
-    );
+    const egpConfig = getEgpConfigForInvoice(inv);
+    if (egpConfig?.desembolsoAuto) {
+        inv.estado = INVOICE_STATES.PENDIENTE_DESEMBOLSO;
+        finishSimulationModalAction(
+            `EGP aprobó con desembolso automático. La factura ${inv.id} pasa a "Pendiente de desembolso" (banco aprueba TX).`,
+            'EGP aprobó — desembolso auto'
+        );
+        scheduleCoreBankingDisbursement(inv.id);
+    } else {
+        inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_BANCO;
+        finishSimulationModalAction(
+            `El EGP aprobó el adelanto de la factura ${inv.id}. Pasa a "Pendiente aprobación banco" (MVP2).`,
+            'EGP aprobó'
+        );
+    }
 });
 
 // EGP rechaza con motivo → Habilitada (actualiza fecha de pago)
@@ -1220,49 +1461,6 @@ document.getElementById('btn-rechazar-desembolso')?.addEventListener('click', ()
     finishSimulationModalAction(
         `El banco rechazó la transacción. La factura ${inv.id} pasa a estado Bloqueada.`,
         'Banco rechazó'
-    );
-});
-
-// Reversión: operador aprueba (sameday → Habilitada | a pasado → Supervisor)
-document.getElementById('btn-operador-aprueba-reversion')?.addEventListener('click', () => {
-    if (!currentSimulationInvoice) return;
-    const inv = currentSimulationInvoice;
-    const sameDay = inv.reversionSameDay !== false;
-    if (sameDay) {
-        inv.estado = INVOICE_STATES.HABILITADA;
-        delete inv.reversionSameDay;
-        finishSimulationModalAction(
-            `Operador aprobó la reversión (sameday). La factura ${inv.id} vuelve a Habilitada.`,
-            'Reversión aprobada'
-        );
-    } else {
-        inv.estado = INVOICE_STATES.PENDIENTE_APROBACION_SUPERVISOR;
-        finishSimulationModalAction(
-            `Operador aprobó la reversión (día anterior). La factura ${inv.id} pasa a Pendiente aprobación Supervisor.`,
-            'Pendiente supervisor'
-        );
-    }
-});
-
-document.getElementById('btn-supervisor-aprueba-reversion')?.addEventListener('click', () => {
-    if (!currentSimulationInvoice) return;
-    const inv = currentSimulationInvoice;
-    inv.estado = INVOICE_STATES.HABILITADA;
-    delete inv.reversionSameDay;
-    finishSimulationModalAction(
-        `Supervisor aprobó la reversión. La factura ${inv.id} vuelve a Habilitada.`,
-        'Supervisor aprobó'
-    );
-});
-
-document.getElementById('btn-supervisor-rechaza-reversion')?.addEventListener('click', () => {
-    if (!currentSimulationInvoice) return;
-    const inv = currentSimulationInvoice;
-    inv.estado = INVOICE_STATES.BLOQUEADA;
-    delete inv.reversionSameDay;
-    finishSimulationModalAction(
-        `Supervisor rechazó la reversión. La factura ${inv.id} pasa a estado Bloqueada.`,
-        'Supervisor rechazó'
     );
 });
 
@@ -1325,29 +1523,6 @@ function deleteInvoice(invoiceId) {
     );
 }
 
-
-// Flujo reversión: EGP revierte adelanto (no desembolsado / no pagado) → Pendiente de Reversión
-function revertInvoice(invoiceId) {
-    const inv = invoices.find(i => i.id === invoiceId);
-    if (!inv || inv.estado !== INVOICE_STATES.FINANCIADA) return;
-
-    const msg = `¿Confirma que el EGP revierte el adelanto de la factura ${inv.id} (${formatCurrency(inv.monto, inv.moneda)})? Debe estar no desembolsado y no pagado. La factura pasará a "Pendiente de Reversión".`;
-
-    showCustomConfirm(msg, () => {
-        const sameDay = window.confirm(
-            '¿La reversión es del mismo día (sameday)?\n\nAceptar = Sí (operador puede volver a Habilitada).\nCancelar = Día anterior (requiere supervisor).'
-        );
-        inv.reversionSameDay = sameDay;
-        inv.estado = INVOICE_STATES.PENDIENTE_REVERSION;
-        renderCurrentConfirmingFilters();
-        showCustomAlert(
-            sameDay
-                ? `Factura ${inv.id} en "Pendiente de Reversión" (sameday). Use "Operador aprueba" en la grilla.`
-                : `Factura ${inv.id} en "Pendiente de Reversión" (día anterior). Tras operador, pasará a supervisor.`,
-            'Reversión iniciada'
-        );
-    }, 'Revertir adelanto (EGP)');
-}
 
 function toggleAbmAddMenu() {
     const menu = document.getElementById('abm-add-menu');
