@@ -3,7 +3,7 @@
 **Versión documento / POC:** 2.1.0 (`v2.1.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 2 de Junio, 2026  
-**Versión anterior del documento:** 1.0.0 (14 de Mayo, 2026)
+**Versión anterior del documento:** 1.0.0
 
 ---
 
@@ -281,7 +281,7 @@ Consolidación de iteraciones desde 2026-05-14 (doc 1.0.0):
 - **Versión POC:** `version.js` + etiqueta cross-plataforma en login y topbar; sincronización nombre usuario logueado.
 - **Proceso:** documentación técnica actualizada; merge continuo a `master`.
 
-### v1.0.0 — 2026-05-14
+### v1.0.0
 
 - Release inicial documentada: Vanilla SPA, mock facturas/participantes, simulación, estados simplificados (Pendiente, Financiada, Pagada, Mora, Bloqueada, Revertida), dashboard Chart.js.
 
