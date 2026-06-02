@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.0.0 (`v2.0.0`)  
+**Versión documento / POC:** 2.1.0 (`v2.1.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 2 de Junio, 2026  
 **Versión anterior del documento:** 1.0.0 (14 de Mayo, 2026)
@@ -262,6 +262,12 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.1.0 — 2026-06-02
+
+- **ABM Entes:** campos financieros y de configuración en solo visualización; desembolso automático siempre activo (bloqueado); email opcional; **EGP Padre** obligatorio para Proveedor; columna EGP en grilla; mock proveedores vinculados a EGP.
+- **Fechas:** formato **dd-mm-yyyy** en grillas, filtros e inputs de fecha.
+- **Confirming:** mocks NO ELEGIBLE con fecha de pago vencida (hoy) y vencimiento &gt; 30 días; botón editar fecha de pago en Pendiente/Habilitada/Bloqueada; filtros por fecha de vencimiento y de pago.
 
 ### v2.0.0 — 2026-06-02
 

@@ -57,12 +57,13 @@ let invoices = [
     { id: '001-001-0007002', egp: 'Retail S.A.', prov: 'Logistica Integral', emision: '2026-03-15', vto: '2026-05-15', moneda: 'GS', monto: 9200000, estado: INVOICE_STATES.FINANCIADA },
     { id: '001-002-0008001', egp: 'Tigo Paraguay', prov: 'Tech Solutions S.A.', emision: '2026-02-15', vto: '2026-03-15', moneda: 'GS', monto: 2100000, estado: INVOICE_STATES.VENCIDA },
     { id: '001-003-0008002', egp: 'Cervepar', prov: 'Limpieza Total SRL', emision: '2026-01-10', vto: '2026-02-10', moneda: 'GS', monto: 3100000, estado: INVOICE_STATES.VENCIDA },
-    { id: '001-001-0009001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-18', vto: '2026-06-05', moneda: 'GS', monto: 4500000, estado: INVOICE_STATES.NO_ELEGIBLE },
-    { id: '001-002-0009002', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-05-17', vto: '2026-06-08', moneda: 'GS', monto: 2800000, estado: INVOICE_STATES.NO_ELEGIBLE },
+    { id: '001-001-0009001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-18', vto: '2026-07-20', moneda: 'GS', monto: 4500000, estado: INVOICE_STATES.NO_ELEGIBLE },
+    { id: '001-002-0009002', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-05-17', vto: '2026-08-01', moneda: 'GS', monto: 2800000, estado: INVOICE_STATES.NO_ELEGIBLE },
 ];
 invoices.forEach(inv => {
     if (!inv.fechaPago) inv.fechaPago = inv.vto;
 });
+patchNoElegibleInvoiceMocks();
 
 // Fecha de pago: mínimo 30 días calendario desde hoy para ser operable.
 const PAYMENT_DATE_MIN_DAYS = 30;
@@ -98,16 +99,88 @@ function getInvoiceFechaPago(inv) {
     return inv.fechaPago || inv.vto || '';
 }
 
+// ====== Formato de fechas dd-mm-yyyy (visualización e inputs) ======
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function formatDateISOFromParts(y, m, d) {
+    return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+function formatDateDDMMYYYY(iso) {
+    if (!iso) return '—';
+    const parts = String(iso).trim().split('-');
+    if (parts.length !== 3) return iso;
+    const [y, m, d] = parts;
+    return `${d}-${m}-${y}`;
+}
+
+function parseDDMMYYYYToISO(value) {
+    if (value == null || value === '') return '';
+    const s = String(value).trim();
+    let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return formatDateISOFromParts(+m[3], +m[2], +m[1]);
+    m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m) return formatDateISOFromParts(+m[1], +m[2], +m[3]);
+    return '';
+}
+
+function normalizeDateToISO(value) {
+    if (!value) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(value).trim())) return value;
+    return parseDDMMYYYYToISO(value);
+}
+
+function setDateInputValue(inputId, iso) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.value = iso ? formatDateDDMMYYYY(iso) : '';
+    el.dataset.isoValue = iso || '';
+}
+
+function readDateInputValue(inputId) {
+    const el = document.getElementById(inputId);
+    if (!el) return '';
+    const iso = normalizeDateToISO(el.value.trim());
+    if (iso) el.dataset.isoValue = iso;
+    return iso;
+}
+
+function todayISO() {
+    const t = new Date();
+    return formatDateISOFromParts(t.getFullYear(), t.getMonth() + 1, t.getDate());
+}
+
+function patchNoElegibleInvoiceMocks() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const fechaPago = new Date(today);
+    const vto = new Date(today);
+    vto.setDate(vto.getDate() + 45);
+    const emision = new Date(today);
+    emision.setDate(emision.getDate() - 20);
+    const fpIso = todayISO();
+    const vtoIso = formatDateISOFromParts(vto.getFullYear(), vto.getMonth() + 1, vto.getDate());
+    const emIso = formatDateISOFromParts(emision.getFullYear(), emision.getMonth() + 1, emision.getDate());
+    ['001-001-0009001', '001-002-0009002'].forEach(id => {
+        const inv = invoices.find(i => i.id === id);
+        if (!inv) return;
+        inv.fechaPago = fpIso;
+        inv.vto = vtoIso;
+        inv.emision = emIso;
+    });
+}
+
 // Participantes (EGPs y Proveedores)
 let participants = [
     { id: 1, tipo: 'EGP', ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 500000000, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: 'Pago a 30/60/90 días', clienteAtlas: true, desembolsoAuto: true },
     { id: 2, tipo: 'EGP', ruc: '80054321-7', razon: 'Tigo Paraguay', email: 'finanzas@tigo.com.py', telefono: '+595 21 654321', monedas: ['GS'], lineaCredito: 2000000000, tasaInteres: 11, tasaComision: 1.2, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false },
     { id: 3, tipo: 'EGP', ruc: '80067890-1', razon: 'Cervepar', email: 'cuentas@cervepar.com.py', telefono: '+595 21 789012', monedas: ['GS', 'USD'], lineaCredito: 800000000, tasaInteres: 13, tasaComision: 1.8, iva: 10, condiciones: 'Límite USD 50,000 por operación', clienteAtlas: true, desembolsoAuto: true },
-    { id: 4, tipo: 'Proveedor', ruc: '80099999-2', razon: 'Tech Solutions S.A.', email: 'pagos@techsolutions.com.py', telefono: '+595 21 999888', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false },
-    { id: 5, tipo: 'Proveedor', ruc: '80011111-3', razon: 'Logistica Integral', email: 'cobranzas@logistica.com.py', telefono: '+595 21 111222', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: false },
-    { id: 6, tipo: 'Proveedor', ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false },
-    { id: 7, tipo: 'Proveedor', ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: false },
-    { id: 8, tipo: 'Proveedor', ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false },
+    { id: 4, tipo: 'Proveedor', egpPadreId: 1, ruc: '80099999-2', razon: 'Tech Solutions S.A.', email: 'pagos@techsolutions.com.py', telefono: '+595 21 999888', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
+    { id: 5, tipo: 'Proveedor', egpPadreId: 2, ruc: '80011111-3', razon: 'Logistica Integral', email: 'cobranzas@logistica.com.py', telefono: '+595 21 111222', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
+    { id: 6, tipo: 'Proveedor', egpPadreId: 3, ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
+    { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
+    { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
 ];
 
 let nextParticipantId = 9;
@@ -412,9 +485,7 @@ document.getElementById('toggle-sidebar')?.addEventListener('click', () => {
 });
 
 document.getElementById('operating-entity-select')?.addEventListener('change', () => {
-    const status = document.getElementById('filter-status')?.value || 'all';
-    const query = document.getElementById('search-invoice')?.value || '';
-    renderInvoices(status, query);
+    renderCurrentConfirmingFilters();
     renderOperatingEntityPanel();
 });
 
@@ -489,6 +560,72 @@ document.getElementById('btn-confirm-action').addEventListener('click', () => {
 
 // ====== ABM - GESTIÓN DE PARTICIPANTES ======
 
+function getParticipantEgpPadreRazon(p) {
+    if (p.tipo !== 'Proveedor' || p.egpPadreId == null) return '';
+    const egp = participants.find(x => x.id === p.egpPadreId && x.tipo === 'EGP');
+    return egp ? egp.razon : '';
+}
+
+function listEgpParticipants() {
+    return participants.filter(p => p.tipo === 'EGP');
+}
+
+function populateAbmEgpPadreSelect(selectedId = '') {
+    const sel = document.getElementById('abm-egp-padre');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Seleccione un EGP...</option>';
+    listEgpParticipants()
+        .sort((a, b) => a.razon.localeCompare(b.razon, 'es'))
+        .forEach(egp => {
+            const opt = document.createElement('option');
+            opt.value = String(egp.id);
+            opt.textContent = egp.razon;
+            sel.appendChild(opt);
+        });
+    if (selectedId != null && selectedId !== '') sel.value = String(selectedId);
+}
+
+function syncAbmTipoFields() {
+    const tipo = document.getElementById('abm-tipo')?.value;
+    const group = document.getElementById('abm-egp-padre-group');
+    const sel = document.getElementById('abm-egp-padre');
+    if (!group || !sel) return;
+    const isProv = tipo === 'Proveedor';
+    group.classList.toggle('hidden', !isProv);
+    sel.required = isProv;
+    if (!isProv) sel.value = '';
+}
+
+function applyAbmModalReadonlyDefaults() {
+    document.getElementById('abm-moneda-gs').checked = true;
+    document.getElementById('abm-moneda-usd').checked = false;
+    document.getElementById('abm-linea').value = '';
+    document.getElementById('abm-interes').value = 12;
+    document.getElementById('abm-comision').value = 1.5;
+    document.getElementById('abm-iva').value = 10;
+    document.getElementById('abm-condiciones').value = '';
+    document.getElementById('abm-cliente-atlas').checked = false;
+    const desAuto = document.getElementById('abm-desembolso-auto');
+    if (desAuto) {
+        desAuto.checked = true;
+        desAuto.disabled = true;
+    }
+}
+
+function getAbmVisualizationDefaults(existing) {
+    const base = existing || {};
+    return {
+        monedas: base.monedas?.length ? [...base.monedas] : ['GS'],
+        lineaCredito: base.lineaCredito ?? 0,
+        tasaInteres: base.tasaInteres ?? 12,
+        tasaComision: base.tasaComision ?? 1.5,
+        iva: base.iva ?? 10,
+        condiciones: base.condiciones ?? '',
+        clienteAtlas: base.clienteAtlas ?? false,
+        desembolsoAuto: true,
+    };
+}
+
 function renderParticipants() {
     const tbody = document.getElementById('participants-tbody');
     if (!tbody) return;
@@ -507,12 +644,17 @@ function renderParticipants() {
             ? `<i class="ph ph-check-circle text-success" style="font-size:18px;"></i>`
             : `<i class="ph ph-x-circle" style="font-size:18px;color:#d1d5db;"></i>`;
 
+        const egpCol = p.tipo === 'Proveedor'
+            ? (getParticipantEgpPadreRazon(p) || '—')
+            : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${tipoBadge}</td>
             <td>${p.ruc}</td>
             <td><strong>${p.razon}</strong></td>
-            <td style="font-size:13px;color:#6b7280;">${p.email}</td>
+            <td style="font-size:13px;">${egpCol ? `<strong>${egpCol}</strong>` : ''}</td>
+            <td style="font-size:13px;color:#6b7280;">${p.email || '—'}</td>
             <td>${monedasHtml}</td>
             <td style="font-weight:600;">${p.lineaCredito > 0 ? formatCurrency(p.lineaCredito, 'GS') : '—'}</td>
             <td>${p.tasaInteres}%</td>
@@ -714,36 +856,40 @@ function openAbmModal(participantId = null) {
     const form = document.getElementById('abm-form');
     form.reset();
     document.getElementById('abm-file-list').innerHTML = '';
+    populateAbmEgpPadreSelect();
 
     if (participantId) {
-        // Modo edición
         const p = participants.find(x => x.id === participantId);
         if (!p) return;
+        const viz = getAbmVisualizationDefaults(p);
         document.getElementById('abm-modal-title').textContent = 'Editar Ente';
         document.getElementById('abm-tipo').value = p.tipo;
         document.getElementById('abm-ruc').value = p.ruc;
         document.getElementById('abm-razon').value = p.razon;
-        document.getElementById('abm-email').value = p.email;
-        document.getElementById('abm-telefono').value = p.telefono;
-        document.getElementById('abm-moneda-gs').checked = p.monedas.includes('GS');
-        document.getElementById('abm-moneda-usd').checked = p.monedas.includes('USD');
-        document.getElementById('abm-linea').value = p.lineaCredito || '';
-        document.getElementById('abm-interes').value = p.tasaInteres;
-        document.getElementById('abm-comision').value = p.tasaComision;
-        document.getElementById('abm-iva').value = p.iva;
-        document.getElementById('abm-condiciones').value = p.condiciones;
-        document.getElementById('abm-cliente-atlas').checked = p.clienteAtlas;
-        document.getElementById('abm-desembolso-auto').checked = p.desembolsoAuto;
+        document.getElementById('abm-email').value = p.email || '';
+        document.getElementById('abm-telefono').value = p.telefono || '';
+        document.getElementById('abm-moneda-gs').checked = viz.monedas.includes('GS');
+        document.getElementById('abm-moneda-usd').checked = viz.monedas.includes('USD');
+        document.getElementById('abm-linea').value = viz.lineaCredito || '';
+        document.getElementById('abm-interes').value = viz.tasaInteres;
+        document.getElementById('abm-comision').value = viz.tasaComision;
+        document.getElementById('abm-iva').value = viz.iva;
+        document.getElementById('abm-condiciones').value = viz.condiciones;
+        document.getElementById('abm-cliente-atlas').checked = viz.clienteAtlas;
+        if (p.tipo === 'Proveedor' && p.egpPadreId != null) {
+            populateAbmEgpPadreSelect(p.egpPadreId);
+        }
     } else {
-        // Modo alta
         document.getElementById('abm-modal-title').textContent = 'Nuevo Ente';
-        // Defaults
-        document.getElementById('abm-moneda-gs').checked = true;
-        document.getElementById('abm-interes').value = 12;
-        document.getElementById('abm-comision').value = 1.5;
-        document.getElementById('abm-iva').value = 10;
+        applyAbmModalReadonlyDefaults();
     }
 
+    const desAuto = document.getElementById('abm-desembolso-auto');
+    if (desAuto) {
+        desAuto.checked = true;
+        desAuto.disabled = true;
+    }
+    syncAbmTipoFields();
     openModal('abm-modal');
 }
 
@@ -752,19 +898,21 @@ function submitParticipant() {
     const ruc = document.getElementById('abm-ruc').value.trim();
     const razon = document.getElementById('abm-razon').value.trim();
     const email = document.getElementById('abm-email').value.trim();
+    const egpPadreRaw = document.getElementById('abm-egp-padre')?.value;
 
-    if (!tipo || !ruc || !razon || !email) {
-        showCustomAlert('Por favor complete los campos obligatorios: Tipo, RUC, Razón Social y Email.', 'Campos Incompletos');
+    if (!tipo || !ruc || !razon) {
+        showCustomAlert('Complete Tipo, RUC y Razón Social.', 'Campos incompletos');
+        return;
+    }
+    if (tipo === 'Proveedor' && !egpPadreRaw) {
+        showCustomAlert('Seleccione el EGP Padre para el proveedor.', 'Campos incompletos');
         return;
     }
 
-    const monedas = [];
-    if (document.getElementById('abm-moneda-gs').checked) monedas.push('GS');
-    if (document.getElementById('abm-moneda-usd').checked) monedas.push('USD');
-    if (monedas.length === 0) {
-        showCustomAlert('Debe seleccionar al menos una moneda habilitada.', 'Campos Incompletos');
-        return;
-    }
+    const existing = editingParticipantId
+        ? participants.find(x => x.id === editingParticipantId)
+        : null;
+    const viz = getAbmVisualizationDefaults(existing);
 
     const data = {
         tipo,
@@ -772,14 +920,15 @@ function submitParticipant() {
         razon,
         email,
         telefono: document.getElementById('abm-telefono').value.trim(),
-        monedas,
-        lineaCredito: parseFloat(document.getElementById('abm-linea').value) || 0,
-        tasaInteres: parseFloat(document.getElementById('abm-interes').value) || 12,
-        tasaComision: parseFloat(document.getElementById('abm-comision').value) || 1.5,
-        iva: parseFloat(document.getElementById('abm-iva').value) || 10,
-        condiciones: document.getElementById('abm-condiciones').value.trim(),
-        clienteAtlas: document.getElementById('abm-cliente-atlas').checked,
-        desembolsoAuto: document.getElementById('abm-desembolso-auto').checked,
+        monedas: viz.monedas,
+        lineaCredito: viz.lineaCredito,
+        tasaInteres: viz.tasaInteres,
+        tasaComision: viz.tasaComision,
+        iva: viz.iva,
+        condiciones: viz.condiciones,
+        clienteAtlas: viz.clienteAtlas,
+        desembolsoAuto: true,
+        egpPadreId: tipo === 'Proveedor' ? parseInt(egpPadreRaw, 10) : null,
     };
 
     if (editingParticipantId) {
@@ -799,6 +948,8 @@ function submitParticipant() {
     populateOperatingEntitySelect();
     renderOperatingEntityPanel();
 }
+
+document.getElementById('abm-tipo')?.addEventListener('change', syncAbmTipoFields);
 
 function handleFileSelect(input) {
     const list = document.getElementById('abm-file-list');
@@ -843,21 +994,52 @@ function estadoToBadgeClass(estado) {
     });
 })();
 
-function renderInvoices(filter = 'all', searchQuery = '') {
+const FECHA_PAGO_EDITABLE_STATES = new Set([
+    INVOICE_STATES.NO_ELEGIBLE,
+    INVOICE_STATES.PENDIENTE,
+    INVOICE_STATES.HABILITADA,
+    INVOICE_STATES.BLOQUEADA,
+]);
+
+function buildEditFechaPagoButtonHtml(inv) {
+    if (!FECHA_PAGO_EDITABLE_STATES.has(inv.estado)) return '';
+    const safeId = String(inv.id).replace(/'/g, "\\'");
+    return `<button type="button" class="btn-secondary btn-sm" onclick="openEditFechaPagoModal('${safeId}')"><i class="ph ph-calendar"></i> Editar fecha de pago</button>`;
+}
+
+function invoiceMatchesDateFilters(inv, filterVtoIso, filterFechaPagoIso) {
+    if (filterVtoIso && inv.vto !== filterVtoIso) return false;
+    if (filterFechaPagoIso && getInvoiceFechaPago(inv) !== filterFechaPagoIso) return false;
+    return true;
+}
+
+function getConfirmingFilterValues() {
+    const status = document.getElementById('filter-status')?.value || 'all';
+    const query = document.getElementById('search-invoice')?.value?.trim() || '';
+    const filterVto = readDateInputValue('filter-vto');
+    const filterFechaPago = readDateInputValue('filter-fecha-pago');
+    return { status, query, filterVto, filterFechaPago };
+}
+
+function renderInvoices(filter = 'all', searchQuery = '', filterVto = '', filterFechaPago = '') {
     const tbody = document.getElementById('invoices-tbody');
     tbody.innerHTML = '';
 
     const enteRazon = getSelectedOperatingEntityRazon();
     const bulkSimActive = isBulkSimulateActive();
+    const vtoIso = filterVto || '';
+    const fpIso = filterFechaPago || '';
 
     const filtered = invoices.filter(inv => {
         const matchTab = invoiceBelongsToCurrentViewTab(inv);
         const matchStatus = filter === 'all' || inv.estado === filter;
-        const matchSearch = inv.id.includes(searchQuery) ||
-                            inv.egp.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            inv.prov.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchSearch = !searchQuery ||
+            inv.id.includes(searchQuery) ||
+            inv.egp.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            inv.prov.toLowerCase().includes(searchQuery.toLowerCase());
         const matchEnte = !enteRazon || inv.egp === enteRazon || inv.prov === enteRazon;
-        return matchTab && matchStatus && matchSearch && matchEnte;
+        const matchDates = invoiceMatchesDateFilters(inv, vtoIso, fpIso);
+        return matchTab && matchStatus && matchSearch && matchEnte && matchDates;
     });
 
     pruneSelectionsToExistingInvoices();
@@ -873,9 +1055,11 @@ function renderInvoices(filter = 'all', searchQuery = '') {
         const rowSimDisabled = bulkSimActive && inv.estado === INVOICE_STATES.HABILITADA;
         switch (inv.estado) {
             case INVOICE_STATES.HABILITADA:
-                actionButtons = rowSimDisabled
-                    ? `<button type="button" class="btn-primary btn-sm is-disabled" aria-disabled="true" title="Use Simular de la cabecera para selección múltiple"><i class="ph ph-calculator"></i> Simular</button>`
-                    : `<button class="btn-primary btn-sm" onclick="openSimulation('${inv.id}')"><i class="ph ph-calculator"></i> Simular</button>`;
+                actionButtons = `<div class="action-btns-stack">${
+                    rowSimDisabled
+                        ? `<button type="button" class="btn-primary btn-sm is-disabled" aria-disabled="true" title="Use Simular de la cabecera para selección múltiple"><i class="ph ph-calculator"></i> Simular</button>`
+                        : `<button class="btn-primary btn-sm" onclick="openSimulation('${inv.id}')"><i class="ph ph-calculator"></i> Simular</button>`
+                }${buildEditFechaPagoButtonHtml(inv)}</div>`;
                 break;
             case INVOICE_STATES.PENDIENTE_APROBACION_EGP:
                 actionButtons = `<button class="btn-primary btn-sm" onclick="openEgpApprovalModal('${inv.id}')"><i class="ph ph-buildings"></i> Aprobar EGP</button>`;
@@ -884,19 +1068,25 @@ function renderInvoices(filter = 'all', searchQuery = '') {
                 actionButtons = `<button class="btn-primary btn-sm btn-aprobar" onclick="openBankApprovalModal('${inv.id}')"><i class="ph ph-bank"></i> Aprobar Banco</button>`;
                 break;
             case INVOICE_STATES.PENDIENTE:
-                actionButtons = `<span class="row-action-hint"><i class="ph ph-hourglass-medium"></i> Use Habilitar / Bloquear</span>`;
+                actionButtons = `<div class="action-btns-stack">
+                    <span class="row-action-hint"><i class="ph ph-hourglass-medium"></i> Use Habilitar / Bloquear</span>
+                    ${buildEditFechaPagoButtonHtml(inv)}
+                </div>`;
                 break;
             case INVOICE_STATES.PENDIENTE_DESEMBOLSO:
                 actionButtons = `<span class="row-action-hint row-action-hint--processing"><i class="ph ph-spinner ph-spin"></i> CORE BANKING desembolsando…</span>`;
                 break;
             case INVOICE_STATES.BLOQUEADA:
-                actionButtons = `<span class="row-action-hint"><i class="ph ph-lock"></i> No operable</span>`;
+                actionButtons = `<div class="action-btns-stack">
+                    <span class="row-action-hint"><i class="ph ph-lock"></i> No operable</span>
+                    ${buildEditFechaPagoButtonHtml(inv)}
+                </div>`;
                 break;
             case INVOICE_STATES.VENCIDA:
                 actionButtons = `<span class="row-action-hint row-action-hint--danger"><i class="ph ph-clock-counter-clockwise"></i> Vencida</span>`;
                 break;
             case INVOICE_STATES.NO_ELEGIBLE:
-                actionButtons = `<button type="button" class="btn-primary btn-sm" onclick="openEditFechaPagoModal('${inv.id}')"><i class="ph ph-calendar"></i> Editar fecha de pago</button>`;
+                actionButtons = buildEditFechaPagoButtonHtml(inv);
                 break;
             case INVOICE_STATES.FINANCIADA:
                 actionButtons = `<span class="row-action-hint"><i class="ph ph-check-circle"></i> Financiada</span>`;
@@ -926,9 +1116,9 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             <td><strong>${inv.id}</strong></td>
             <td>${inv.egp}</td>
             <td>${inv.prov}</td>
-            <td>${inv.emision}</td>
-            <td>${inv.vto}</td>
-            <td>${getInvoiceFechaPago(inv)}</td>
+            <td>${formatDateDDMMYYYY(inv.emision)}</td>
+            <td>${formatDateDDMMYYYY(inv.vto)}</td>
+            <td>${formatDateDDMMYYYY(getInvoiceFechaPago(inv))}</td>
             <td style="font-weight: 600;">${formatCurrency(inv.monto, inv.moneda)}</td>
             <td><span class="status-badge ${estadoToBadgeClass(inv.estado)}">${inv.estado}</span></td>
             <td class="col-inv-delete">${deleteInvoiceBtn}</td>
@@ -965,17 +1155,18 @@ function updateInvoiceSelectionUI(filteredInvoices) {
 }
 
 function getCurrentFilteredInvoices() {
-    const filter = document.getElementById('filter-status')?.value || 'all';
-    const query = document.getElementById('search-invoice')?.value || '';
+    const { status: filter, query, filterVto, filterFechaPago } = getConfirmingFilterValues();
     const enteRazon = getSelectedOperatingEntityRazon();
     return invoices.filter(inv => {
         const matchTab = invoiceBelongsToCurrentViewTab(inv);
         const matchStatus = filter === 'all' || inv.estado === filter;
-        const matchSearch = inv.id.includes(query) ||
-                            inv.egp.toLowerCase().includes(query.toLowerCase()) ||
-                            inv.prov.toLowerCase().includes(query.toLowerCase());
+        const matchSearch = !query ||
+            inv.id.includes(query) ||
+            inv.egp.toLowerCase().includes(query.toLowerCase()) ||
+            inv.prov.toLowerCase().includes(query.toLowerCase());
         const matchEnte = !enteRazon || inv.egp === enteRazon || inv.prov === enteRazon;
-        return matchTab && matchStatus && matchSearch && matchEnte;
+        const matchDates = invoiceMatchesDateFilters(inv, filterVto, filterFechaPago);
+        return matchTab && matchStatus && matchSearch && matchEnte && matchDates;
     });
 }
 
@@ -1216,15 +1407,12 @@ function bloquearSelectedInvoices() {
     }, 'Bloquear facturas');
 }
 
-document.getElementById('filter-status').addEventListener('change', (e) => {
-    const query = document.getElementById('search-invoice').value;
-    renderInvoices(e.target.value, query);
-});
-
-document.getElementById('search-invoice').addEventListener('input', (e) => {
-    const status = document.getElementById('filter-status').value;
-    renderInvoices(status, e.target.value);
-});
+document.getElementById('filter-status')?.addEventListener('change', () => renderCurrentConfirmingFilters());
+document.getElementById('search-invoice')?.addEventListener('input', () => renderCurrentConfirmingFilters());
+document.getElementById('filter-vto')?.addEventListener('change', () => renderCurrentConfirmingFilters());
+document.getElementById('filter-fecha-pago')?.addEventListener('change', () => renderCurrentConfirmingFilters());
+document.getElementById('filter-vto')?.addEventListener('blur', () => renderCurrentConfirmingFilters());
+document.getElementById('filter-fecha-pago')?.addEventListener('blur', () => renderCurrentConfirmingFilters());
 
 
 // SIMULAR ESCANEO QR
@@ -1238,11 +1426,12 @@ function simulateScan() {
         document.getElementById('ni-prov').value = 'Logistica Integral';
 
         const today = new Date();
-        document.getElementById('ni-emision').value = today.toISOString().split('T')[0];
-
-        const vto = new Date(today);
-        vto.setDate(vto.getDate() + 45);
-        document.getElementById('ni-vto').value = vto.toISOString().split('T')[0];
+        const emIso = formatDateISOFromParts(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        const vtoD = new Date(today);
+        vtoD.setDate(vtoD.getDate() + 45);
+        const vtoIso = formatDateISOFromParts(vtoD.getFullYear(), vtoD.getMonth() + 1, vtoD.getDate());
+        setDateInputValue('ni-emision', emIso);
+        setDateInputValue('ni-vto', vtoIso);
         syncNewInvoiceFechaPagoFromVto();
 
         document.getElementById('ni-moneda').value = 'GS';
@@ -1261,9 +1450,8 @@ function openNewInvoiceModal() {
 
 function syncNewInvoiceFechaPagoFromVto() {
     if (newInvoiceFechaPagoTouched) return;
-    const vto = document.getElementById('ni-vto')?.value;
-    const fp = document.getElementById('ni-fecha-pago');
-    if (fp && vto) fp.value = vto;
+    const vtoIso = readDateInputValue('ni-vto') || document.getElementById('ni-vto')?.dataset.isoValue;
+    if (vtoIso) setDateInputValue('ni-fecha-pago', vtoIso);
 }
 
 // Nueva Factura
@@ -1271,9 +1459,9 @@ function submitNewInvoice() {
     const nro = document.getElementById('ni-nro').value;
     const egp = document.getElementById('ni-egp').value;
     const prov = document.getElementById('ni-prov').value;
-    const emision = document.getElementById('ni-emision').value;
-    const vto = document.getElementById('ni-vto').value;
-    const fechaPago = document.getElementById('ni-fecha-pago').value || vto;
+    const emision = readDateInputValue('ni-emision');
+    const vto = readDateInputValue('ni-vto');
+    const fechaPago = readDateInputValue('ni-fecha-pago') || vto;
     const moneda = document.getElementById('ni-moneda').value;
     const monto = parseFloat(document.getElementById('ni-monto').value);
     const estadoSolicitado = document.getElementById('ni-estado').value;
@@ -1303,41 +1491,54 @@ function submitNewInvoice() {
 
 function openEditFechaPagoModal(invoiceId) {
     const inv = invoices.find(i => i.id === invoiceId);
-    if (!inv || inv.estado !== INVOICE_STATES.NO_ELEGIBLE) return;
+    if (!inv || !FECHA_PAGO_EDITABLE_STATES.has(inv.estado)) return;
     editingFechaPagoInvoiceId = invoiceId;
     document.getElementById('efp-invoice-id').textContent = inv.id;
-    document.getElementById('efp-fecha-pago').value = getInvoiceFechaPago(inv);
+    setDateInputValue('efp-fecha-pago', getInvoiceFechaPago(inv));
+    const hint = document.getElementById('efp-hint');
+    if (hint) {
+        hint.innerHTML = inv.estado === INVOICE_STATES.NO_ELEGIBLE
+            ? `Factura <strong>${inv.id}</strong>. Si la nueva fecha está a 30 días o más desde hoy, la factura vuelve a Habilitada.`
+            : `Factura <strong>${inv.id}</strong> (${inv.estado}). Si la fecha de pago queda a menos de 30 días desde hoy, pasará a NO ELEGIBLE.`;
+    }
     openModal('edit-fecha-pago-modal');
 }
 
 function submitEditFechaPago() {
     const inv = invoices.find(i => i.id === editingFechaPagoInvoiceId);
     if (!inv) return;
-    const nuevaFecha = document.getElementById('efp-fecha-pago').value;
+    const nuevaFecha = readDateInputValue('efp-fecha-pago');
     if (!nuevaFecha) {
-        showCustomAlert('Indique una fecha de pago válida.');
+        showCustomAlert('Indique una fecha de pago válida (dd-mm-yyyy).', 'Fecha inválida');
         return;
     }
+    const prevState = inv.estado;
     inv.fechaPago = nuevaFecha;
-    if (isPaymentDateEligible(nuevaFecha)) {
-        inv.estado = INVOICE_STATES.HABILITADA;
-        closeModal('edit-fecha-pago-modal');
-        editingFechaPagoInvoiceId = null;
-        renderCurrentConfirmingFilters();
-        showCustomAlert(
-            `La fecha de pago fue actualizada. La factura ${inv.id} pasó a estado Habilitada.`,
-            'Fecha de pago actualizada'
-        );
-    } else {
+    if (!isPaymentDateEligible(nuevaFecha)) {
         inv.estado = INVOICE_STATES.NO_ELEGIBLE;
         closeModal('edit-fecha-pago-modal');
         editingFechaPagoInvoiceId = null;
         renderCurrentConfirmingFilters();
         showCustomAlert(
-            `La fecha de pago fue guardada, pero la factura sigue NO ELEGIBLE: debe estar a 30 días o más desde hoy.`,
-            'Sigue no elegible'
+            prevState === INVOICE_STATES.NO_ELEGIBLE
+                ? `La fecha fue guardada. La factura ${inv.id} sigue NO ELEGIBLE (menos de 30 días desde hoy).`
+                : `La factura ${inv.id} pasó a NO ELEGIBLE: la fecha de pago debe estar a 30 días o más desde hoy.`,
+            'Fecha de pago actualizada'
         );
+        return;
     }
+    if (prevState === INVOICE_STATES.NO_ELEGIBLE) {
+        inv.estado = INVOICE_STATES.HABILITADA;
+    }
+    closeModal('edit-fecha-pago-modal');
+    editingFechaPagoInvoiceId = null;
+    renderCurrentConfirmingFilters();
+    showCustomAlert(
+        prevState === INVOICE_STATES.NO_ELEGIBLE
+            ? `La fecha de pago fue actualizada. La factura ${inv.id} pasó a estado Habilitada.`
+            : `La fecha de pago de la factura ${inv.id} fue actualizada.`,
+        'Fecha de pago actualizada'
+    );
 }
 
 
@@ -1553,11 +1754,15 @@ document.getElementById('btn-rechazar-egp-motivo')?.addEventListener('click', ()
     if (!currentSimulationInvoice) return;
     const inv = currentSimulationInvoice;
     const newVto = window.prompt(
-        `EGP rechaza con motivo. Indique la nueva fecha de pago (AAAA-MM-DD) para la factura ${inv.id}:`,
-        inv.vto
+        `EGP rechaza con motivo. Indique la nueva fecha de pago (dd-mm-yyyy) para la factura ${inv.id}:`,
+        formatDateDDMMYYYY(getInvoiceFechaPago(inv))
     );
     if (newVto == null || newVto.trim() === '') return;
-    const nuevaFecha = newVto.trim();
+    const nuevaFecha = normalizeDateToISO(newVto.trim());
+    if (!nuevaFecha) {
+        showCustomAlert('Formato de fecha inválido. Use dd-mm-yyyy.', 'Fecha inválida');
+        return;
+    }
     inv.fechaPago = nuevaFecha;
     inv.vto = nuevaFecha;
     inv.estado = isPaymentDateEligible(nuevaFecha)
@@ -1645,9 +1850,8 @@ function scheduleCoreBankingDisbursement(invoiceId) {
 
 // Helper para refrescar la grilla respetando los filtros y búsqueda actuales
 function renderCurrentConfirmingFilters() {
-    const status = document.getElementById('filter-status')?.value || 'all';
-    const query = document.getElementById('search-invoice')?.value || '';
-    renderInvoices(status, query);
+    const { status, query, filterVto, filterFechaPago } = getConfirmingFilterValues();
+    renderInvoices(status, query, filterVto, filterFechaPago);
 }
 
 function deleteInvoice(invoiceId) {
@@ -2073,6 +2277,8 @@ function parseBulkDate(v) {
         return formatDateISO(v);
     }
     const s = String(v).trim();
+    const fromDisplay = parseDDMMYYYYToISO(s);
+    if (fromDisplay) return fromDisplay;
     // ISO YYYY-MM-DD o YYYY/MM/DD
     let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
     if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])}`;
@@ -2094,8 +2300,6 @@ function parseBulkDate(v) {
     }
     return '';
 }
-
-function pad2(n) { return String(n).padStart(2, '0'); }
 
 function formatDateISO(d) {
     return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;

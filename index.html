@@ -200,6 +200,14 @@
                                         <input type="text" id="search-invoice" placeholder="Buscar por Nro, EGP o Proveedor...">
                                     </div>
                                 </div>
+                                <div class="filter-field filter-field--date">
+                                    <label class="filter-field-label" for="filter-vto">Fecha de Vencimiento</label>
+                                    <input type="text" id="filter-vto" class="input-text input-date-ddmm" placeholder="dd-mm-yyyy" autocomplete="off">
+                                </div>
+                                <div class="filter-field filter-field--date">
+                                    <label class="filter-field-label" for="filter-fecha-pago">Fecha de Pago</label>
+                                    <input type="text" id="filter-fecha-pago" class="input-text input-date-ddmm" placeholder="dd-mm-yyyy" autocomplete="off">
+                                </div>
                                 <div class="filter-field filter-field--status">
                                     <label class="filter-field-label" for="filter-status">Estado</label>
                                     <select id="filter-status" class="select-input">
@@ -311,6 +319,7 @@
                                         <th>Tipo</th>
                                         <th>RUC</th>
                                         <th>Razón Social</th>
+                                        <th>EGP</th>
                                         <th>Email</th>
                                         <th>Monedas</th>
                                         <th>Línea de Crédito</th>
@@ -543,17 +552,17 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Fecha Emisión</label>
-                            <input type="date" id="ni-emision" class="input-text" required>
+                            <input type="text" id="ni-emision" class="input-text input-date-ddmm" placeholder="dd-mm-yyyy" required autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Fecha Vencimiento</label>
-                            <input type="date" id="ni-vto" class="input-text" required>
+                            <input type="text" id="ni-vto" class="input-text input-date-ddmm" placeholder="dd-mm-yyyy" required autocomplete="off">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Fecha de Pago</label>
-                            <input type="date" id="ni-fecha-pago" class="input-text" required>
+                            <input type="text" id="ni-fecha-pago" class="input-text input-date-ddmm" placeholder="dd-mm-yyyy" required autocomplete="off">
                             <p class="bulk-upload-panel-hint">Por defecto coincide con el vencimiento. Si queda a menos de 30 días, la factura será NO ELEGIBLE.</p>
                         </div>
                     </div>
@@ -595,10 +604,10 @@
                 <button class="btn-close" onclick="closeModal('edit-fecha-pago-modal')"><i class="ph ph-x"></i></button>
             </div>
             <div class="modal-body">
-                <p class="bulk-upload-panel-hint">Factura <strong id="efp-invoice-id"></strong>. Si la nueva fecha está a 30 días o más desde hoy, la factura vuelve a Habilitada.</p>
+                <p class="bulk-upload-panel-hint" id="efp-hint">Factura <strong id="efp-invoice-id"></strong>.</p>
                 <div class="form-group">
                     <label for="efp-fecha-pago">Fecha de Pago</label>
-                    <input type="date" id="efp-fecha-pago" class="input-text" required>
+                    <input type="text" id="efp-fecha-pago" class="input-text input-date-ddmm" placeholder="dd-mm-yyyy" required autocomplete="off">
                 </div>
             </div>
             <div class="modal-footer">
@@ -723,6 +732,14 @@
                                 <option value="Proveedor">Proveedor</option>
                             </select>
                         </div>
+                        <div class="form-group hidden" id="abm-egp-padre-group">
+                            <label for="abm-egp-padre">EGP Padre *</label>
+                            <select id="abm-egp-padre" class="select-input">
+                                <option value="">Seleccione un EGP...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label>RUC *</label>
                             <input type="text" id="abm-ruc" class="input-text" placeholder="Ej: 80001234-5" required>
@@ -734,8 +751,8 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Email de Contacto *</label>
-                            <input type="email" id="abm-email" class="input-text" placeholder="contacto@empresa.com" required>
+                            <label>Email de Contacto</label>
+                            <input type="email" id="abm-email" class="input-text" placeholder="contacto@empresa.com">
                         </div>
                         <div class="form-group">
                             <label>Teléfono</label>
@@ -743,58 +760,58 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Monedas Habilitadas para Operar *</label>
+                    <div class="form-group abm-readonly-block" id="abm-block-monedas">
+                        <label>Monedas Habilitadas para Operar <span class="abm-viz-tag">(solo visualización)</span></label>
                         <div class="checkbox-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="abm-moneda-gs" value="GS">
+                                <input type="checkbox" id="abm-moneda-gs" value="GS" disabled>
                                 <span class="checkbox-custom"></span>
                                 <span>GS &mdash; Guaraníes</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" id="abm-moneda-usd" value="USD">
+                                <input type="checkbox" id="abm-moneda-usd" value="USD" disabled>
                                 <span class="checkbox-custom"></span>
                                 <span>USD &mdash; Dólares</span>
                             </label>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Línea de Crédito Asignada (Gs.)</label>
-                        <input type="number" id="abm-linea" class="input-text" placeholder="Monto aprobado">
+                    <div class="form-group abm-readonly-block" id="abm-block-linea">
+                        <label>Línea de Crédito Asignada (Gs.) <span class="abm-viz-tag">(solo visualización)</span></label>
+                        <input type="number" id="abm-linea" class="input-text" placeholder="Monto aprobado" readonly tabindex="-1">
                     </div>
 
-                    <p class="form-section-title" style="margin-top:24px">Condiciones Financieras</p>
-                    <div class="form-row">
+                    <p class="form-section-title abm-readonly-block" style="margin-top:24px">Condiciones Financieras <span class="abm-viz-tag">(solo visualización)</span></p>
+                    <div class="form-row abm-readonly-block" id="abm-block-financieras">
                         <div class="form-group">
                             <label>% Interés (TNA)</label>
-                            <input type="number" id="abm-interes" class="input-text" placeholder="Ej: 12.0" step="0.1">
+                            <input type="number" id="abm-interes" class="input-text" placeholder="Ej: 12.0" step="0.1" readonly tabindex="-1">
                         </div>
                         <div class="form-group">
                             <label>% Comisión</label>
-                            <input type="number" id="abm-comision" class="input-text" placeholder="Ej: 1.5" step="0.1">
+                            <input type="number" id="abm-comision" class="input-text" placeholder="Ej: 1.5" step="0.1" readonly tabindex="-1">
                         </div>
                         <div class="form-group">
                             <label>% IVA</label>
-                            <input type="number" id="abm-iva" class="input-text" placeholder="Ej: 10" step="0.1">
+                            <input type="number" id="abm-iva" class="input-text" placeholder="Ej: 10" step="0.1" readonly tabindex="-1">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Condiciones Especiales</label>
-                        <textarea id="abm-condiciones" class="input-text" rows="3" placeholder="Detalle condiciones especiales acordadas..."></textarea>
+                    <div class="form-group abm-readonly-block" id="abm-block-condiciones">
+                        <label>Condiciones Especiales <span class="abm-viz-tag">(solo visualización)</span></label>
+                        <textarea id="abm-condiciones" class="input-text" rows="3" placeholder="Detalle condiciones especiales acordadas..." readonly tabindex="-1"></textarea>
                     </div>
 
                     <p class="form-section-title" style="margin-top:24px">Configuración</p>
                     <div class="toggles-row">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="abm-cliente-atlas">
+                        <label class="toggle-label toggle-label--readonly abm-readonly-block" id="abm-block-cliente-atlas">
+                            <input type="checkbox" id="abm-cliente-atlas" disabled>
                             <span class="toggle-switch"></span>
-                            <span>Cliente Atlas (cuenta activa en Banco Atlas)</span>
+                            <span>Cliente Atlas (cuenta activa en Banco Atlas) <span class="abm-viz-tag">(solo visualización)</span></span>
                         </label>
-                        <label class="toggle-label">
-                            <input type="checkbox" id="abm-desembolso-auto">
+                        <label class="toggle-label toggle-label--locked">
+                            <input type="checkbox" id="abm-desembolso-auto" checked disabled>
                             <span class="toggle-switch"></span>
-                            <span>Desembolsos Automáticos</span>
+                            <span>Desembolsos Automáticos (siempre activo)</span>
                         </label>
                     </div>
 

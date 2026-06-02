@@ -480,6 +480,40 @@ select.topbar-entity-select,
     font-size: 11px;
     color: var(--text-muted);
 }
+.abm-viz-tag {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.abm-readonly-block input[readonly],
+.abm-readonly-block textarea[readonly] {
+    background: #f3f4f6;
+    color: #4b5563;
+    cursor: default;
+}
+.abm-readonly-block .checkbox-label {
+    opacity: 0.85;
+    cursor: default;
+}
+.toggle-label--locked,
+.toggle-label--readonly {
+    opacity: 0.9;
+    cursor: default;
+}
+.filter-field--date {
+    min-width: 140px;
+}
+.filter-field--date .input-text {
+    width: 100%;
+}
+.action-btns-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
 .login-poc-version {
     margin: 16px 0 0;
     text-align: center;
