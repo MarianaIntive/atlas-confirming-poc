@@ -232,7 +232,7 @@
                                             <i class="ph ph-calculator"></i> Simular
                                         </button>
                                     </span>
-                                    <button type="button" id="btn-cargar-factura-confirming" class="btn-primary" onclick="openModal('new-invoice-modal')">
+                                    <button type="button" id="btn-cargar-factura-confirming" class="btn-primary" onclick="openNewInvoiceModal()">
                                         <i class="ph ph-plus"></i> Cargar Factura
                                     </button>
                                 </div>
@@ -263,6 +263,7 @@
                                     <th>Proveedor</th>
                                     <th>Emisión</th>
                                     <th>Vencimiento</th>
+                                    <th>Fecha de Pago</th>
                                     <th>Monto</th>
                                     <th>Estado</th>
                                     <th class="col-inv-delete" scope="col"><span class="sr-only">Eliminar factura</span></th>
@@ -549,6 +550,13 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Fecha de Pago</label>
+                            <input type="date" id="ni-fecha-pago" class="input-text" required>
+                            <p class="bulk-upload-panel-hint">Por defecto coincide con el vencimiento. Si queda a menos de 30 días, la factura será NO ELEGIBLE.</p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label>Moneda</label>
                             <select id="ni-moneda" class="select-input">
                                 <option value="GS">GS (Guaraníes)</option>
@@ -573,6 +581,27 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeModal('new-invoice-modal')">Cancelar</button>
                 <button class="btn-primary" onclick="submitNewInvoice()">Guardar Factura</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editar Fecha de Pago (facturas NO ELEGIBLE) -->
+    <div id="edit-fecha-pago-modal" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Editar fecha de pago</h3>
+                <button class="btn-close" onclick="closeModal('edit-fecha-pago-modal')"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="bulk-upload-panel-hint">Factura <strong id="efp-invoice-id"></strong>. Si la nueva fecha está a 30 días o más desde hoy, la factura vuelve a Habilitada.</p>
+                <div class="form-group">
+                    <label for="efp-fecha-pago">Fecha de Pago</label>
+                    <input type="date" id="efp-fecha-pago" class="input-text" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('edit-fecha-pago-modal')">Cancelar</button>
+                <button class="btn-primary" onclick="submitEditFechaPago()">Guardar</button>
             </div>
         </div>
     </div>

@@ -60,6 +60,43 @@ let invoices = [
     { id: '001-001-0009001', egp: 'Retail S.A.', prov: 'Tech Solutions S.A.', emision: '2026-05-18', vto: '2026-06-05', moneda: 'GS', monto: 4500000, estado: INVOICE_STATES.NO_ELEGIBLE },
     { id: '001-002-0009002', egp: 'Tigo Paraguay', prov: 'Logistica Integral', emision: '2026-05-17', vto: '2026-06-08', moneda: 'GS', monto: 2800000, estado: INVOICE_STATES.NO_ELEGIBLE },
 ];
+invoices.forEach(inv => {
+    if (!inv.fechaPago) inv.fechaPago = inv.vto;
+});
+
+// Fecha de pago: mínimo 30 días calendario desde hoy para ser operable.
+const PAYMENT_DATE_MIN_DAYS = 30;
+let editingFechaPagoInvoiceId = null;
+let newInvoiceFechaPagoTouched = false;
+
+function parseLocalDate(isoDate) {
+    const [y, m, d] = String(isoDate || '').split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+}
+
+function daysFromTodayTo(isoDate) {
+    const target = parseLocalDate(isoDate);
+    if (!target) return NaN;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
+    return Math.round((target - today) / 86400000);
+}
+
+function isPaymentDateEligible(fechaPago) {
+    const days = daysFromTodayTo(fechaPago);
+    return Number.isFinite(days) && days >= PAYMENT_DATE_MIN_DAYS;
+}
+
+function resolveInitialInvoiceState(requestedEstado, fechaPago) {
+    if (!isPaymentDateEligible(fechaPago)) return INVOICE_STATES.NO_ELEGIBLE;
+    return requestedEstado;
+}
+
+function getInvoiceFechaPago(inv) {
+    return inv.fechaPago || inv.vto || '';
+}
 
 // Participantes (EGPs y Proveedores)
 let participants = [
@@ -793,7 +830,7 @@ function renderInvoices(filter = 'all', searchQuery = '') {
     pruneSelectionsToExistingInvoices();
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10"><div class="table-empty">No se encontraron facturas con los filtros aplicados.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11"><div class="table-empty">No se encontraron facturas con los filtros aplicados.</div></td></tr>`;
         updateInvoiceSelectionUI(filtered);
         return;
     }
@@ -826,7 +863,7 @@ function renderInvoices(filter = 'all', searchQuery = '') {
                 actionButtons = `<span class="row-action-hint row-action-hint--danger"><i class="ph ph-clock-counter-clockwise"></i> Vencida</span>`;
                 break;
             case INVOICE_STATES.NO_ELEGIBLE:
-                actionButtons = `<span class="row-action-hint row-action-hint--danger"><i class="ph ph-prohibit"></i> No elegible</span>`;
+                actionButtons = `<button type="button" class="btn-primary btn-sm" onclick="openEditFechaPagoModal('${inv.id}')"><i class="ph ph-calendar"></i> Editar fecha de pago</button>`;
                 break;
             case INVOICE_STATES.FINANCIADA:
                 actionButtons = `<span class="row-action-hint"><i class="ph ph-check-circle"></i> Financiada</span>`;
@@ -858,6 +895,7 @@ function renderInvoices(filter = 'all', searchQuery = '') {
             <td>${inv.prov}</td>
             <td>${inv.emision}</td>
             <td>${inv.vto}</td>
+            <td>${getInvoiceFechaPago(inv)}</td>
             <td style="font-weight: 600;">${formatCurrency(inv.monto, inv.moneda)}</td>
             <td><span class="status-badge ${estadoToBadgeClass(inv.estado)}">${inv.estado}</span></td>
             <td class="col-inv-delete">${deleteInvoiceBtn}</td>
@@ -1172,6 +1210,7 @@ function simulateScan() {
         const vto = new Date(today);
         vto.setDate(vto.getDate() + 45);
         document.getElementById('ni-vto').value = vto.toISOString().split('T')[0];
+        syncNewInvoiceFechaPagoFromVto();
 
         document.getElementById('ni-moneda').value = 'GS';
         document.getElementById('ni-monto').value = Math.floor(10000000 + Math.random() * 50000000);
@@ -1181,6 +1220,19 @@ function simulateScan() {
     }, 2000);
 }
 
+function openNewInvoiceModal() {
+    newInvoiceFechaPagoTouched = false;
+    openModal('new-invoice-modal');
+    syncNewInvoiceFechaPagoFromVto();
+}
+
+function syncNewInvoiceFechaPagoFromVto() {
+    if (newInvoiceFechaPagoTouched) return;
+    const vto = document.getElementById('ni-vto')?.value;
+    const fp = document.getElementById('ni-fecha-pago');
+    if (fp && vto) fp.value = vto;
+}
+
 // Nueva Factura
 function submitNewInvoice() {
     const nro = document.getElementById('ni-nro').value;
@@ -1188,21 +1240,71 @@ function submitNewInvoice() {
     const prov = document.getElementById('ni-prov').value;
     const emision = document.getElementById('ni-emision').value;
     const vto = document.getElementById('ni-vto').value;
+    const fechaPago = document.getElementById('ni-fecha-pago').value || vto;
     const moneda = document.getElementById('ni-moneda').value;
     const monto = parseFloat(document.getElementById('ni-monto').value);
-    const estado = document.getElementById('ni-estado').value;
+    const estadoSolicitado = document.getElementById('ni-estado').value;
 
-    if (!nro || !emision || !vto || !monto) {
+    if (!nro || !emision || !vto || !fechaPago || !monto) {
         showCustomAlert("Por favor complete todos los campos obligatorios.");
         return;
     }
 
-    invoices.unshift({ id: nro, egp, prov, emision, vto, moneda, monto, estado });
+    const estado = resolveInitialInvoiceState(estadoSolicitado, fechaPago);
+    invoices.unshift({ id: nro, egp, prov, emision, vto, fechaPago, moneda, monto, estado });
 
     closeModal('new-invoice-modal');
     document.getElementById('new-invoice-form').reset();
+    newInvoiceFechaPagoTouched = false;
     renderCurrentConfirmingFilters();
-    showCustomAlert('La factura ha sido registrada exitosamente.', 'Factura Registrada');
+
+    if (estado === INVOICE_STATES.NO_ELEGIBLE) {
+        showCustomAlert(
+            'La factura fue registrada en estado NO ELEGIBLE: la fecha de pago debe estar a 30 días o más desde hoy.',
+            'Factura no elegible'
+        );
+    } else {
+        showCustomAlert('La factura ha sido registrada exitosamente.', 'Factura Registrada');
+    }
+}
+
+function openEditFechaPagoModal(invoiceId) {
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (!inv || inv.estado !== INVOICE_STATES.NO_ELEGIBLE) return;
+    editingFechaPagoInvoiceId = invoiceId;
+    document.getElementById('efp-invoice-id').textContent = inv.id;
+    document.getElementById('efp-fecha-pago').value = getInvoiceFechaPago(inv);
+    openModal('edit-fecha-pago-modal');
+}
+
+function submitEditFechaPago() {
+    const inv = invoices.find(i => i.id === editingFechaPagoInvoiceId);
+    if (!inv) return;
+    const nuevaFecha = document.getElementById('efp-fecha-pago').value;
+    if (!nuevaFecha) {
+        showCustomAlert('Indique una fecha de pago válida.');
+        return;
+    }
+    inv.fechaPago = nuevaFecha;
+    if (isPaymentDateEligible(nuevaFecha)) {
+        inv.estado = INVOICE_STATES.HABILITADA;
+        closeModal('edit-fecha-pago-modal');
+        editingFechaPagoInvoiceId = null;
+        renderCurrentConfirmingFilters();
+        showCustomAlert(
+            `La fecha de pago fue actualizada. La factura ${inv.id} pasó a estado Habilitada.`,
+            'Fecha de pago actualizada'
+        );
+    } else {
+        inv.estado = INVOICE_STATES.NO_ELEGIBLE;
+        closeModal('edit-fecha-pago-modal');
+        editingFechaPagoInvoiceId = null;
+        renderCurrentConfirmingFilters();
+        showCustomAlert(
+            `La fecha de pago fue guardada, pero la factura sigue NO ELEGIBLE: debe estar a 30 días o más desde hoy.`,
+            'Sigue no elegible'
+        );
+    }
 }
 
 
@@ -1422,10 +1524,17 @@ document.getElementById('btn-rechazar-egp-motivo')?.addEventListener('click', ()
         inv.vto
     );
     if (newVto == null || newVto.trim() === '') return;
-    inv.vto = newVto.trim();
-    inv.estado = INVOICE_STATES.HABILITADA;
+    const nuevaFecha = newVto.trim();
+    inv.fechaPago = nuevaFecha;
+    inv.vto = nuevaFecha;
+    inv.estado = isPaymentDateEligible(nuevaFecha)
+        ? INVOICE_STATES.HABILITADA
+        : INVOICE_STATES.NO_ELEGIBLE;
+    const estadoMsg = inv.estado === INVOICE_STATES.HABILITADA
+        ? 'vuelve a Habilitada'
+        : 'queda en NO ELEGIBLE (fecha de pago menor a 30 días)';
     finishSimulationModalAction(
-        `El EGP rechazó con motivo. La factura ${inv.id} vuelve a Habilitada (vencimiento actualizado a ${inv.vto}).`,
+        `El EGP rechazó con motivo. La factura ${inv.id} ${estadoMsg} (fecha de pago: ${inv.fechaPago}).`,
         'EGP rechazó con motivo'
     );
 });
@@ -1682,6 +1791,7 @@ const BULK_INVOICE_HEADERS = [
     'Proveedor',
     'Fecha emisión',
     'Fecha vencimiento',
+    'Fecha de pago',
     'Moneda',
     'Monto',
     'Estado inicial'
@@ -1700,6 +1810,7 @@ function downloadInvoiceTemplate() {
         'Tech Solutions S.A.',
         '2026-05-01',
         '2026-06-30',
+        '2026-06-30',
         'GS',
         15000000,
         'Pendiente'
@@ -1708,7 +1819,7 @@ function downloadInvoiceTemplate() {
     // Ancho de columnas legible
     ws['!cols'] = [
         { wch: 20 }, { wch: 22 }, { wch: 22 }, { wch: 16 },
-        { wch: 18 }, { wch: 10 }, { wch: 16 }, { wch: 18 }
+        { wch: 18 }, { wch: 16 }, { wch: 10 }, { wch: 16 }, { wch: 18 }
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Facturas');
@@ -1792,15 +1903,18 @@ function processBulkInvoiceRows(rows) {
             return;
         }
 
+        const fechaPago = row.fechaPago || row.vto;
+        const estado = resolveInitialInvoiceState(row.estado, fechaPago);
         invoices.unshift({
             id: row.id,
             egp: row.egp,
             prov: row.prov,
             emision: row.emision,
             vto: row.vto,
+            fechaPago,
             moneda: row.moneda,
             monto: row.monto,
-            estado: row.estado
+            estado
         });
         loaded.push(row.id);
     });
@@ -1829,6 +1943,8 @@ function normalizeBulkRow(raw) {
     const prov = String(get('Proveedor') || '').trim();
     const emision = parseBulkDate(get('Fecha emisión', 'Fecha emision', 'Emisión', 'Emision'));
     const vto = parseBulkDate(get('Fecha vencimiento', 'Vencimiento'));
+    let fechaPago = parseBulkDate(get('Fecha de pago', 'Fecha pago', 'Fecha Pago'));
+    if (!fechaPago) fechaPago = vto;
     let moneda = String(get('Moneda') || '').trim().toUpperCase();
     if (moneda === 'GUARANIES' || moneda === 'GUARANÍES' || moneda === 'PYG') moneda = 'GS';
     if (moneda === 'DOLAR' || moneda === 'DÓLAR' || moneda === 'DOLARES' || moneda === 'DÓLARES') moneda = 'USD';
@@ -1838,7 +1954,7 @@ function normalizeBulkRow(raw) {
     let estado = String(get('Estado inicial', 'Estado') || '').trim();
     estado = normalizeBulkEstado(estado);
 
-    return { id, egp, prov, emision, vto, moneda, monto, estado };
+    return { id, egp, prov, emision, vto, fechaPago, moneda, monto, estado };
 }
 
 function normalizeKey(s) {
@@ -1997,3 +2113,8 @@ function escapeHtml(s) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[ch]));
 }
+
+document.getElementById('ni-vto')?.addEventListener('change', syncNewInvoiceFechaPagoFromVto);
+document.getElementById('ni-fecha-pago')?.addEventListener('input', () => {
+    newInvoiceFechaPagoTouched = true;
+});
