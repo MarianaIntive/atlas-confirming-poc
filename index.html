@@ -45,6 +45,7 @@
                     </div>
                     <button type="submit" class="btn-primary w-100">Ingresar al Portal</button>
                 </form>
+                <p class="login-poc-version" data-poc-version aria-label="Versión de la POC"></p>
             </div>
             <div class="login-bg"></div>
         </div>
@@ -117,7 +118,8 @@
                             <span>AD</span>
                         </div>
                         <div class="user-info">
-                            <span class="user-name">Administrador Atlas</span>
+                            <span class="user-name" id="logged-user-display">Administrador Atlas</span>
+                            <span class="poc-version" data-poc-version aria-label="Versión de iteración POC"></span>
                             <span class="user-role">Acceso total · Confirming</span>
                         </div>
                     </div>
@@ -973,6 +975,7 @@
     </div>
 
     <!-- Script de la App -->
+    <script src="version.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

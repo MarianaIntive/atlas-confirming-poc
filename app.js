@@ -331,10 +331,41 @@ const formatCurrency = (monto, moneda) => {
 };
 
 
+// ====== VERSIÓN POC (UI) ======
+
+function applyPocVersionLabels() {
+    const versionText = typeof POC_APP_VERSION_LABEL !== 'undefined'
+        ? POC_APP_VERSION_LABEL
+        : (typeof POC_APP_VERSION !== 'undefined' ? POC_APP_VERSION : '');
+    document.querySelectorAll('[data-poc-version]').forEach(el => {
+        el.textContent = versionText;
+    });
+    const titleSuffix = typeof POC_APP_VERSION !== 'undefined' ? ` · ${POC_APP_VERSION}` : '';
+    if (titleSuffix && !document.title.includes(POC_APP_VERSION)) {
+        document.title = `Portal Confirming | Banco Atlas${titleSuffix}`;
+    }
+}
+
+function syncLoggedUserDisplayFromLogin() {
+    const input = document.getElementById('username');
+    const display = document.getElementById('logged-user-display');
+    if (!display) return;
+    const raw = input?.value?.trim();
+    display.textContent = raw
+        ? raw.charAt(0).toUpperCase() + raw.slice(1)
+        : 'Administrador Atlas';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    applyPocVersionLabels();
+});
+
 // ====== NAVEGACIÓN Y LOGIN ======
 
 document.getElementById('login-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    syncLoggedUserDisplayFromLogin();
+    applyPocVersionLabels();
     document.getElementById('login-view').classList.remove('active');
     document.getElementById('app-view').classList.add('active');
     initDashboardChart();

@@ -1,197 +1,284 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
-**Versión:** 1.0.0  
-**Estado:** Draft / Proof of Concept  
-**Fecha:** 14 de Mayo, 2026
+
+**Versión documento / POC:** 2.0.0 (`v2.0.0`)  
+**Estado:** Proof of Concept — iteración activa  
+**Última actualización:** 2 de Junio, 2026  
+**Versión anterior del documento:** 1.0.0 (14 de Mayo, 2026)
 
 ---
 
 ## 1. Introducción y Propósito
-Este documento proporciona una guía técnica exhaustiva del Proof of Concept (POC) desarrollado para el **Portal de Confirming de Banco Atlas**. El objetivo principal es servir como base para la transferencia de conocimiento (KT) y escalabilidad del producto hacia un entorno de producción real.
 
-Siguiendo los principios de *Fundamentals of Software Architecture* (Mark Richards) y *Docs for Developers*, esta documentación detalla no solo el "qué" sino el "cómo" y el "por qué" de las decisiones técnicas tomadas. Se ha aplicado un estilo de escritura técnico preciso basado en *The Elements of Style*.
+Este documento es la guía técnica del **Portal de Confirming Banco Atlas (POC)**. Debe mantenerse alineado con cada release visible en la UI (etiqueta `POC vX.Y.Z` bajo el usuario logueado y en login).
+
+**Fuente de verdad de versión en código:** `version.js` → constantes `POC_APP_VERSION`, `POC_APP_VERSION_DATE`, `POC_APP_VERSION_LABEL`.
+
+**Despliegue:** GitHub Pages desde rama `master` → https://marianaintive.github.io/atlas-confirming-poc/
 
 ---
 
 ## 2. Arquitectura de Software
 
-### 2.1 Patrón de Arquitectura: "Vanilla SPA"
-A diferencia de los frameworks modernos (React/Angular), este POC utiliza una arquitectura de **Estado Centralizado en Memoria** con manipulación directa del DOM. 
+### 2.1 Patrón: Vanilla SPA
 
-*   **Rationale:** Minimizar la sobrecarga de dependencias (overhead) para validaciones rápidas de UX/UI.
-*   **Gestión de Vistas:** Implementada mediante un sistema de clases CSS `.view` y `.page-view` controlado por JavaScript. La visibilidad se alterna mediante la clase `.active`.
+- Estado centralizado en memoria (`invoices`, `participants`, `abmUsers`, `abmRoles`, `abmNotifications`).
+- Vistas con clases `.view` / `.page-view` y toggle `.active`.
+- Sin bundler; `index.html` + `version.js` + `app.js` + `styles.css`.
 
-### 2.2 Diagrama de Flujo de Datos
-1.  **Ingreso:** El usuario interactúa con un componente (Ej: Botón "Simular").
-2.  **Lógica:** Se dispara un evento que consulta el estado global (`invoices`, `participants`).
-3.  **Procesamiento:** Se ejecutan cálculos financieros basados en la configuración del ente.
-4.  **Renderizado:** Se inyecta HTML dinámico en el contenedor correspondiente (Ej: `#simulation-ticket`).
+### 2.2 Estructura de archivos
 
-### 2.3 Modelo Lógico de Datos (ER)
-Aunque no existe una DB física, el modelo lógico sigue esta estructura de relaciones:
-*   **Participante (1) : (N) Factura**: Un EGP o Proveedor puede estar asociado a múltiples facturas.
-*   **Participante (1) : (N) Usuario**: Un Ente tiene múltiples usuarios con distintos roles.
-*   **Rol (1) : (N) Usuario**: Los permisos se heredan del rol asignado.
-*   **Factura (1) : (1) Operación**: Una factura financiada genera un registro de operación único.
-
----
-
-## 3. Especificaciones del Frontend (Visual Stack)
-
-### 3.1 Sistema de Diseño y Tokens
-El archivo `styles.css` actúa como la única fuente de verdad para el diseño. 
-
-| Token | Valor | Propósito |
-| :--- | :--- | :--- |
-| `--atlas-primary` | `#901d2d` | Identidad corporativa, botones principales y headers. |
-| `--radius-lg` | `8px` | Consistencia en bordes de botones y inputs. |
-| `--shadow-lg` | `0 8px 24px rgba(0,0,0,0.1)` | Profundidad para modales y menús desplegables. |
-
-### 3.2 Componentes UI Reutilizables
-*   **Modales:** Sistema genérico que utiliza las funciones `openModal(id)` y `closeModal(id)`. Soporta variantes `modal-sm`, `modal-lg` y la clase `premium-modal` para flujos críticos como la simulación.
-*   **Tablas:** Estilizadas con la clase `.data-table`, incluyen hover effects y badges de estado dinámicos.
-*   **KPI Cards:** Diseñadas para mostrar métricas clave en el Dashboard con indicadores de tendencia (`.trend`).
-
----
-
-### 2.2 Estructura de Archivos
 ```text
 atlas-confirming-poc/
-├── index.html       # Punto de entrada único y estructura de vistas/modales.
-├── styles.css      # Sistema de diseño, tokens visuales y layouts.
-├── app.js          # Lógica de negocio, gestión de estado y renderizado dinámico.
-└── assets/         # Recursos estáticos (imágenes, iconos).
+├── index.html              # Vistas, modales, topbar con usuario y versión POC
+├── version.js              # Versión de iteración (actualizar en cada release)
+├── app.js                  # Lógica, máquina de estados, ABM, bulk upload
+├── styles.css              # Design tokens y layout
+└── assets/
+    ├── logo-banco-atlas.png
+    └── tecnico_v1.0.0 (1).md   # Este documento
 ```
 
+### 2.3 Flujo de datos
+
+1. Evento UI → consulta estado global.
+2. Reglas de negocio (estados, elegibilidad, simulación).
+3. `render*` inyecta filas en `<tbody>` o actualiza modales.
+
+### 2.4 Modelo lógico (sin DB)
+
+- **Participante (1) : (N) Factura**
+- **Participante (1) : (N) Usuario ABM** (`enteId`)
+- **Rol (1) : (N) permisos** (lista en objeto rol)
+- **Notificación** disparada por `estadoDisparador` de factura
+
 ---
 
-## 3. Configuración y Estilos (Frontend)
+## 3. Frontend (Visual Stack)
 
-### 3.1 Design Tokens (CSS Variables)
-Ubicados en el `:root` de `styles.css`. Se definieron para mantener consistencia con la marca Atlas:
-*   `--atlas-primary`: #901d2d (Color institucional).
-*   `--atlas-yellow-arrow`: #e4b012 (Acento).
-*   `--bg-main`: #fafafa (Fondo neutro).
+### 3.1 Design tokens (`styles.css`)
 
-### 3.2 Layout System
-Se utiliza una combinación de **CSS Grid** para la estructura principal (Sidebar + Main Content) y **Flexbox** para componentes internos (Cards, Form Rows).
+| Token | Valor | Uso |
+| :--- | :--- | :--- |
+| `--atlas-primary` | `#901d2d` | Marca, CTAs |
+| `--sidebar-width` | `268px` | Layout principal |
+| `--radius-lg` | `8px` | Inputs y botones |
+
+### 3.2 Componentes
+
+- **Modales:** `openModal(id)` / `closeModal(id)` — `modal-sm`, `modal-lg`, `premium-modal` (simulación).
+- **Tablas:** `.data-table`, badges `.status-*`, selección masiva en Confirming.
+- **Versión POC:** `.poc-version` en topbar (debajo del nombre de usuario) y `.login-poc-version` en pantalla de login.
+
+### 3.3 Dependencias CDN
+
+- Phosphor Icons, Chart.js (dashboard), SheetJS / XLSX (carga masiva).
 
 ---
 
-## 4. Gestión de Datos y Estado (Logic)
+## 4. Gestión de datos (Mock)
 
-### 4.1 Modelo de Datos (Mock Data)
-El archivo `app.js` inicializa el estado global de la aplicación. Estructuras principales:
+### 4.1 Factura (`invoices`)
 
-#### A. Invoices (Facturas)
-Representa las cuentas por cobrar cargadas en el sistema.
 ```javascript
 {
-    id: string,       // Nro. Factura
-    egp: string,      // Empresa Gran Pagador
-    prov: string,     // Proveedor
-    emision: date,    // ISO String
-    vto: date,        // ISO String
-    moneda: 'GS'|'USD',
+    id: string,
+    egp: string,
+    prov: string,
+    emision: string,      // ISO date YYYY-MM-DD
+    vto: string,
+    fechaPago: string,    // ISO; default = vto en alta
+    moneda: 'GS' | 'USD',
     monto: number,
-    estado: 'Pendiente'|'Financiada'|'Pagada'|'Mora'|'Bloqueada'|'Revertida'
+    estado: string        // ver §5.1
 }
 ```
 
-#### B. Participants (Entes)
-Define la configuración financiera de cada participante del ecosistema.
+### 4.2 Participante (`participants`)
+
 ```javascript
 {
     id: number,
-    tipo: 'EGP'|'Proveedor',
-    ruc: string,
-    razon: string,
-    email: string,
+    tipo: 'EGP' | 'Proveedor',
+    ruc, razon, email, telefono,
     monedas: string[],
-    lineaCredito: number,
-    tasaInteres: number, // TNA
-    tasaComision: number,
-    iva: number,
+    lineaCredito, tasaInteres, tasaComision, iva,
+    condiciones: string,
     clienteAtlas: boolean,
-    desembolsoAuto: boolean
+    desembolsoAuto: boolean   // EGP: auto → Pendiente desembolso; NO → Pendiente aprobación banco
 }
 ```
 
----
-
-## 5. Lógicas de Negocio y Algoritmos
-
-### 5.1 Algoritmo de Descuento (Confirming)
-Siguiendo las mejores prácticas de *Software Architecture: The Hard Parts*, el motor de cálculo está desacoplado de la UI. La lógica reside en `recalculateSimulation()`:
+### 4.3 Usuario ABM (`abmUsers`)
 
 ```javascript
-// Fórmula Financiera Aplicada
-Interés = (Monto * (TNA / 100) * Días) / 365
-Comisión = Monto * (TasaComisión / 100)
-IVA = (Interés + Comisión) * (TasaIVA / 100)
-Monto_Neto = Monto - Interés - Comisión - IVA
+{ id, nombre, apellido, email, telefono, enteId, documento? }
 ```
 
-*   **Variables de Entrada:** `montoAdelanto` (usuario), `diasAdelanto` (calculado), `egpConfig` (datos del participante).
-*   **Validación de Límites:** El sistema impide adelantar un monto superior al nominal de la factura original.
+### 4.4 Rol ABM (`abmRoles`)
 
-### 5.2 Gestión de Estados de Factura
-El ciclo de vida de una factura en el portal está definido por los siguientes estados:
-1.  **Pendiente:** Cargada pero no operada.
-2.  **Financiada:** Adelanto ejecutado con éxito.
-3.  **Mora:** Fecha de vencimiento superada sin pago del EGP.
-4.  **Pagada:** Ciclo completado.
-5.  **Bloqueada:** Restringida por el Banco para operaciones.
+```javascript
+{ id, dominio: 'Banco'|'EGP'|'Proveedor', rol: string, permisos: string[] }
+```
 
----
+### 4.5 Notificación ABM (`abmNotifications`)
 
-## 6. Diseño de APIs (Contratos REST)
-Inspirado en *Design of Web APIs* de Arnaud Lauret, se proponen los siguientes contratos para la futura integración con el Backend:
-
-### 6.1 Facturas (Invoices)
-*   `GET /api/v1/invoices`: Lista facturas con soporte de filtros (`status`, `search`).
-*   `POST /api/v1/invoices`: Carga individual de documentos.
-*   `POST /api/v1/invoices/{id}/simulate`: Retorna el cálculo de descuento sin persistir.
-*   `POST /api/v1/invoices/{id}/confirm-advance`: Ejecuta la operación de Confirming.
-
-### 6.2 Participantes (Entities)
-*   `GET /api/v1/participants`: Recupera lista de EGPs y Proveedores.
-*   `PUT /api/v1/participants/{id}`: Actualiza condiciones financieras (TNA, Comisión).
+```javascript
+{ id, nombre, estadoDisparador, dominio, rol, emails, mensaje, activa }
+```
 
 ---
 
-## 7. Guía de Implementación Técnica
+## 5. Lógicas de negocio
 
-### 7.1 Gestión de Eventos en JS
-Se utiliza **Event Delegation** para optimizar el rendimiento:
-*   Los botones de "Simular" y "Editar" en tablas dinámicas se manejan mediante funciones inyectadas directamente (`onclick`) por simplicidad en esta fase, aunque se recomienda migrar a `addEventListener` global en producción.
+### 5.1 Máquina de estados de factura (v2)
 
-### 7.2 Integración de Gráficos (Chart.js)
-El `mainChartInstance` se destruye y recrea cada vez que se navega al Dashboard para asegurar que los datos estén actualizados y evitar fugas de memoria (memory leaks).
+Estados vigentes en la POC (no existen Pagada / Mora / Revertida del doc 1.0.0):
+
+| Estado | Uso |
+| :--- | :--- |
+| Pendiente | Carga ERP / alta; habilitar o bloquear (EGP) |
+| Habilitada | Lista para simular adelanto |
+| Bloqueada | Restringida |
+| Pendiente aprobación EGP | Post-simulación |
+| Pendiente aprobación banco | EGP sin desembolso auto (MVP2) |
+| Pendiente de desembolso | CORE BANKING |
+| Financiada | Desembolso OK |
+| Vencida | Vencimiento superado |
+| NO ELEGIBLE | Fecha de pago &lt; 30 días desde hoy |
+
+**Pestañas Confirming:**
+
+- **Vigentes:** operativos (incl. Pendiente aprobación banco).
+- **No vigentes:** Financiada, Vencida.
+- **No operables:** NO ELEGIBLE.
+
+**Transiciones destacadas:**
+
+- Simular (individual o masivo ≥2 Habilitada, misma combinatoria EGP/Proveedor/Moneda) → Pendiente aprobación EGP.
+- EGP aprueba + `desembolsoAuto` → Pendiente de desembolso → (timer) Financiada o error → Pendiente aprobación banco.
+- EGP rechaza con motivo → actualiza `fechaPago` / `vto`; elegibilidad 30 días → Habilitada o NO ELEGIBLE.
+- EGP rechaza sin motivo / banco rechaza → Bloqueada.
+
+### 5.2 Fecha de pago y elegibilidad
+
+- Constante `PAYMENT_DATE_MIN_DAYS = 30`.
+- `isPaymentDateEligible(fechaPago)`: días calendario desde hoy ≥ 30.
+- Alta individual, bulk y rechazo EGP con motivo aplican `resolveInitialInvoiceState()`.
+- Tab **No operables:** botón **Editar fecha de pago**; si ≥ 30 días → **Habilitada**.
+
+### 5.3 Acciones masivas Confirming
+
+- **Habilitar:** Pendiente o Bloqueada → Habilitada.
+- **Bloquear:** Pendiente o Habilitada → Bloqueada.
+- **Simular:** ≥2 Habilitada, mismo EGP, proveedor y moneda.
+
+### 5.4 Motor de simulación
+
+`recalculateSimulation()` — interés, comisión, IVA, neto (TNA, días, config EGP).
+
+### 5.5 Carga masiva
+
+- Template Excel: columnas incl. **Fecha de pago** (opcional, default vencimiento).
+- `processBulkInvoiceRows` + `normalizeBulkRow`; estados iniciales solo Pendiente / Habilitada / Bloqueada + regla 30 días.
+
+### 5.6 ABM
+
+- Pestañas: Entes, Usuarios, Roles, Notificaciones.
+- CRUD simulado en memoria; modales alta/edición para entes, usuarios, roles y notificaciones.
+- Eliminar factura: delegación en `#invoices-tbody` + `data-invoice-id` (evita rotura de `onclick` con IDs con guiones).
+
+### 5.7 Contexto de ente
+
+- Selector topbar **Estás operando para el ente** filtra Confirming y muestra panel informativo.
 
 ---
 
-## 8. Seguridad y Mejores Prácticas
-1.  **Sanitización:** Todos los inputs de búsqueda pasan por una validación básica antes de filtrar los arreglos de datos.
-2.  **UI Feedback:** Uso de `showCustomAlert` y `showCustomConfirm` para todas las acciones destructivas (Ej: Revertir operación).
-3.  **Responsividad:** El CSS incluye Media Queries para ocultar el sidebar y optimizar la visualización en dispositivos móviles (Breakpoints: 720px y 900px).
+## 6. APIs propuestas (futuro backend)
+
+Sin cambio sustancial respecto a 1.0.0; ampliar con:
+
+- `PATCH /api/v1/invoices/{id}/payment-date`
+- `POST /api/v1/invoices/bulk`
+- `POST /api/v1/invoices/bulk/simulate`
 
 ---
 
-## 9. Guía de Estilo y Convenciones
-Siguiendo *The Elements of Style*, el código y la documentación deben ser:
-*   **Conciso:** Evitar comentarios redundantes que el código ya explica.
-*   **Consistente:** Uso de `camelCase` para variables JS y `kebab-case` para clases CSS.
-*   **Descriptivo:** Nombres de funciones que inicien con verbos de acción (`render`, `submit`, `open`, `close`).
+## 7. Implementación JS
+
+- **Versión UI:** `applyPocVersionLabels()` en `DOMContentLoaded` y post-login; elementos `[data-poc-version]`.
+- **Usuario mostrado:** `syncLoggedUserDisplayFromLogin()` desde campo `#username`.
+- **Event delegation:** eliminación de facturas en grilla.
+- **Chart.js:** destruir/recrear instancia al entrar al dashboard.
 
 ---
 
-## 10. Glosario Técnico
-*   **EGP:** Empresa Gran Pagador. Cliente corporativo que origina las facturas.
-*   **Confirming:** Servicio financiero de pago a proveedores con opción de adelanto.
-*   **TNA:** Tasa Nominal Anual. Base para el cálculo de intereses de descuento.
-*   **Vanilla JS:** JavaScript puro, sin librerías externas de framework.
+## 8. Seguridad y UX (POC)
+
+- Confirmaciones en acciones destructivas.
+- Sanitización básica en atributos HTML (`invoiceIdToHtmlAttr`).
+- Responsive: sidebar colapsable &lt; 900px.
 
 ---
 
+## 9. Convenciones
+
+- `camelCase` en JS; `kebab-case` en CSS.
+- Ramas feature: `cursor/<descripcion>-d4a4`.
+- **Merge obligatorio a `master`** tras cada entrega para publicar en GitHub Pages.
+
 ---
-*Documento generado por el equipo de Arquitectura de Software - Banco Atlas POC.*
+
+## 10. Glosario
+
+- **EGP:** Empresa Gran Pagador.
+- **Confirming:** Adelanto a proveedores sobre facturas.
+- **TNA:** Tasa nominal anual.
+- **POC:** Proof of Concept; versión visible `vX.Y.Z`.
+
+---
+
+## 11. Versionado y proceso de release (obligatorio)
+
+### 11.1 Esquema `vMAJOR.MINOR.PATCH`
+
+| Incremento | Cuándo | Ejemplo |
+| :--- | :--- | :--- |
+| **MAJOR** | Cambio de modelo, estados, flujos o breaking UX | 1.0.0 → 2.0.0 (máquina de estados nueva) |
+| **MINOR** | Funcionalidad nueva visible | 2.0.0 → 2.1.0 (nueva pestaña ABM) |
+| **PATCH** | Correcciones, textos, estilos, solo documentación | 2.0.0 → 2.0.1 |
+
+### 11.2 Checklist en cada cambio
+
+1. Actualizar `version.js` (`POC_APP_VERSION`, `POC_APP_VERSION_DATE`).
+2. Actualizar este documento: cabecera, §5 si aplica, y entrada en **§12 Changelog**.
+3. Commit descriptivo en rama `cursor/...-d4a4`.
+4. **Merge a `master` y `git push origin master`** (despliegue automático Pages).
+
+### 11.3 Ubicación en UI
+
+- Login: pie de tarjeta (`data-poc-version`).
+- App: topbar, debajo de `#logged-user-display` (`data-poc-version`).
+
+---
+
+## 12. Changelog
+
+### v2.0.0 — 2026-06-02
+
+Consolidación de iteraciones desde 2026-05-14 (doc 1.0.0):
+
+- **ABM:** pestañas Entes / Usuarios / Roles / Notificaciones; iconos editar/eliminar; modales Nuevo/Editar usuario y rol; notificaciones por estado disparador.
+- **Confirming:** panel ente; aprobar/rechazar desembolso (banco); selección múltiple; Habilitar/Bloquear/Simular masivo; estilo botones bulk (rojo Atlas / deshabilitado gris).
+- **Facturas:** eliminar por fila (columna X); carga masiva Excel/CSV + template; corrección delegación click eliminar.
+- **Máquina de estados:** flujo normal EGP + reversión; pestañas Vigentes / No vigentes / No operables; simular masivo; CORE BANKING simulado; mock ≥2 facturas por estado.
+- **Fecha de pago:** campo en alta; regla 30 días → NO ELEGIBLE; edición en No operables; columna en grilla y bulk.
+- **Versión POC:** `version.js` + etiqueta cross-plataforma en login y topbar; sincronización nombre usuario logueado.
+- **Proceso:** documentación técnica actualizada; merge continuo a `master`.
+
+### v1.0.0 — 2026-05-14
+
+- Release inicial documentada: Vanilla SPA, mock facturas/participantes, simulación, estados simplificados (Pendiente, Financiada, Pagada, Mora, Bloqueada, Revertida), dashboard Chart.js.
+
+---
+
+*Documento mantenido por el equipo POC Banco Atlas — actualizar en cada release.*
