@@ -119,6 +119,7 @@ let abmUsers = [
     { id: 3, nombre: 'Laura', apellido: 'Benítez', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4 },
 ];
 let nextAbmUserId = 4;
+let editingAbmUserId = null;
 
 let abmRoles = [
     { id: 1, dominio: 'Banco', rol: 'ADMIN', permisos: ['Ver ABM', 'Editar ABM', 'Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Aprobar Desembolsos', 'Revertir Adelantos'] },
@@ -126,6 +127,7 @@ let abmRoles = [
     { id: 3, dominio: 'Proveedor', rol: 'Operador', permisos: ['Ver Confirming', 'Ver Facturas'] },
 ];
 let nextAbmRoleId = 4;
+let editingAbmRoleId = null;
 
 // Notificaciones del sistema (disparadas por avance en la máquina de estados)
 let abmNotifications = [
@@ -531,7 +533,7 @@ function renderAbmUsers() {
             <td><strong>${enteRazon}</strong></td>
             <td>${tipoBadge}</td>
             <td class="abm-actions-cell">
-                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="showCustomAlert('Edición de usuario: demostración.', 'Usuario')" title="Editar usuario" aria-label="Editar usuario">
+                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openUserModal(${u.id})" title="Editar usuario" aria-label="Editar usuario">
                     <i class="ph ph-pencil-simple"></i>
                 </button>
                 <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmUser(${u.id})" title="Eliminar usuario" aria-label="Eliminar usuario">
@@ -558,7 +560,7 @@ function renderAbmRoles() {
             <td><strong>${r.rol}</strong></td>
             <td style="font-size:12px;color:#6b7280;max-width:360px;">${summary}</td>
             <td class="abm-actions-cell">
-                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="showCustomAlert('Edición de rol: demostración.', 'Rol')" title="Editar rol" aria-label="Editar rol">
+                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openRoleModal(${r.id})" title="Editar rol" aria-label="Editar rol">
                     <i class="ph ph-pencil-simple"></i>
                 </button>
                 <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmRole(${r.id})" title="Eliminar rol" aria-label="Eliminar rol">
@@ -1669,16 +1671,32 @@ function populateUserEnteSelect() {
     if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
-function openUserModal() {
+function openUserModal(id = null) {
+    editingAbmUserId = id;
     const form = document.getElementById('user-form');
     if (form) form.reset();
     populateUserEnteSelect();
+    const title = document.getElementById('user-modal-title');
+    if (id != null) {
+        const u = abmUsers.find(x => x.id === id);
+        if (!u) return;
+        if (title) title.textContent = 'Editar Usuario';
+        document.getElementById('nu-nombre').value = u.nombre;
+        document.getElementById('nu-apellido').value = u.apellido;
+        document.getElementById('nu-doc').value = u.documento || '';
+        document.getElementById('nu-telefono').value = u.telefono;
+        document.getElementById('nu-email').value = u.email;
+        document.getElementById('nu-ente-id').value = String(u.enteId);
+    } else {
+        if (title) title.textContent = 'Nuevo Usuario';
+    }
     openModal('user-modal');
 }
 
 function submitUserModal() {
     const nombre = document.getElementById('nu-nombre').value.trim();
     const apellido = document.getElementById('nu-apellido').value.trim();
+    const documento = document.getElementById('nu-doc').value.trim();
     const telefono = document.getElementById('nu-telefono').value.trim();
     const email = document.getElementById('nu-email').value.trim();
     const enteId = document.getElementById('nu-ente-id').value;
@@ -1687,27 +1705,53 @@ function submitUserModal() {
         return;
     }
     const ente = participants.find(p => String(p.id) === enteId);
-    closeModal('user-modal');
-    abmUsers.push({
-        id: nextAbmUserId++,
+    const payload = {
         nombre,
         apellido,
         email,
         telefono,
         enteId: parseInt(enteId, 10),
-    });
+        documento,
+    };
+    closeModal('user-modal');
+    if (editingAbmUserId != null) {
+        const idx = abmUsers.findIndex(x => x.id === editingAbmUserId);
+        if (idx >= 0) abmUsers[idx] = { ...abmUsers[idx], ...payload };
+        showCustomAlert(
+            `Usuario "${nombre} ${apellido}" actualizado correctamente.`,
+            'Usuario actualizado'
+        );
+    } else {
+        abmUsers.push({ id: nextAbmUserId++, ...payload });
+        showCustomAlert(
+            `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} guardado correctamente.`,
+            'Usuario registrado'
+        );
+    }
+    editingAbmUserId = null;
     renderAbmUsers();
     switchAbmTab('usuarios');
-    showCustomAlert(
-        `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} guardado correctamente (simulación).`,
-        'Usuario registrado'
-    );
 }
 
-function openRoleModal() {
+function openRoleModal(id = null) {
+    editingAbmRoleId = id;
     const form = document.getElementById('role-form');
     if (form) form.reset();
     document.querySelectorAll('#role-form input[name="role-perm"]').forEach(cb => { cb.checked = false; });
+    const title = document.getElementById('role-modal-title');
+    if (id != null) {
+        const r = abmRoles.find(x => x.id === id);
+        if (!r) return;
+        if (title) title.textContent = 'Editar Rol';
+        document.getElementById('role-dominio').value = r.dominio;
+        document.getElementById('role-nombre-rol').value = r.rol;
+        const permSet = new Set(r.permisos || []);
+        document.querySelectorAll('#role-form input[name="role-perm"]').forEach(cb => {
+            cb.checked = permSet.has(cb.value);
+        });
+    } else {
+        if (title) title.textContent = 'Nuevo Rol';
+    }
     openModal('role-modal');
 }
 
@@ -1719,19 +1763,22 @@ function submitRoleModal() {
         return;
     }
     const perms = [...document.querySelectorAll('#role-form input[name="role-perm"]:checked')].map(c => c.value);
+    const payload = { dominio, rol, permisos: perms };
     closeModal('role-modal');
-    abmRoles.push({
-        id: nextAbmRoleId++,
-        dominio,
-        rol,
-        permisos: perms,
-    });
+    if (editingAbmRoleId != null) {
+        const idx = abmRoles.findIndex(x => x.id === editingAbmRoleId);
+        if (idx >= 0) abmRoles[idx] = { ...abmRoles[idx], ...payload };
+        showCustomAlert(`Rol "${rol}" en dominio "${dominio}" actualizado (${perms.length} permiso(s)).`, 'Rol actualizado');
+    } else {
+        abmRoles.push({ id: nextAbmRoleId++, ...payload });
+        showCustomAlert(
+            `Rol "${rol}" en dominio "${dominio}" con ${perms.length} permiso(s) asignado(s) guardado correctamente.`,
+            'Rol registrado'
+        );
+    }
+    editingAbmRoleId = null;
     renderAbmRoles();
     switchAbmTab('roles');
-    showCustomAlert(
-        `Rol "${rol}" en dominio "${dominio}" con ${perms.length} permiso(s) asignado(s) guardado correctamente (simulación).`,
-        'Rol registrado'
-    );
 }
 
 
