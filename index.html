@@ -312,6 +312,25 @@
 
                     <div id="abm-panel-entes" class="abm-tab-panel active" role="tabpanel" aria-labelledby="abm-tab-entes">
                         <p class="abm-panel-caption">Entes registrados</p>
+                        <div class="abm-filters">
+                            <div class="filters-row filters-row-main">
+                                <div class="filter-field filter-field--search">
+                                    <label class="filter-field-label" for="filter-entes-search">Buscar (RUC / Razón Social)</label>
+                                    <div class="search-box">
+                                        <i class="ph ph-magnifying-glass"></i>
+                                        <input type="text" id="filter-entes-search" placeholder="RUC o razón social...">
+                                    </div>
+                                </div>
+                                <div class="filter-field filter-field--status">
+                                    <label class="filter-field-label" for="filter-entes-cliente-atlas">Cliente Atlas</label>
+                                    <select id="filter-entes-cliente-atlas" class="select-input">
+                                        <option value="all">Ambos</option>
+                                        <option value="si">Sí</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
@@ -336,12 +355,32 @@
 
                     <div id="abm-panel-usuarios" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-usuarios">
                         <p class="abm-panel-caption">Usuarios del portal</p>
+                        <div class="abm-filters">
+                            <div class="filters-row filters-row-main">
+                                <div class="filter-field filter-field--search">
+                                    <label class="filter-field-label" for="filter-usuarios-ente">Buscar ente (RUC / Razón Social)</label>
+                                    <div class="search-box">
+                                        <i class="ph ph-magnifying-glass"></i>
+                                        <input type="text" id="filter-usuarios-ente" placeholder="RUC o razón social del ente...">
+                                    </div>
+                                </div>
+                                <div class="filter-field filter-field--status">
+                                    <label class="filter-field-label" for="filter-usuarios-cedula">Cédula de Identidad</label>
+                                    <input type="text" id="filter-usuarios-cedula" class="input-text" placeholder="Nro. de cédula">
+                                </div>
+                                <div class="filter-field filter-field--status">
+                                    <label class="filter-field-label" for="filter-usuarios-apellido">Apellido</label>
+                                    <input type="text" id="filter-usuarios-apellido" class="input-text" placeholder="Apellido">
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
                                         <th>Apellido</th>
+                                        <th>Cédula de Identidad</th>
                                         <th>Email</th>
                                         <th>Teléfono</th>
                                         <th>Ente asociado</th>
@@ -357,6 +396,28 @@
 
                     <div id="abm-panel-roles" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-roles">
                         <p class="abm-panel-caption">Roles y permisos</p>
+                        <div class="abm-filters">
+                            <div class="filters-row filters-row-main">
+                                <div class="filter-field filter-field--status">
+                                    <label class="filter-field-label" for="filter-roles-dominio">Dominio</label>
+                                    <select id="filter-roles-dominio" class="select-input">
+                                        <option value="all">Todos</option>
+                                        <option value="Banco">Banco</option>
+                                        <option value="EGP">EGP</option>
+                                        <option value="Proveedor">Proveedor</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field filter-field--status">
+                                    <label class="filter-field-label" for="filter-roles-rol">Rol</label>
+                                    <select id="filter-roles-rol" class="select-input">
+                                        <option value="all">Todos</option>
+                                        <option value="ADMIN">ADMIN</option>
+                                        <option value="Supervisor">Supervisor</option>
+                                        <option value="Operador">Operador</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
@@ -375,6 +436,17 @@
 
                     <div id="abm-panel-notificaciones" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-notificaciones">
                         <p class="abm-panel-caption">Notificaciones por avance en la máquina de estados (dominio / rol / emails)</p>
+                        <div class="abm-filters">
+                            <div class="filters-row filters-row-main">
+                                <div class="filter-field filter-field--search">
+                                    <label class="filter-field-label" for="filter-notificaciones-nombre">Buscar por nombre</label>
+                                    <div class="search-box">
+                                        <i class="ph ph-magnifying-glass"></i>
+                                        <input type="text" id="filter-notificaciones-nombre" placeholder="Nombre de la notificación...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>

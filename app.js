@@ -187,9 +187,9 @@ let nextParticipantId = 9;
 let editingParticipantId = null;
 
 let abmUsers = [
-    { id: 1, nombre: 'Ana', apellido: 'Gómez', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1 },
-    { id: 2, nombre: 'Carlos', apellido: 'Vera', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2 },
-    { id: 3, nombre: 'Laura', apellido: 'Benítez', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4 },
+    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1 },
+    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2 },
+    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4 },
 ];
 let nextAbmUserId = 4;
 let editingAbmUserId = null;
@@ -626,12 +626,98 @@ function getAbmVisualizationDefaults(existing) {
     };
 }
 
+// ====== ABM — filtros de búsqueda ======
+
+function normalizeAbmSearchText(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function abmTextIncludes(haystack, needle) {
+    const q = normalizeAbmSearchText(needle);
+    if (!q) return true;
+    return normalizeAbmSearchText(haystack).includes(q);
+}
+
+function getAbmEntesFilterValues() {
+    return {
+        search: document.getElementById('filter-entes-search')?.value?.trim() || '',
+        clienteAtlas: document.getElementById('filter-entes-cliente-atlas')?.value || 'all',
+    };
+}
+
+function participantMatchesEntesFilters(p) {
+    const { search, clienteAtlas } = getAbmEntesFilterValues();
+    const matchSearch = !search || abmTextIncludes(p.ruc, search) || abmTextIncludes(p.razon, search);
+    let matchAtlas = true;
+    if (clienteAtlas === 'si') matchAtlas = p.clienteAtlas === true;
+    else if (clienteAtlas === 'no') matchAtlas = !p.clienteAtlas;
+    return matchSearch && matchAtlas;
+}
+
+function getUserAssociatedEnte(u) {
+    return participants.find(p => p.id === u.enteId) || null;
+}
+
+function getAbmUsuariosFilterValues() {
+    return {
+        enteSearch: document.getElementById('filter-usuarios-ente')?.value?.trim() || '',
+        cedula: document.getElementById('filter-usuarios-cedula')?.value?.trim() || '',
+        apellido: document.getElementById('filter-usuarios-apellido')?.value?.trim() || '',
+    };
+}
+
+function userMatchesUsuariosFilters(u) {
+    const { enteSearch, cedula, apellido } = getAbmUsuariosFilterValues();
+    const ente = getUserAssociatedEnte(u);
+    const matchEnte = !enteSearch || (ente && (
+        abmTextIncludes(ente.ruc, enteSearch) || abmTextIncludes(ente.razon, enteSearch)
+    ));
+    const matchCedula = !cedula || abmTextIncludes(u.documento || '', cedula);
+    const matchApellido = !apellido || abmTextIncludes(u.apellido, apellido);
+    return matchEnte && matchCedula && matchApellido;
+}
+
+function getAbmRolesFilterValues() {
+    return {
+        dominio: document.getElementById('filter-roles-dominio')?.value || 'all',
+        rol: document.getElementById('filter-roles-rol')?.value || 'all',
+    };
+}
+
+function roleMatchesRolesFilters(r) {
+    const { dominio, rol } = getAbmRolesFilterValues();
+    const matchDominio = dominio === 'all' || r.dominio === dominio;
+    const matchRol = rol === 'all' || r.rol === rol;
+    return matchDominio && matchRol;
+}
+
+function getAbmNotificacionesFilterValues() {
+    return {
+        nombre: document.getElementById('filter-notificaciones-nombre')?.value?.trim() || '',
+    };
+}
+
+function notificationMatchesNotificacionesFilters(n) {
+    const { nombre } = getAbmNotificacionesFilterValues();
+    return !nombre || abmTextIncludes(n.nombre, nombre);
+}
+
 function renderParticipants() {
     const tbody = document.getElementById('participants-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    participants.forEach(p => {
+    const filtered = participants.filter(participantMatchesEntesFilters);
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron entes con los filtros aplicados.</div></td></tr>';
+        return;
+    }
+
+    filtered.forEach(p => {
         const monedasHtml = p.monedas.map(m =>
             `<span class="badge-moneda ${m.toLowerCase()}">${m}</span>`
         ).join('');
@@ -691,8 +777,15 @@ function renderAbmUsers() {
     const tbody = document.getElementById('abm-users-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    abmUsers.forEach(u => {
-        const ente = participants.find(p => p.id === u.enteId);
+
+    const filtered = abmUsers.filter(userMatchesUsuariosFilters);
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        return;
+    }
+
+    filtered.forEach(u => {
+        const ente = getUserAssociatedEnte(u);
         const enteRazon = ente ? ente.razon : '—';
         const tipoBadge = !ente ? '—' : (ente.tipo === 'EGP'
             ? '<span class="badge-egp">EGP</span>'
@@ -701,6 +794,7 @@ function renderAbmUsers() {
         tr.innerHTML = `
             <td>${u.nombre}</td>
             <td>${u.apellido}</td>
+            <td style="font-size:13px;">${u.documento || '—'}</td>
             <td style="font-size:13px;color:#6b7280;">${u.email}</td>
             <td>${u.telefono}</td>
             <td><strong>${enteRazon}</strong></td>
@@ -722,7 +816,14 @@ function renderAbmRoles() {
     const tbody = document.getElementById('abm-roles-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    abmRoles.forEach(r => {
+
+    const filtered = abmRoles.filter(roleMatchesRolesFilters);
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="table-empty">No se encontraron roles con los filtros aplicados.</div></td></tr>';
+        return;
+    }
+
+    filtered.forEach(r => {
         const n = r.permisos.length;
         const summary = n === 0
             ? 'Sin permisos'
@@ -749,7 +850,14 @@ function renderAbmNotifications() {
     const tbody = document.getElementById('abm-notifications-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    abmNotifications.forEach(n => {
+
+    const filtered = abmNotifications.filter(notificationMatchesNotificacionesFilters);
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">No se encontraron notificaciones con los filtros aplicados.</div></td></tr>';
+        return;
+    }
+
+    filtered.forEach(n => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${n.nombre}</strong></td>
@@ -845,6 +953,15 @@ function deleteAbmNotification(id) {
 document.querySelectorAll('.abm-tab').forEach(btn => {
     btn.addEventListener('click', () => switchAbmTab(btn.dataset.abmTab));
 });
+
+document.getElementById('filter-entes-search')?.addEventListener('input', renderParticipants);
+document.getElementById('filter-entes-cliente-atlas')?.addEventListener('change', renderParticipants);
+document.getElementById('filter-usuarios-ente')?.addEventListener('input', renderAbmUsers);
+document.getElementById('filter-usuarios-cedula')?.addEventListener('input', renderAbmUsers);
+document.getElementById('filter-usuarios-apellido')?.addEventListener('input', renderAbmUsers);
+document.getElementById('filter-roles-dominio')?.addEventListener('change', renderAbmRoles);
+document.getElementById('filter-roles-rol')?.addEventListener('change', renderAbmRoles);
+document.getElementById('filter-notificaciones-nombre')?.addEventListener('input', renderAbmNotifications);
 
 document.querySelectorAll('.confirming-invoice-tab').forEach(btn => {
     btn.addEventListener('click', () => switchInvoiceViewTab(btn.dataset.invoiceTab));

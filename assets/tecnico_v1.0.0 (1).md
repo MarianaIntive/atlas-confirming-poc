@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.1.0 (`v2.1.0`)  
+**Versión documento / POC:** 2.2.0 (`v2.2.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 2 de Junio, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -262,6 +262,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.2.0 — 2026-06-02
+
+- **ABM filtros:** Entes (RUC/razón social, Cliente Atlas Sí/No/Ambos); Usuarios (ente RUC/razón, cédula, apellido + columna cédula); Roles (dominio, rol); Notificaciones (nombre).
 
 ### v2.1.0 — 2026-06-02
 

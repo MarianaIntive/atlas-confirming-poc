@@ -1624,6 +1624,43 @@ textarea.input-text {
     font-family: var(--font-heading);
 }
 
+.abm-filters {
+    margin-bottom: 16px;
+}
+.abm-filters .filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    align-items: flex-end;
+}
+.abm-filters .filter-field {
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+.abm-filters .filter-field--search {
+    flex: 2 1 220px;
+    min-width: 200px;
+}
+.abm-filters .filter-field--status .select-input,
+.abm-filters .filter-field--status .input-text {
+    width: 100%;
+}
+.abm-filters .search-box {
+    position: relative;
+}
+.abm-filters .search-box i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+.abm-filters .search-box input {
+    width: 100%;
+    padding-left: 32px;
+}
+
 .abm-add-dropdown {
     position: relative;
 }
