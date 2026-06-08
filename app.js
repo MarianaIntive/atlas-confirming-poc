@@ -192,9 +192,9 @@ const ABM_USER_STATES = {
 };
 
 let abmUsers = [
-    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, estado: ABM_USER_STATES.AUTORIZADO },
-    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION },
-    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, estado: ABM_USER_STATES.AUTORIZADO },
+    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 2, estado: ABM_USER_STATES.AUTORIZADO },
+    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, rolId: 2, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION },
+    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, rolId: 3, estado: ABM_USER_STATES.AUTORIZADO },
 ];
 abmUsers.forEach(u => {
     if (!u.estado) u.estado = ABM_USER_STATES.PENDIENTE_AUTORIZACION;
@@ -209,6 +209,10 @@ let abmRoles = [
 ];
 let nextAbmRoleId = 4;
 let editingAbmRoleId = null;
+
+abmUsers.forEach(u => {
+    if (u.rolId == null && abmRoles.length > 0) u.rolId = abmRoles[0].id;
+});
 
 // Notificaciones del sistema (disparadas por avance en la máquina de estados)
 let abmNotifications = [
@@ -670,6 +674,32 @@ function getUserAssociatedEnte(u) {
     return participants.find(p => p.id === u.enteId) || null;
 }
 
+function getAbmRoleById(roleId) {
+    return abmRoles.find(r => r.id === roleId) || null;
+}
+
+function getAbmRoleLabel(roleId) {
+    const r = getAbmRoleById(roleId);
+    return r ? `${r.rol} (${r.dominio})` : '—';
+}
+
+function populateUserRoleSelect(selectedId = '') {
+    const sel = document.getElementById('nu-rol-id');
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Seleccione un rol...</option>';
+    [...abmRoles]
+        .sort((a, b) => `${a.dominio} ${a.rol}`.localeCompare(`${b.dominio} ${b.rol}`, 'es'))
+        .forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = String(r.id);
+            opt.textContent = `${r.rol} (${r.dominio})`;
+            sel.appendChild(opt);
+        });
+    const target = selectedId !== '' && selectedId != null ? String(selectedId) : prev;
+    if (target && [...sel.options].some(o => o.value === target)) sel.value = target;
+}
+
 function getAbmUsuariosFilterValues() {
     return {
         enteSearch: document.getElementById('filter-usuarios-ente')?.value?.trim() || '',
@@ -797,7 +827,7 @@ function renderAbmUsers() {
 
     const filtered = abmUsers.filter(userMatchesUsuariosFilters);
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
         return;
     }
 
@@ -809,6 +839,7 @@ function renderAbmUsers() {
             : '<span class="badge-proveedor">Proveedor</span>');
         const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
         const estadoBadge = `<span class="status-badge ${abmUserEstadoBadgeClass(userEstado)}">${userEstado}</span>`;
+        const rolLabel = getAbmRoleLabel(u.rolId);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${u.nombre}</td>
@@ -818,6 +849,7 @@ function renderAbmUsers() {
             <td>${u.telefono}</td>
             <td><strong>${enteRazon}</strong></td>
             <td>${tipoBadge}</td>
+            <td><strong>${rolLabel}</strong></td>
             <td>${estadoBadge}</td>
             <td class="abm-actions-cell">
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openUserModal(${u.id})" title="Editar usuario" aria-label="Editar usuario">
@@ -2049,6 +2081,7 @@ function openUserModal(id = null) {
     const form = document.getElementById('user-form');
     if (form) form.reset();
     populateUserEnteSelect();
+    populateUserRoleSelect();
     const title = document.getElementById('user-modal-title');
     if (id != null) {
         const u = abmUsers.find(x => x.id === id);
@@ -2060,6 +2093,7 @@ function openUserModal(id = null) {
         document.getElementById('nu-telefono').value = u.telefono;
         document.getElementById('nu-email').value = u.email;
         document.getElementById('nu-ente-id').value = String(u.enteId);
+        populateUserRoleSelect(u.rolId);
     } else {
         if (title) title.textContent = 'Nuevo Usuario';
     }
@@ -2073,17 +2107,20 @@ function submitUserModal() {
     const telefono = document.getElementById('nu-telefono').value.trim();
     const email = document.getElementById('nu-email').value.trim();
     const enteId = document.getElementById('nu-ente-id').value;
-    if (!nombre || !apellido || !telefono || !email || !enteId) {
-        showCustomAlert('Complete los campos obligatorios (nombre, apellido, teléfono, correo y ente asociado).', 'Datos incompletos');
+    const rolId = document.getElementById('nu-rol-id').value;
+    if (!nombre || !apellido || !telefono || !email || !enteId || !rolId) {
+        showCustomAlert('Complete los campos obligatorios (nombre, apellido, teléfono, correo, ente asociado y rol).', 'Datos incompletos');
         return;
     }
     const ente = participants.find(p => String(p.id) === enteId);
+    const rol = getAbmRoleById(parseInt(rolId, 10));
     const payload = {
         nombre,
         apellido,
         email,
         telefono,
         enteId: parseInt(enteId, 10),
+        rolId: parseInt(rolId, 10),
         documento,
     };
     closeModal('user-modal');
@@ -2101,7 +2138,7 @@ function submitUserModal() {
             estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION,
         });
         showCustomAlert(
-            `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} guardado correctamente.`,
+            `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} con rol ${rol ? getAbmRoleLabel(rol.id) : '—'} guardado correctamente.`,
             'Usuario registrado'
         );
     }
