@@ -343,6 +343,7 @@
                                         <th>Línea de Crédito</th>
                                         <th>TNA %</th>
                                         <th>Cliente Atlas</th>
+                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -374,9 +375,10 @@
                                 <div class="filter-field filter-field--status">
                                     <label class="filter-field-label" for="filter-usuarios-estado">Estado</label>
                                     <select id="filter-usuarios-estado" class="select-input">
-                                        <option value="all">Ambos</option>
+                                        <option value="all">Todos</option>
                                         <option value="Pendiente de Autorización">Pendiente de Autorización</option>
                                         <option value="Autorizado">Autorizado</option>
+                                        <option value="Rechazado">Rechazado</option>
                                     </select>
                                 </div>
                             </div>
@@ -394,6 +396,7 @@
                                         <th>Tipo ente</th>
                                         <th>Rol</th>
                                         <th>Estado</th>
+                                        <th>Acceso</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -965,6 +968,36 @@
             </div>
             <div class="modal-body" id="abm-view-modal-body">
                 <!-- Se inyecta por JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestionar autorización de usuario -->
+    <div id="user-auth-modal" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Gestionar autorización</h3>
+                <button class="btn-close" onclick="closeModal('user-auth-modal')"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="user-auth-summary" class="user-auth-summary"></div>
+                <p class="abm-panel-caption" style="margin-bottom:12px">Seleccione el nuevo estado de autorización:</p>
+                <div class="radio-group user-auth-options">
+                    <label class="radio-label">
+                        <input type="radio" name="user-auth-estado" value="Autorizado">
+                        <span class="radio-custom"></span>
+                        <span>Autorizado</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="user-auth-estado" value="Rechazado">
+                        <span class="radio-custom"></span>
+                        <span>Rechazado</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('user-auth-modal')">Cancelar</button>
+                <button type="button" class="btn-primary" onclick="submitUserAuthModal()">Guardar</button>
             </div>
         </div>
     </div>

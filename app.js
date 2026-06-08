@@ -181,27 +181,39 @@ let participants = [
     { id: 6, tipo: 'Proveedor', egpPadreId: 3, ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
     { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
     { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
-    { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
+    { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true, bloqueado: false },
 ];
 
 let nextParticipantId = 10;
 let editingParticipantId = null;
 
+participants.forEach(p => {
+    if (p.bloqueado == null) p.bloqueado = false;
+});
+
 const ABM_USER_STATES = {
     PENDIENTE_AUTORIZACION: 'Pendiente de Autorización',
     AUTORIZADO: 'Autorizado',
+    RECHAZADO: 'Rechazado',
+};
+
+const ABM_ACCESS_STATES = {
+    ACTIVO: 'Activo',
+    BLOQUEADO: 'Bloqueado',
 };
 
 let abmUsers = [
-    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 7, estado: ABM_USER_STATES.AUTORIZADO },
-    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, rolId: 8, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION },
-    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, rolId: 10, estado: ABM_USER_STATES.AUTORIZADO },
+    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 7, estado: ABM_USER_STATES.AUTORIZADO, bloqueado: false },
+    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, rolId: 8, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION, bloqueado: false },
+    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, rolId: 10, estado: ABM_USER_STATES.AUTORIZADO, bloqueado: false },
 ];
 abmUsers.forEach(u => {
     if (!u.estado) u.estado = ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    if (u.bloqueado == null) u.bloqueado = false;
 });
 let nextAbmUserId = 4;
 let editingAbmUserId = null;
+let managingAbmUserAuthId = null;
 
 // Sesión POC del usuario logueado (dominio / rol para reglas de UI)
 let loggedSession = { dominio: 'Banco', rol: 'ADMIN' };
@@ -1037,6 +1049,7 @@ function openAbmViewModal(participantId) {
             <div class="form-row">
                 ${abmViewField('Cliente Atlas', atlasLabel)}
                 ${abmViewField('Desembolsos Automáticos', 'Siempre activo')}
+                ${abmViewField('Estado de acceso', getAbmAccessLabel(isParticipantBlocked(p)))}
             </div>
             ${adminFieldsHtml}
             <p class="form-section-title" style="margin-top:24px">Documentación Legal</p>
@@ -1172,9 +1185,111 @@ function getAbmUsuariosFilterValues() {
 }
 
 function abmUserEstadoBadgeClass(estado) {
-    return estado === ABM_USER_STATES.AUTORIZADO
-        ? 'status-usuario-autorizado'
-        : 'status-usuario-pendiente-autorizacion';
+    if (estado === ABM_USER_STATES.AUTORIZADO) return 'status-usuario-autorizado';
+    if (estado === ABM_USER_STATES.RECHAZADO) return 'status-usuario-rechazado';
+    return 'status-usuario-pendiente-autorizacion';
+}
+
+function abmAccessBadgeClass(bloqueado) {
+    return bloqueado ? 'status-acceso-bloqueado' : 'status-acceso-activo';
+}
+
+function getAbmAccessLabel(bloqueado) {
+    return bloqueado ? ABM_ACCESS_STATES.BLOQUEADO : ABM_ACCESS_STATES.ACTIVO;
+}
+
+function isParticipantBlocked(p) {
+    return p?.bloqueado === true;
+}
+
+function isAbmUserBlocked(u) {
+    return u?.bloqueado === true;
+}
+
+function toggleParticipantBlock(id) {
+    const p = participants.find(x => x.id === id);
+    if (!p) return;
+    const willBlock = !isParticipantBlocked(p);
+    const actionLabel = willBlock ? 'bloquear' : 'desbloquear';
+    showCustomConfirm(
+        `¿Confirma ${actionLabel} el ente "${p.razon}" (${p.tipo})? ${willBlock ? 'No podrá ejecutar acciones en la plataforma hasta ser desbloqueado.' : 'Volverá a poder operar con normalidad.'}`,
+        () => {
+            p.bloqueado = willBlock;
+            renderParticipants();
+            populateOperatingEntitySelect();
+            renderOperatingEntityPanel();
+            showCustomAlert(
+                `El ente "${p.razon}" fue ${willBlock ? 'bloqueado' : 'desbloqueado'} correctamente.`,
+                willBlock ? 'Ente bloqueado' : 'Ente desbloqueado'
+            );
+        },
+        willBlock ? 'Bloquear ente' : 'Desbloquear ente'
+    );
+}
+
+function toggleAbmUserBlock(id) {
+    const u = abmUsers.find(x => x.id === id);
+    if (!u) return;
+    const willBlock = !isAbmUserBlocked(u);
+    const actionLabel = willBlock ? 'bloquear' : 'desbloquear';
+    showCustomConfirm(
+        `¿Confirma ${actionLabel} al usuario "${u.nombre} ${u.apellido}" (${u.email})? ${willBlock ? 'No podrá ejecutar acciones en la plataforma hasta ser desbloqueado.' : 'Volverá a poder operar con normalidad.'}`,
+        () => {
+            u.bloqueado = willBlock;
+            renderAbmUsers();
+            showCustomAlert(
+                `El usuario "${u.nombre} ${u.apellido}" fue ${willBlock ? 'bloqueado' : 'desbloqueado'} correctamente.`,
+                willBlock ? 'Usuario bloqueado' : 'Usuario desbloqueado'
+            );
+        },
+        willBlock ? 'Bloquear usuario' : 'Desbloquear usuario'
+    );
+}
+
+function openUserAuthModal(id) {
+    const u = abmUsers.find(x => x.id === id);
+    if (!u) return;
+    const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    if (userEstado !== ABM_USER_STATES.PENDIENTE_AUTORIZACION) {
+        showCustomAlert('Solo se puede gestionar la autorización de usuarios en estado Pendiente de Autorización.', 'Acción no disponible');
+        return;
+    }
+    managingAbmUserAuthId = id;
+    const ente = getUserAssociatedEnte(u);
+    const summary = document.getElementById('user-auth-summary');
+    if (summary) {
+        summary.innerHTML = `
+            <p><strong>${u.nombre} ${u.apellido}</strong></p>
+            <p style="font-size:13px;color:#6b7280;margin:0;">${u.email}${ente ? ` · ${ente.razon}` : ''}</p>
+        `;
+    }
+    document.querySelectorAll('input[name="user-auth-estado"]').forEach(radio => { radio.checked = false; });
+    openModal('user-auth-modal');
+}
+
+function submitUserAuthModal() {
+    const selected = document.querySelector('input[name="user-auth-estado"]:checked')?.value;
+    if (!selected) {
+        showCustomAlert('Seleccione Autorizado o Rechazado.', 'Campos incompletos');
+        return;
+    }
+    const u = abmUsers.find(x => x.id === managingAbmUserAuthId);
+    if (!u) return;
+    if ((u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) !== ABM_USER_STATES.PENDIENTE_AUTORIZACION) {
+        showCustomAlert('El usuario ya no está pendiente de autorización.', 'Acción no disponible');
+        closeModal('user-auth-modal');
+        managingAbmUserAuthId = null;
+        renderAbmUsers();
+        return;
+    }
+    u.estado = selected;
+    closeModal('user-auth-modal');
+    managingAbmUserAuthId = null;
+    renderAbmUsers();
+    showCustomAlert(
+        `Usuario "${u.nombre} ${u.apellido}" actualizado a estado "${selected}".`,
+        'Autorización gestionada'
+    );
 }
 
 function userMatchesUsuariosFilters(u) {
@@ -1222,7 +1337,7 @@ function renderParticipants() {
 
     const filtered = participants.filter(participantMatchesEntesFilters);
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron entes con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron entes con los filtros aplicados.</div></td></tr>';
         return;
     }
 
@@ -1239,7 +1354,14 @@ function renderParticipants() {
             ? (getParticipantEgpPadreRazon(p) || '—')
             : '';
 
+        const blocked = isParticipantBlocked(p);
+        const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(blocked)}">${getAbmAccessLabel(blocked)}</span>`;
+        const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
+        const blockBtnTitle = blocked ? 'Desbloquear ente' : 'Bloquear ente';
+        const blockBtnIcon = blocked ? 'ph-lock-open' : 'ph-lock';
+
         const tr = document.createElement('tr');
+        if (blocked) tr.classList.add('abm-row-blocked');
         tr.innerHTML = `
             <td>${p.ruc}</td>
             <td><strong>${p.razon}</strong></td>
@@ -1249,12 +1371,16 @@ function renderParticipants() {
             <td style="font-weight:600;">${p.lineaCredito > 0 ? formatCurrency(p.lineaCredito, 'GS') : '—'}</td>
             <td>${p.tasaInteres}%</td>
             <td style="text-align:center;">${atlasIcon}</td>
+            <td>${accessBadge}</td>
             <td class="abm-actions-cell">
                 <button type="button" class="btn-icon-action btn-icon-action--view" onclick="openAbmViewModal(${p.id})" title="Ver ente" aria-label="Ver ente">
                     <i class="ph ph-eye"></i>
                 </button>
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openAbmModal(${p.id})" title="Editar ente" aria-label="Editar ente">
                     <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn-icon-action ${blockBtnClass}" onclick="toggleParticipantBlock(${p.id})" title="${blockBtnTitle}" aria-label="${blockBtnTitle}">
+                    <i class="ph ${blockBtnIcon}"></i>
                 </button>
                 <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteParticipant(${p.id})" title="Eliminar ente" aria-label="Eliminar ente">
                     <i class="ph ph-x"></i>
@@ -1287,7 +1413,7 @@ function renderAbmUsers() {
 
     const filtered = abmUsers.filter(userMatchesUsuariosFilters);
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
         return;
     }
 
@@ -1299,8 +1425,18 @@ function renderAbmUsers() {
             : '<span class="badge-proveedor">Proveedor</span>');
         const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
         const estadoBadge = `<span class="status-badge ${abmUserEstadoBadgeClass(userEstado)}">${userEstado}</span>`;
+        const blocked = isAbmUserBlocked(u);
+        const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(blocked)}">${getAbmAccessLabel(blocked)}</span>`;
         const rolLabel = getAbmRoleLabel(u.rolId);
+        const isPendingAuth = userEstado === ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+        const manageBtn = isPendingAuth
+            ? `<button type="button" class="btn-abm-manage" onclick="openUserAuthModal(${u.id})" title="Gestionar autorización" aria-label="Gestionar autorización">Gestionar</button>`
+            : '';
+        const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
+        const blockBtnTitle = blocked ? 'Desbloquear usuario' : 'Bloquear usuario';
+        const blockBtnIcon = blocked ? 'ph-lock-open' : 'ph-lock';
         const tr = document.createElement('tr');
+        if (blocked) tr.classList.add('abm-row-blocked');
         tr.innerHTML = `
             <td>${u.nombre}</td>
             <td>${u.apellido}</td>
@@ -1311,9 +1447,14 @@ function renderAbmUsers() {
             <td>${tipoBadge}</td>
             <td><strong>${rolLabel}</strong></td>
             <td>${estadoBadge}</td>
+            <td>${accessBadge}</td>
             <td class="abm-actions-cell">
+                ${manageBtn}
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openUserModal(${u.id})" title="Editar usuario" aria-label="Editar usuario">
                     <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn-icon-action ${blockBtnClass}" onclick="toggleAbmUserBlock(${u.id})" title="${blockBtnTitle}" aria-label="${blockBtnTitle}">
+                    <i class="ph ${blockBtnIcon}"></i>
                 </button>
                 <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmUser(${u.id})" title="Eliminar usuario" aria-label="Eliminar usuario">
                     <i class="ph ph-x"></i>
@@ -1565,6 +1706,7 @@ function submitParticipant() {
         clienteAtlas: viz.clienteAtlas,
         desembolsoAuto: true,
         egpPadreId: tipo === 'Proveedor' ? parseInt(egpPadreRaw, 10) : null,
+        bloqueado: existing?.bloqueado ?? false,
     };
 
     if (editingParticipantId && canEditProveedorAdminFields()) {
@@ -2619,6 +2761,7 @@ function submitUserModal() {
             id: nextAbmUserId++,
             ...payload,
             estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION,
+            bloqueado: false,
         });
         showCustomAlert(
             `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} con rol ${rol ? getAbmRoleLabel(rol.id) : '—'} guardado correctamente.`,

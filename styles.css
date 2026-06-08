@@ -870,6 +870,18 @@ select.select-input {
     background: #fef3c7;
     color: #92400e;
 }
+.status-usuario-rechazado {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.status-acceso-activo {
+    background: #ecfdf5;
+    color: #047857;
+}
+.status-acceso-bloqueado {
+    background: #f3f4f6;
+    color: #4b5563;
+}
 
 .status-habilitada {
     background: #ecfdf5;
@@ -2261,6 +2273,26 @@ textarea.input-text {
     color: #1d4ed8;
     border-color: #93c5fd;
 }
+.btn-icon-action--lock {
+    color: #b45309;
+    border-color: #fcd34d;
+    background: #fff;
+}
+.btn-icon-action--lock:hover {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+.btn-icon-action--unlock {
+    color: #047857;
+    border-color: #a7f3d0;
+    background: #fff;
+}
+.btn-icon-action--unlock:hover {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #6ee7b7;
+}
 .btn-icon-action--edit {
     color: var(--text-dark);
     border-color: #d4d4d4;
@@ -2333,6 +2365,49 @@ textarea.input-text {
     font-weight: 600;
     background: var(--atlas-active-bg-soft);
     color: var(--atlas-primary);
+}
+
+.abm-row-blocked {
+    opacity: 0.72;
+}
+.abm-row-blocked td:first-child strong,
+.abm-row-blocked td:nth-child(2) strong {
+    color: #6b7280;
+}
+.btn-abm-manage {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 10px;
+    margin-right: 4px;
+    border: 1px solid var(--border-atlas);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--atlas-primary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    vertical-align: middle;
+}
+.btn-abm-manage:hover {
+    background: var(--atlas-active-bg-soft);
+}
+.user-auth-summary {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius);
+}
+.user-auth-summary p {
+    margin: 0 0 4px;
+}
+.user-auth-options {
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 @media (max-width: 720px) {

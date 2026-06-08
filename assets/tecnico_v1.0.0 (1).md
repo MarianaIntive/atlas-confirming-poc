@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.6.0 (`v2.6.0`)  
+**Versión documento / POC:** 2.7.0 (`v2.7.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -104,14 +104,15 @@ atlas-confirming-poc/
     lineaCredito, tasaInteres, tasaComision, iva,
     condiciones: string,
     clienteAtlas: boolean,
-    desembolsoAuto: boolean   // EGP: auto → Pendiente desembolso; NO → Pendiente aprobación banco
+    desembolsoAuto: boolean,  // EGP: auto → Pendiente desembolso; NO → Pendiente aprobación banco
+    bloqueado?: boolean       // impide operar en plataforma sin eliminar el registro
 }
 ```
 
 ### 4.3 Usuario ABM (`abmUsers`)
 
 ```javascript
-{ id, nombre, apellido, email, telefono, enteId, rolId, documento?, estado: 'Pendiente de Autorización' | 'Autorizado' }
+{ id, nombre, apellido, email, telefono, enteId, rolId, documento?, estado: 'Pendiente de Autorización' | 'Autorizado' | 'Rechazado', bloqueado?: boolean }
 ```
 
 ### 4.4 Rol ABM (`abmRoles`)
@@ -275,6 +276,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.7.0 — 2026-05-19
+
+- **ABM Entes / Usuarios:** botón bloquear/desbloquear (sin eliminar); columnas Estado/Acceso; modal **Gestionar** para usuarios Pendiente de Autorización → Autorizado o Rechazado.
 
 ### v2.6.0 — 2026-05-19
 
