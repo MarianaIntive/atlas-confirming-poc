@@ -1099,16 +1099,20 @@ function getAbmEntesFilterValues() {
     return {
         search: document.getElementById('filter-entes-search')?.value?.trim() || '',
         clienteAtlas: document.getElementById('filter-entes-cliente-atlas')?.value || 'all',
+        estado: document.getElementById('filter-entes-estado')?.value || 'all',
     };
 }
 
 function participantMatchesEntesFilters(p) {
-    const { search, clienteAtlas } = getAbmEntesFilterValues();
+    const { search, clienteAtlas, estado } = getAbmEntesFilterValues();
     const matchSearch = !search || abmTextIncludes(p.ruc, search) || abmTextIncludes(p.razon, search);
     let matchAtlas = true;
     if (clienteAtlas === 'si') matchAtlas = p.clienteAtlas === true;
     else if (clienteAtlas === 'no') matchAtlas = !p.clienteAtlas;
-    return matchSearch && matchAtlas;
+    let matchEstado = true;
+    if (estado === 'activo') matchEstado = !isParticipantBlocked(p);
+    else if (estado === 'bloqueado') matchEstado = isParticipantBlocked(p);
+    return matchSearch && matchAtlas && matchEstado;
 }
 
 function getUserAssociatedEnte(u) {
@@ -1609,6 +1613,7 @@ document.querySelectorAll('.abm-tab').forEach(btn => {
 
 document.getElementById('filter-entes-search')?.addEventListener('input', renderParticipants);
 document.getElementById('filter-entes-cliente-atlas')?.addEventListener('change', renderParticipants);
+document.getElementById('filter-entes-estado')?.addEventListener('change', renderParticipants);
 document.getElementById('filter-usuarios-ente')?.addEventListener('input', renderAbmUsers);
 document.getElementById('filter-usuarios-cedula')?.addEventListener('input', renderAbmUsers);
 document.getElementById('filter-usuarios-apellido')?.addEventListener('input', renderAbmUsers);

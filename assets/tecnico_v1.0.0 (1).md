@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.7.0 (`v2.7.0`)  
+**Versión documento / POC:** 2.7.1 (`v2.7.1`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -277,6 +277,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 
 ## 12. Changelog
 
+### v2.7.1 — 2026-05-19
+
+- **ABM Entes:** filtro por estado (Todos / Activo / Bloqueado).
+
 ### v2.7.0 — 2026-05-19
 
 - **ABM Entes / Usuarios:** botón bloquear/desbloquear (sin eliminar); columnas Estado/Acceso; modal **Gestionar** para usuarios Pendiente de Autorización → Autorizado o Rechazado.
@@ -307,7 +311,7 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 
 ### v2.2.0 — 2026-06-02
 
-- **ABM filtros:** Entes (RUC/razón social, Cliente Atlas Sí/No/Ambos); Usuarios (ente RUC/razón, cédula, apellido + columna cédula); Roles (dominio, rol); Notificaciones (nombre).
+- **ABM filtros:** Entes (RUC/razón social, Cliente Atlas Sí/No/Ambos, **Estado Activo/Bloqueado/Todos**); Usuarios (ente RUC/razón, cédula, apellido + columna cédula); Roles (dominio, rol); Notificaciones (nombre).
 
 ### v2.1.0 — 2026-06-02
 
