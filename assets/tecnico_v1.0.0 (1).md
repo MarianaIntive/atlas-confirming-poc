@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.4.1 (`v2.4.1`)  
+**Versión documento / POC:** 2.4.2 (`v2.4.2`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 2 de Junio, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -119,8 +119,8 @@ atlas-confirming-poc/
 Catálogo por dominio (`ABM_ROLES_BY_DOMINIO`):
 
 - **Banco:** ADMIN, SUPERVISOR, OPERADOR, APROBADOR, GERENTE, EJECUTIVO DE CUENTAS
-- **EGP:** ADMIN, PROVEEDOR
-- **Proveedor:** ADMIN, PROVEEDOR
+- **EGP:** ADMIN, OPERADOR
+- **Proveedor:** ADMIN, OPERADOR
 
 ```javascript
 { id, dominio: 'Banco'|'EGP'|'Proveedor', rol: string, permisos: string[] }
@@ -269,9 +269,13 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 
 ## 12. Changelog
 
+### v2.4.2 — 2026-06-02
+
+- **Roles EGP / Proveedor:** solo ADMIN u OPERADOR (reemplaza PROVEEDOR en catálogo, mocks y notificaciones).
+
 ### v2.4.1 — 2026-06-02
 
-- **Roles por dominio:** catálogo corregido (Banco 6 roles; EGP y Proveedor: ADMIN + PROVEEDOR); usuarios mock y notificaciones alineados.
+- **Roles por dominio:** catálogo corregido (Banco 6 roles; EGP y Proveedor: ADMIN + OPERADOR); usuarios mock y notificaciones alineados.
 
 ### v2.4.0 — 2026-06-02
 

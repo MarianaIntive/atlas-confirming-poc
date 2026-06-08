@@ -205,8 +205,8 @@ let editingAbmUserId = null;
 // Catálogo de roles permitidos por dominio (POC)
 const ABM_ROLES_BY_DOMINIO = {
     Banco: ['ADMIN', 'SUPERVISOR', 'OPERADOR', 'APROBADOR', 'GERENTE', 'EJECUTIVO DE CUENTAS'],
-    EGP: ['ADMIN', 'PROVEEDOR'],
-    Proveedor: ['ADMIN', 'PROVEEDOR'],
+    EGP: ['ADMIN', 'OPERADOR'],
+    Proveedor: ['ADMIN', 'OPERADOR'],
 };
 
 let abmRoles = [
@@ -217,9 +217,9 @@ let abmRoles = [
     { id: 5, dominio: 'Banco', rol: 'GERENTE', permisos: ['Ver ABM', 'Ver Confirming', 'Ver Info Financiera Ente', 'Configurar Info Financiera Ente'] },
     { id: 6, dominio: 'Banco', rol: 'EJECUTIVO DE CUENTAS', permisos: ['Ver Confirming', 'Ver Facturas', 'Ver Info Financiera Ente'] },
     { id: 7, dominio: 'EGP', rol: 'ADMIN', permisos: ['Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Ver Info Financiera Ente'] },
-    { id: 8, dominio: 'EGP', rol: 'PROVEEDOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
+    { id: 8, dominio: 'EGP', rol: 'OPERADOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
     { id: 9, dominio: 'Proveedor', rol: 'ADMIN', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas'] },
-    { id: 10, dominio: 'Proveedor', rol: 'PROVEEDOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
+    { id: 10, dominio: 'Proveedor', rol: 'OPERADOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
 ];
 let nextAbmRoleId = 11;
 let editingAbmRoleId = null;
@@ -234,7 +234,7 @@ let abmNotifications = [
     { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
     { id: 3, nombre: 'Desembolso en curso', estadoDisparador: INVOICE_STATES.PENDIENTE_DESEMBOLSO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Factura en Pendiente de desembolso: CORE BANKING procesando el pago.' },
     { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, dominio: 'Banco', rol: 'APROBADOR', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
-    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'PROVEEDOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
+    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
     { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
 ];
 let nextAbmNotificationId = 7;
