@@ -421,9 +421,6 @@
                                     <label class="filter-field-label" for="filter-roles-rol">Rol</label>
                                     <select id="filter-roles-rol" class="select-input">
                                         <option value="all">Todos</option>
-                                        <option value="ADMIN">ADMIN</option>
-                                        <option value="Supervisor">Supervisor</option>
-                                        <option value="Operador">Operador</option>
                                     </select>
                                 </div>
                             </div>
@@ -992,10 +989,7 @@
                         <div class="form-group">
                             <label for="role-nombre-rol">Rol *</label>
                             <select id="role-nombre-rol" class="select-input" required>
-                                <option value="">Seleccione...</option>
-                                <option value="ADMIN">ADMIN</option>
-                                <option value="Supervisor">Supervisor</option>
-                                <option value="Operador">Operador</option>
+                                <option value="">Seleccione dominio primero...</option>
                             </select>
                         </div>
                     </div>
@@ -1054,7 +1048,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="notif-rol">Rol destino *</label>
-                            <input type="text" id="notif-rol" class="input-text" required placeholder="Ej: Supervisor">
+                            <input type="text" id="notif-rol" class="input-text" required placeholder="Ej: ADMIN, SUPERVISOR">
                         </div>
                         <div class="form-group">
                             <label for="notif-emails">Emails (separados por coma) *</label>

@@ -192,9 +192,9 @@ const ABM_USER_STATES = {
 };
 
 let abmUsers = [
-    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 2, estado: ABM_USER_STATES.AUTORIZADO },
-    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, rolId: 2, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION },
-    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, rolId: 3, estado: ABM_USER_STATES.AUTORIZADO },
+    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 7, estado: ABM_USER_STATES.AUTORIZADO },
+    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, rolId: 8, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION },
+    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, rolId: 10, estado: ABM_USER_STATES.AUTORIZADO },
 ];
 abmUsers.forEach(u => {
     if (!u.estado) u.estado = ABM_USER_STATES.PENDIENTE_AUTORIZACION;
@@ -202,12 +202,26 @@ abmUsers.forEach(u => {
 let nextAbmUserId = 4;
 let editingAbmUserId = null;
 
+// Catálogo de roles permitidos por dominio (POC)
+const ABM_ROLES_BY_DOMINIO = {
+    Banco: ['ADMIN', 'SUPERVISOR', 'OPERADOR', 'APROBADOR', 'GERENTE', 'EJECUTIVO DE CUENTAS'],
+    EGP: ['ADMIN', 'PROVEEDOR'],
+    Proveedor: ['ADMIN', 'PROVEEDOR'],
+};
+
 let abmRoles = [
     { id: 1, dominio: 'Banco', rol: 'ADMIN', permisos: ['Ver ABM', 'Editar ABM', 'Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Aprobar Desembolsos', 'Revertir Adelantos'] },
-    { id: 2, dominio: 'EGP', rol: 'Supervisor', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Ver Info Financiera Ente'] },
-    { id: 3, dominio: 'Proveedor', rol: 'Operador', permisos: ['Ver Confirming', 'Ver Facturas'] },
+    { id: 2, dominio: 'Banco', rol: 'SUPERVISOR', permisos: ['Ver ABM', 'Ver Confirming', 'Ver Facturas', 'Aprobar Desembolsos', 'Revertir Adelantos'] },
+    { id: 3, dominio: 'Banco', rol: 'OPERADOR', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas'] },
+    { id: 4, dominio: 'Banco', rol: 'APROBADOR', permisos: ['Ver Confirming', 'Ver Facturas', 'Aprobar Desembolsos'] },
+    { id: 5, dominio: 'Banco', rol: 'GERENTE', permisos: ['Ver ABM', 'Ver Confirming', 'Ver Info Financiera Ente', 'Configurar Info Financiera Ente'] },
+    { id: 6, dominio: 'Banco', rol: 'EJECUTIVO DE CUENTAS', permisos: ['Ver Confirming', 'Ver Facturas', 'Ver Info Financiera Ente'] },
+    { id: 7, dominio: 'EGP', rol: 'ADMIN', permisos: ['Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Ver Info Financiera Ente'] },
+    { id: 8, dominio: 'EGP', rol: 'PROVEEDOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
+    { id: 9, dominio: 'Proveedor', rol: 'ADMIN', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas'] },
+    { id: 10, dominio: 'Proveedor', rol: 'PROVEEDOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
 ];
-let nextAbmRoleId = 4;
+let nextAbmRoleId = 11;
 let editingAbmRoleId = null;
 
 abmUsers.forEach(u => {
@@ -216,12 +230,12 @@ abmUsers.forEach(u => {
 
 // Notificaciones del sistema (disparadas por avance en la máquina de estados)
 let abmNotifications = [
-    { id: 1, nombre: 'Factura cargada — Pendiente', estadoDisparador: INVOICE_STATES.PENDIENTE, dominio: 'EGP', rol: 'Supervisor', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Factura en estado Pendiente: lista para Habilitar o Bloquear por el aprobador EGP.' },
-    { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, dominio: 'EGP', rol: 'Supervisor', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
+    { id: 1, nombre: 'Factura cargada — Pendiente', estadoDisparador: INVOICE_STATES.PENDIENTE, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Factura en estado Pendiente: lista para Habilitar o Bloquear por el aprobador EGP.' },
+    { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
     { id: 3, nombre: 'Desembolso en curso', estadoDisparador: INVOICE_STATES.PENDIENTE_DESEMBOLSO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Factura en Pendiente de desembolso: CORE BANKING procesando el pago.' },
-    { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
-    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'Operador', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
-    { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, dominio: 'EGP', rol: 'Supervisor', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
+    { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, dominio: 'Banco', rol: 'APROBADOR', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
+    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'PROVEEDOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
+    { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
 ];
 let nextAbmNotificationId = 7;
 let editingNotificationId = null;
@@ -459,6 +473,7 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     renderAbmUsers();
     renderAbmRoles();
     renderAbmNotifications();
+    populateAbmRolesFilterSelect();
     populateOperatingEntitySelect();
     renderOperatingEntityPanel();
 });
@@ -488,6 +503,7 @@ document.querySelectorAll('.nav-item[data-target]').forEach(item => {
             renderAbmUsers();
             renderAbmRoles();
             renderAbmNotifications();
+            populateAbmRolesFilterSelect();
         }
     });
 });
@@ -681,6 +697,40 @@ function getAbmRoleById(roleId) {
 function getAbmRoleLabel(roleId) {
     const r = getAbmRoleById(roleId);
     return r ? `${r.rol} (${r.dominio})` : '—';
+}
+
+function populateRoleNombreSelect(dominio = '', selectedRol = '') {
+    const sel = document.getElementById('role-nombre-rol');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Seleccione...</option>';
+    const roles = ABM_ROLES_BY_DOMINIO[dominio] || [];
+    roles.forEach(rol => {
+        const opt = document.createElement('option');
+        opt.value = rol;
+        opt.textContent = rol;
+        sel.appendChild(opt);
+    });
+    if (selectedRol && roles.includes(selectedRol)) sel.value = selectedRol;
+}
+
+function syncRoleOptionsFromDominio() {
+    const dominio = document.getElementById('role-dominio')?.value || '';
+    populateRoleNombreSelect(dominio);
+}
+
+function populateAbmRolesFilterSelect() {
+    const sel = document.getElementById('filter-roles-rol');
+    if (!sel) return;
+    const prev = sel.value;
+    const uniqueRoles = [...new Set(abmRoles.map(r => r.rol))].sort((a, b) => a.localeCompare(b, 'es'));
+    sel.innerHTML = '<option value="all">Todos</option>';
+    uniqueRoles.forEach(rol => {
+        const opt = document.createElement('option');
+        opt.value = rol;
+        opt.textContent = rol;
+        sel.appendChild(opt);
+    });
+    if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
 function populateUserRoleSelect(selectedId = '') {
@@ -2158,13 +2208,14 @@ function openRoleModal(id = null) {
         if (!r) return;
         if (title) title.textContent = 'Editar Rol';
         document.getElementById('role-dominio').value = r.dominio;
-        document.getElementById('role-nombre-rol').value = r.rol;
+        populateRoleNombreSelect(r.dominio, r.rol);
         const permSet = new Set(r.permisos || []);
         document.querySelectorAll('#role-form input[name="role-perm"]').forEach(cb => {
             cb.checked = permSet.has(cb.value);
         });
     } else {
         if (title) title.textContent = 'Nuevo Rol';
+        populateRoleNombreSelect('');
     }
     openModal('role-modal');
 }
@@ -2174,6 +2225,11 @@ function submitRoleModal() {
     const rol = document.getElementById('role-nombre-rol').value;
     if (!dominio || !rol) {
         showCustomAlert('Seleccione dominio y rol.', 'Campos incompletos');
+        return;
+    }
+    const rolesPermitidos = ABM_ROLES_BY_DOMINIO[dominio] || [];
+    if (!rolesPermitidos.includes(rol)) {
+        showCustomAlert(`El rol "${rol}" no está permitido para el dominio ${dominio}.`, 'Rol inválido');
         return;
     }
     const perms = [...document.querySelectorAll('#role-form input[name="role-perm"]:checked')].map(c => c.value);
@@ -2191,9 +2247,12 @@ function submitRoleModal() {
         );
     }
     editingAbmRoleId = null;
+    populateAbmRolesFilterSelect();
     renderAbmRoles();
     switchAbmTab('roles');
 }
+
+document.getElementById('role-dominio')?.addEventListener('change', syncRoleOptionsFromDominio);
 
 
 // ====== ABM - Eliminación con confirmación ======
