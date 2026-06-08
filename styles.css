@@ -1425,6 +1425,49 @@ tr.row-select-locked {
     transform: rotate(45deg) translate(-1px, -1px);
 }
 
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.radio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+.radio-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.radio-custom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    flex-shrink: 0;
+}
+.radio-label input[type="radio"]:checked + .radio-custom {
+    border-color: var(--atlas-primary);
+}
+.radio-label input[type="radio"]:checked + .radio-custom::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: var(--atlas-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .toggles-row {
     display: flex;
     flex-direction: column;
@@ -2208,6 +2251,16 @@ textarea.input-text {
     font-size: 18px;
     line-height: 1;
 }
+.btn-icon-action--view {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background: #fff;
+}
+.btn-icon-action--view:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
 .btn-icon-action--edit {
     color: var(--text-dark);
     border-color: #d4d4d4;
@@ -2231,6 +2284,55 @@ textarea.input-text {
 .btn-icon-action:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--atlas-active-bg);
+}
+
+.abm-view-field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.abm-view-value {
+    padding: 10px 12px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: #374151;
+    min-height: 20px;
+}
+.abm-view-docs {
+    font-style: italic;
+    color: var(--text-muted);
+}
+.abm-relations-table-wrap {
+    margin-top: 8px;
+}
+.abm-relations-table th {
+    font-size: 12px;
+}
+.abm-relation-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.abm-relations-empty {
+    margin: 0;
+    padding: 12px;
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.badge-relation {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--atlas-active-bg-soft);
+    color: var(--atlas-primary);
 }
 
 @media (max-width: 720px) {

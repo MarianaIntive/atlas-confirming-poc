@@ -181,9 +181,10 @@ let participants = [
     { id: 6, tipo: 'Proveedor', egpPadreId: 3, ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
     { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
     { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
+    { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
 ];
 
-let nextParticipantId = 9;
+let nextParticipantId = 10;
 let editingParticipantId = null;
 
 const ABM_USER_STATES = {
@@ -202,11 +203,38 @@ abmUsers.forEach(u => {
 let nextAbmUserId = 4;
 let editingAbmUserId = null;
 
+// Sesión POC del usuario logueado (dominio / rol para reglas de UI)
+let loggedSession = { dominio: 'Banco', rol: 'ADMIN' };
+
+const LOGIN_SESSION_PROFILES = {
+    admin: { dominio: 'Banco', rol: 'ADMIN' },
+    administrador: { dominio: 'Banco', rol: 'ADMIN' },
+    ana: { dominio: 'EGP', rol: 'ADMIN' },
+    carlos: { dominio: 'EGP', rol: 'OPERADOR' },
+    laura: { dominio: 'Proveedor', rol: 'ADMIN' },
+    proveedor: { dominio: 'Proveedor', rol: 'ADMIN' },
+    supervisor: { dominio: 'Proveedor', rol: 'SUPERVISOR' },
+};
+
+function syncLoggedSessionFromLogin(username) {
+    const key = String(username || 'admin').trim().toLowerCase().split('@')[0].split('.')[0];
+    loggedSession = LOGIN_SESSION_PROFILES[key] ? { ...LOGIN_SESSION_PROFILES[key] } : { dominio: 'Banco', rol: 'ADMIN' };
+}
+
+function getLoggedSession() {
+    return loggedSession;
+}
+
+function canEditProveedorAdminFields() {
+    const { dominio, rol } = getLoggedSession();
+    return dominio === 'Proveedor' && (rol === 'ADMIN' || rol === 'SUPERVISOR');
+}
+
 // Catálogo de roles permitidos por dominio (POC)
 const ABM_ROLES_BY_DOMINIO = {
     Banco: ['ADMIN', 'SUPERVISOR', 'OPERADOR', 'APROBADOR', 'GERENTE', 'EJECUTIVO DE CUENTAS'],
     EGP: ['ADMIN', 'OPERADOR'],
-    Proveedor: ['ADMIN', 'OPERADOR'],
+    Proveedor: ['ADMIN', 'SUPERVISOR', 'OPERADOR'],
 };
 
 // Catálogo granular de permisos por pantalla (modal de roles)
@@ -647,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('login-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    syncLoggedSessionFromLogin(document.getElementById('username')?.value);
     syncLoggedUserDisplayFromLogin();
     applyPocVersionLabels();
     document.getElementById('login-view').classList.remove('active');
@@ -824,6 +853,205 @@ function applyAbmModalReadonlyDefaults() {
     }
 }
 
+function getProveedorAdminFieldDefaults(ruc) {
+    const cleanRuc = String(ruc || '').trim();
+    return {
+        cuentaCredito: cleanRuc ? `CC-${cleanRuc}` : '',
+        banco: 'Banco Atlas',
+        monedaOperacion: 'PYG',
+    };
+}
+
+function populateProveedorAdminFields(p) {
+    const defaults = getProveedorAdminFieldDefaults(p.ruc);
+    document.getElementById('abm-cuenta-credito').value = p.cuentaCredito ?? defaults.cuentaCredito;
+    document.getElementById('abm-banco').value = p.banco ?? defaults.banco;
+    const moneda = p.monedaOperacion || defaults.monedaOperacion;
+    document.querySelectorAll('input[name="abm-moneda-operacion"]').forEach(radio => {
+        radio.checked = radio.value === moneda;
+    });
+    document.getElementById('abm-tipo-documento').value = p.tipoDocumento || '';
+    document.getElementById('abm-numero-documento').value = p.numeroDocumento || '';
+    document.getElementById('abm-nombre-apellido').value = p.nombreApellido || '';
+}
+
+function clearProveedorAdminFields() {
+    ['abm-cuenta-credito', 'abm-banco', 'abm-tipo-documento', 'abm-numero-documento', 'abm-nombre-apellido'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const pygRadio = document.querySelector('input[name="abm-moneda-operacion"][value="PYG"]');
+    if (pygRadio) pygRadio.checked = true;
+}
+
+function syncAbmProveedorAdminBlock(isEdit) {
+    const block = document.getElementById('abm-proveedor-admin-block');
+    if (!block) return;
+    block.classList.toggle('hidden', !(isEdit && canEditProveedorAdminFields()));
+}
+
+function getEnteEgpProveedorRelations(participant) {
+    const ruc = participant.ruc;
+    const recordsWithSameRuc = participants.filter(p => p.ruc === ruc);
+    const relations = [];
+    const seen = new Set();
+
+    const pushRelation = (rel) => {
+        const key = `${rel.tipo}|${rel.egpRazon}|${rel.proveedorRazon}|${rel.registroTipo}|${rel.registroId}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        relations.push(rel);
+    };
+
+    recordsWithSameRuc.forEach(record => {
+        if (record.tipo === 'EGP') {
+            participants
+                .filter(p => p.tipo === 'Proveedor' && p.egpPadreId === record.id)
+                .forEach(prov => {
+                    pushRelation({
+                        tipo: 'EGP → Proveedor',
+                        registroTipo: record.tipo,
+                        registroId: record.id,
+                        egpRazon: record.razon,
+                        egpRuc: record.ruc,
+                        proveedorRazon: prov.razon,
+                        proveedorRuc: prov.ruc,
+                        detalle: `${record.razon} (EGP) tiene como proveedor a ${prov.razon}`,
+                    });
+                });
+        }
+        if (record.tipo === 'Proveedor') {
+            const egp = participants.find(p => p.id === record.egpPadreId);
+            if (egp) {
+                pushRelation({
+                    tipo: 'Proveedor → EGP',
+                    registroTipo: record.tipo,
+                    registroId: record.id,
+                    egpRazon: egp.razon,
+                    egpRuc: egp.ruc,
+                    proveedorRazon: record.razon,
+                    proveedorRuc: record.ruc,
+                    detalle: `${record.razon} (Proveedor) vinculado al EGP ${egp.razon}`,
+                });
+            }
+        }
+    });
+
+    return relations;
+}
+
+function renderEnteRelationsPanel(relations) {
+    if (!relations.length) {
+        return '<p class="abm-relations-empty">No se encontraron relaciones EGP–Proveedor para este RUC.</p>';
+    }
+    const rows = relations.map(rel => `
+        <tr>
+            <td><span class="badge-relation">${rel.tipo}</span></td>
+            <td><strong>${rel.egpRazon}</strong><br><span class="abm-relation-meta">${rel.egpRuc}</span></td>
+            <td><strong>${rel.proveedorRazon}</strong><br><span class="abm-relation-meta">${rel.proveedorRuc}</span></td>
+            <td style="font-size:13px;color:#4b5563;">${rel.detalle}</td>
+        </tr>
+    `).join('');
+    return `
+        <div class="table-container abm-relations-table-wrap">
+            <table class="data-table abm-relations-table">
+                <thead>
+                    <tr>
+                        <th>Relación</th>
+                        <th>EGP</th>
+                        <th>Proveedor</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+function abmViewField(label, value) {
+    return `
+        <div class="form-group abm-view-field">
+            <label>${label}</label>
+            <div class="abm-view-value">${value || '—'}</div>
+        </div>
+    `;
+}
+
+function openAbmViewModal(participantId) {
+    const p = participants.find(x => x.id === participantId);
+    if (!p) return;
+    switchAbmTab('entes');
+
+    const viz = getAbmVisualizationDefaults(p);
+    const tipoLabel = p.tipo === 'EGP' ? 'Empresa Gran Pagador (EGP)' : 'Proveedor';
+    const egpPadre = p.tipo === 'Proveedor' ? (getParticipantEgpPadreRazon(p) || '—') : '—';
+    const monedasLabel = viz.monedas.map(m => (m === 'GS' ? 'GS — Guaraníes' : 'USD — Dólares')).join(', ') || '—';
+    const atlasLabel = viz.clienteAtlas ? 'Sí' : 'No';
+    const relations = getEnteEgpProveedorRelations(p);
+    const adminDefaults = getProveedorAdminFieldDefaults(p.ruc);
+    const adminFieldsHtml = (p.cuentaCredito || p.banco || p.tipoDocumento || p.numeroDocumento || p.nombreApellido || p.monedaOperacion)
+        ? `
+            <p class="form-section-title" style="margin-top:24px">Datos bancarios y titular</p>
+            <div class="form-row">
+                ${abmViewField('Cuenta crédito', p.cuentaCredito || adminDefaults.cuentaCredito)}
+                ${abmViewField('Banco', p.banco || adminDefaults.banco)}
+            </div>
+            <div class="form-row">
+                ${abmViewField('Moneda', p.monedaOperacion || adminDefaults.monedaOperacion)}
+                ${abmViewField('Tipo de documento', p.tipoDocumento)}
+            </div>
+            <div class="form-row">
+                ${abmViewField('Número de documento', p.numeroDocumento)}
+                ${abmViewField('Nombre y Apellido', p.nombreApellido)}
+            </div>
+        `
+        : '';
+
+    const body = document.getElementById('abm-view-modal-body');
+    if (body) {
+        body.innerHTML = `
+            <p class="form-section-title">Datos Generales</p>
+            <div class="form-row">
+                ${abmViewField('Tipo de Ente', tipoLabel)}
+                ${p.tipo === 'Proveedor' ? abmViewField('EGP Padre', egpPadre) : ''}
+            </div>
+            <div class="form-row">
+                ${abmViewField('RUC', p.ruc)}
+            </div>
+            ${abmViewField('Razón Social', `<strong>${p.razon}</strong>`)}
+            <div class="form-row">
+                ${abmViewField('Email de Contacto', p.email)}
+                ${abmViewField('Teléfono', p.telefono)}
+            </div>
+            ${abmViewField('Monedas Habilitadas para Operar', monedasLabel)}
+            ${abmViewField('Línea de Crédito Asignada (Gs.)', viz.lineaCredito > 0 ? formatCurrency(viz.lineaCredito, 'GS') : '—')}
+            <p class="form-section-title abm-readonly-block" style="margin-top:24px">Condiciones Financieras</p>
+            <div class="form-row">
+                ${abmViewField('% Interés (TNA)', `${viz.tasaInteres}%`)}
+                ${abmViewField('% Comisión', `${viz.tasaComision}%`)}
+                ${abmViewField('% IVA', `${viz.iva}%`)}
+            </div>
+            ${abmViewField('Condiciones Especiales', viz.condiciones)}
+            <p class="form-section-title" style="margin-top:24px">Configuración</p>
+            <div class="form-row">
+                ${abmViewField('Cliente Atlas', atlasLabel)}
+                ${abmViewField('Desembolsos Automáticos', 'Siempre activo')}
+            </div>
+            ${adminFieldsHtml}
+            <p class="form-section-title" style="margin-top:24px">Documentación Legal</p>
+            <div class="abm-view-value abm-view-docs">Sin documentos cargados en esta demostración.</div>
+            <p class="form-section-title" style="margin-top:24px">Relaciones EGP–Proveedor</p>
+            <p class="abm-panel-caption">Relaciones del ente según RUC <strong>${p.ruc}</strong> en la plataforma.</p>
+            ${renderEnteRelationsPanel(relations)}
+        `;
+    }
+
+    const title = document.getElementById('abm-view-modal-title');
+    if (title) title.textContent = `Ver Ente — ${p.razon}`;
+    openModal('abm-view-modal');
+}
+
 function getAbmVisualizationDefaults(existing) {
     const base = existing || {};
     return {
@@ -994,7 +1222,7 @@ function renderParticipants() {
 
     const filtered = participants.filter(participantMatchesEntesFilters);
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron entes con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron entes con los filtros aplicados.</div></td></tr>';
         return;
     }
 
@@ -1002,10 +1230,6 @@ function renderParticipants() {
         const monedasHtml = p.monedas.map(m =>
             `<span class="badge-moneda ${m.toLowerCase()}">${m}</span>`
         ).join('');
-
-        const tipoBadge = p.tipo === 'EGP'
-            ? `<span class="badge-egp">EGP</span>`
-            : `<span class="badge-proveedor">Proveedor</span>`;
 
         const atlasIcon = p.clienteAtlas
             ? `<i class="ph ph-check-circle text-success" style="font-size:18px;"></i>`
@@ -1017,16 +1241,18 @@ function renderParticipants() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${tipoBadge}</td>
             <td>${p.ruc}</td>
             <td><strong>${p.razon}</strong></td>
-            <td style="font-size:13px;">${egpCol ? `<strong>${egpCol}</strong>` : ''}</td>
+            <td style="font-size:13px;">${egpCol ? `<strong>${egpCol}</strong>` : '—'}</td>
             <td style="font-size:13px;color:#6b7280;">${p.email || '—'}</td>
             <td>${monedasHtml}</td>
             <td style="font-weight:600;">${p.lineaCredito > 0 ? formatCurrency(p.lineaCredito, 'GS') : '—'}</td>
             <td>${p.tasaInteres}%</td>
             <td style="text-align:center;">${atlasIcon}</td>
             <td class="abm-actions-cell">
+                <button type="button" class="btn-icon-action btn-icon-action--view" onclick="openAbmViewModal(${p.id})" title="Ver ente" aria-label="Ver ente">
+                    <i class="ph ph-eye"></i>
+                </button>
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openAbmModal(${p.id})" title="Editar ente" aria-label="Editar ente">
                     <i class="ph ph-pencil-simple"></i>
                 </button>
@@ -1261,6 +1487,8 @@ function openAbmModal(participantId = null) {
     form.reset();
     document.getElementById('abm-file-list').innerHTML = '';
     populateAbmEgpPadreSelect();
+    clearProveedorAdminFields();
+    syncAbmProveedorAdminBlock(false);
 
     if (participantId) {
         const p = participants.find(x => x.id === participantId);
@@ -1282,6 +1510,10 @@ function openAbmModal(participantId = null) {
         document.getElementById('abm-cliente-atlas').checked = viz.clienteAtlas;
         if (p.tipo === 'Proveedor' && p.egpPadreId != null) {
             populateAbmEgpPadreSelect(p.egpPadreId);
+        }
+        syncAbmProveedorAdminBlock(true);
+        if (canEditProveedorAdminFields()) {
+            populateProveedorAdminFields(p);
         }
     } else {
         document.getElementById('abm-modal-title').textContent = 'Nuevo Ente';
@@ -1334,6 +1566,23 @@ function submitParticipant() {
         desembolsoAuto: true,
         egpPadreId: tipo === 'Proveedor' ? parseInt(egpPadreRaw, 10) : null,
     };
+
+    if (editingParticipantId && canEditProveedorAdminFields()) {
+        const defaults = getProveedorAdminFieldDefaults(ruc);
+        data.cuentaCredito = document.getElementById('abm-cuenta-credito').value.trim() || defaults.cuentaCredito;
+        data.banco = document.getElementById('abm-banco').value.trim() || defaults.banco;
+        data.monedaOperacion = document.querySelector('input[name="abm-moneda-operacion"]:checked')?.value || defaults.monedaOperacion;
+        data.tipoDocumento = document.getElementById('abm-tipo-documento').value.trim();
+        data.numeroDocumento = document.getElementById('abm-numero-documento').value.trim();
+        data.nombreApellido = document.getElementById('abm-nombre-apellido').value.trim();
+    } else if (existing) {
+        data.cuentaCredito = existing.cuentaCredito;
+        data.banco = existing.banco;
+        data.monedaOperacion = existing.monedaOperacion;
+        data.tipoDocumento = existing.tipoDocumento;
+        data.numeroDocumento = existing.numeroDocumento;
+        data.nombreApellido = existing.nombreApellido;
+    }
 
     if (editingParticipantId) {
         const idx = participants.findIndex(x => x.id === editingParticipantId);

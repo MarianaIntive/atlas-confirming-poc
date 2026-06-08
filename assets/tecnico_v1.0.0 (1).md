@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.5.0 (`v2.5.0`)  
+**Versión documento / POC:** 2.6.0 (`v2.6.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -120,7 +120,7 @@ Catálogo por dominio (`ABM_ROLES_BY_DOMINIO`):
 
 - **Banco:** ADMIN, SUPERVISOR, OPERADOR, APROBADOR, GERENTE, EJECUTIVO DE CUENTAS
 - **EGP:** ADMIN, OPERADOR
-- **Proveedor:** ADMIN, OPERADOR
+- **Proveedor:** ADMIN, SUPERVISOR, OPERADOR
 
 ```javascript
 { id, dominio: 'Banco'|'EGP'|'Proveedor', rol: string, permisos: string[] }
@@ -275,6 +275,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.6.0 — 2026-05-19
+
+- **ABM Entes:** se quita columna Tipo de la grilla (permanece en modales); botón ver (ojito) con modal solo lectura y panel Relaciones EGP–Proveedor por RUC; campos bancarios/titular en edición para sesión Proveedor ADMIN/SUPERVISOR; mock Retail S.A. también como proveedor de Tigo.
 
 ### v2.5.0 — 2026-05-19
 

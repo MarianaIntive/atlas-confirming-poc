@@ -335,7 +335,6 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Tipo</th>
                                         <th>RUC</th>
                                         <th>Razón Social</th>
                                         <th>EGP</th>
@@ -894,6 +893,50 @@
                         </label>
                     </div>
 
+                    <div id="abm-proveedor-admin-block" class="hidden">
+                        <p class="form-section-title" style="margin-top:24px">Datos bancarios y titular</p>
+                        <p class="abm-panel-caption" style="margin-bottom:12px">Solo visible al editar para usuarios dominio Proveedor con rol ADMIN o SUPERVISOR.</p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="abm-cuenta-credito">Cuenta crédito</label>
+                                <input type="text" id="abm-cuenta-credito" class="input-text" placeholder="Ej: CC-80012345-6">
+                            </div>
+                            <div class="form-group">
+                                <label for="abm-banco">Banco</label>
+                                <input type="text" id="abm-banco" class="input-text" placeholder="Ej: Banco Atlas">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Moneda</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="abm-moneda-operacion" value="PYG" checked>
+                                    <span class="radio-custom"></span>
+                                    <span>PYG</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="abm-moneda-operacion" value="USD">
+                                    <span class="radio-custom"></span>
+                                    <span>USD</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="abm-tipo-documento">Tipo de documento</label>
+                                <input type="text" id="abm-tipo-documento" class="input-text" placeholder="Ej: CI">
+                            </div>
+                            <div class="form-group">
+                                <label for="abm-numero-documento">Número de documento</label>
+                                <input type="text" id="abm-numero-documento" class="input-text" placeholder="Ej: 1234567">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="abm-nombre-apellido">Nombre y Apellido</label>
+                            <input type="text" id="abm-nombre-apellido" class="input-text" placeholder="Titular de la cuenta">
+                        </div>
+                    </div>
+
                     <p class="form-section-title" style="margin-top:24px">Documentación Legal</p>
                     <div class="form-group">
                         <div class="file-upload-area" onclick="document.getElementById('abm-file-input').click()">
@@ -909,6 +952,19 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeModal('abm-modal')">Cancelar</button>
                 <button class="btn-primary" onclick="submitParticipant()">Guardar Ente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Ente (solo lectura) -->
+    <div id="abm-view-modal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="abm-view-modal-title">Ver Ente</h3>
+                <button class="btn-close" onclick="closeModal('abm-view-modal')"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" id="abm-view-modal-body">
+                <!-- Se inyecta por JS -->
             </div>
         </div>
     </div>
