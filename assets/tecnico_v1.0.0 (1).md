@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.2.0 (`v2.2.0`)  
+**Versión documento / POC:** 2.3.0 (`v2.3.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 2 de Junio, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -111,7 +111,7 @@ atlas-confirming-poc/
 ### 4.3 Usuario ABM (`abmUsers`)
 
 ```javascript
-{ id, nombre, apellido, email, telefono, enteId, documento? }
+{ id, nombre, apellido, email, telefono, enteId, documento?, estado: 'Pendiente de Autorización' | 'Autorizado' }
 ```
 
 ### 4.4 Rol ABM (`abmRoles`)
@@ -262,6 +262,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.3.0 — 2026-06-02
+
+- **ABM Usuarios:** columna Estado (Pendiente de Autorización / Autorizado) y filtro Ambos / por estado.
 
 ### v2.2.0 — 2026-06-02
 

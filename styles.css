@@ -862,6 +862,15 @@ select.select-input {
     text-transform: uppercase;
     letter-spacing: 0.02em;
 }
+.status-usuario-autorizado {
+    background: #dcfce7;
+    color: #166534;
+}
+.status-usuario-pendiente-autorizacion {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 .status-habilitada {
     background: #ecfdf5;
     color: #047857;

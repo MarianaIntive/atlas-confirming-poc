@@ -372,6 +372,14 @@
                                     <label class="filter-field-label" for="filter-usuarios-apellido">Apellido</label>
                                     <input type="text" id="filter-usuarios-apellido" class="input-text" placeholder="Apellido">
                                 </div>
+                                <div class="filter-field filter-field--status">
+                                    <label class="filter-field-label" for="filter-usuarios-estado">Estado</label>
+                                    <select id="filter-usuarios-estado" class="select-input">
+                                        <option value="all">Ambos</option>
+                                        <option value="Pendiente de Autorización">Pendiente de Autorización</option>
+                                        <option value="Autorizado">Autorizado</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="table-container">
@@ -385,6 +393,7 @@
                                         <th>Teléfono</th>
                                         <th>Ente asociado</th>
                                         <th>Tipo ente</th>
+                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>

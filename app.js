@@ -186,11 +186,19 @@ let participants = [
 let nextParticipantId = 9;
 let editingParticipantId = null;
 
+const ABM_USER_STATES = {
+    PENDIENTE_AUTORIZACION: 'Pendiente de Autorización',
+    AUTORIZADO: 'Autorizado',
+};
+
 let abmUsers = [
-    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1 },
-    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2 },
-    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4 },
+    { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, estado: ABM_USER_STATES.AUTORIZADO },
+    { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION },
+    { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, estado: ABM_USER_STATES.AUTORIZADO },
 ];
+abmUsers.forEach(u => {
+    if (!u.estado) u.estado = ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+});
 let nextAbmUserId = 4;
 let editingAbmUserId = null;
 
@@ -667,18 +675,27 @@ function getAbmUsuariosFilterValues() {
         enteSearch: document.getElementById('filter-usuarios-ente')?.value?.trim() || '',
         cedula: document.getElementById('filter-usuarios-cedula')?.value?.trim() || '',
         apellido: document.getElementById('filter-usuarios-apellido')?.value?.trim() || '',
+        estado: document.getElementById('filter-usuarios-estado')?.value || 'all',
     };
 }
 
+function abmUserEstadoBadgeClass(estado) {
+    return estado === ABM_USER_STATES.AUTORIZADO
+        ? 'status-usuario-autorizado'
+        : 'status-usuario-pendiente-autorizacion';
+}
+
 function userMatchesUsuariosFilters(u) {
-    const { enteSearch, cedula, apellido } = getAbmUsuariosFilterValues();
+    const { enteSearch, cedula, apellido, estado } = getAbmUsuariosFilterValues();
     const ente = getUserAssociatedEnte(u);
     const matchEnte = !enteSearch || (ente && (
         abmTextIncludes(ente.ruc, enteSearch) || abmTextIncludes(ente.razon, enteSearch)
     ));
     const matchCedula = !cedula || abmTextIncludes(u.documento || '', cedula);
     const matchApellido = !apellido || abmTextIncludes(u.apellido, apellido);
-    return matchEnte && matchCedula && matchApellido;
+    const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    const matchEstado = estado === 'all' || userEstado === estado;
+    return matchEnte && matchCedula && matchApellido && matchEstado;
 }
 
 function getAbmRolesFilterValues() {
@@ -780,7 +797,7 @@ function renderAbmUsers() {
 
     const filtered = abmUsers.filter(userMatchesUsuariosFilters);
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
         return;
     }
 
@@ -790,6 +807,8 @@ function renderAbmUsers() {
         const tipoBadge = !ente ? '—' : (ente.tipo === 'EGP'
             ? '<span class="badge-egp">EGP</span>'
             : '<span class="badge-proveedor">Proveedor</span>');
+        const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+        const estadoBadge = `<span class="status-badge ${abmUserEstadoBadgeClass(userEstado)}">${userEstado}</span>`;
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${u.nombre}</td>
@@ -799,6 +818,7 @@ function renderAbmUsers() {
             <td>${u.telefono}</td>
             <td><strong>${enteRazon}</strong></td>
             <td>${tipoBadge}</td>
+            <td>${estadoBadge}</td>
             <td class="abm-actions-cell">
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openUserModal(${u.id})" title="Editar usuario" aria-label="Editar usuario">
                     <i class="ph ph-pencil-simple"></i>
@@ -959,6 +979,7 @@ document.getElementById('filter-entes-cliente-atlas')?.addEventListener('change'
 document.getElementById('filter-usuarios-ente')?.addEventListener('input', renderAbmUsers);
 document.getElementById('filter-usuarios-cedula')?.addEventListener('input', renderAbmUsers);
 document.getElementById('filter-usuarios-apellido')?.addEventListener('input', renderAbmUsers);
+document.getElementById('filter-usuarios-estado')?.addEventListener('change', renderAbmUsers);
 document.getElementById('filter-roles-dominio')?.addEventListener('change', renderAbmRoles);
 document.getElementById('filter-roles-rol')?.addEventListener('change', renderAbmRoles);
 document.getElementById('filter-notificaciones-nombre')?.addEventListener('input', renderAbmNotifications);
@@ -2074,7 +2095,11 @@ function submitUserModal() {
             'Usuario actualizado'
         );
     } else {
-        abmUsers.push({ id: nextAbmUserId++, ...payload });
+        abmUsers.push({
+            id: nextAbmUserId++,
+            ...payload,
+            estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION,
+        });
         showCustomAlert(
             `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} guardado correctamente.`,
             'Usuario registrado'
