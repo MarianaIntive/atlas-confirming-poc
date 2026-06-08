@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.7.1 (`v2.7.1`)  
+**Versión documento / POC:** 2.8.0 (`v2.8.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -112,7 +112,7 @@ atlas-confirming-poc/
 ### 4.3 Usuario ABM (`abmUsers`)
 
 ```javascript
-{ id, nombre, apellido, email, telefono, enteId, rolId, documento?, estado: 'Pendiente de Autorización' | 'Autorizado' | 'Rechazado', bloqueado?: boolean }
+{ id, nombre, apellido, email, telefono, enteId, rolId, documento?, estado: 'Pendiente de Autorización' | 'Autorizado' | 'Rechazado', bloqueado?: boolean, motivoRechazo?: string }
 ```
 
 ### 4.4 Rol ABM (`abmRoles`)
@@ -138,6 +138,14 @@ El modal de rol renderiza checkboxes desde el catálogo; los mocks `abmRoles` in
 
 ```javascript
 { id, nombre, estadoDisparador, dominio, rol, emails, mensaje, activa }
+```
+
+### 4.6 Auditoría ABM (`abmAuditLog`)
+
+Registro en memoria de operaciones sensibles (autorizar/rechazar/confirmar autorización de usuarios):
+
+```javascript
+{ id, timestamp, actorUsername, actorDocumento, actorDominio, actorRol, action, targetUserId, targetUserEmail, details }
 ```
 
 ---
@@ -276,6 +284,11 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.8.0 — 2026-05-19
+
+- **ABM Usuarios — Gestionar:** modal con cédula, nombre, apellido, rol y ente; botones Autorizar/Rechazar; validación de cédula duplicada; motivo obligatorio al rechazar; registro de auditoría (`abmAuditLog`).
+- **ABM Usuarios — Rechazados:** edición con etiqueta "Usuario Rechazado" y botón **Confirmar y Autorizar**; warning si no hubo cambios en campos obligatorios.
 
 ### v2.7.1 — 2026-05-19
 

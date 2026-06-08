@@ -206,35 +206,138 @@ let abmUsers = [
     { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 7, estado: ABM_USER_STATES.AUTORIZADO, bloqueado: false },
     { id: 2, nombre: 'Carlos', apellido: 'Vera', documento: '2345678', email: 'c.vera@tigo.com.py', telefono: '+595 981 333444', enteId: 2, rolId: 8, estado: ABM_USER_STATES.PENDIENTE_AUTORIZACION, bloqueado: false },
     { id: 3, nombre: 'Laura', apellido: 'Benítez', documento: '3456789', email: 'l.benitez@techsolutions.com.py', telefono: '+595 985 555666', enteId: 4, rolId: 10, estado: ABM_USER_STATES.AUTORIZADO, bloqueado: false },
+    { id: 4, nombre: 'María', apellido: 'Acosta', documento: '5678901', email: 'm.acosta@cervepar.com.py', telefono: '+595 981 777888', enteId: 3, rolId: 8, estado: ABM_USER_STATES.RECHAZADO, bloqueado: false, motivoRechazo: 'Documentación de respaldo incompleta' },
 ];
 abmUsers.forEach(u => {
     if (!u.estado) u.estado = ABM_USER_STATES.PENDIENTE_AUTORIZACION;
     if (u.bloqueado == null) u.bloqueado = false;
 });
-let nextAbmUserId = 4;
+let nextAbmUserId = 5;
 let editingAbmUserId = null;
 let managingAbmUserAuthId = null;
+let editingAbmUserSnapshot = null;
 
-// Sesión POC del usuario logueado (dominio / rol para reglas de UI)
-let loggedSession = { dominio: 'Banco', rol: 'ADMIN' };
+let abmAuditLog = [];
+let nextAbmAuditLogId = 1;
+
+// Sesión POC del usuario logueado (dominio / rol / documento para reglas de UI)
+let loggedSession = { dominio: 'Banco', rol: 'ADMIN', documento: '9000001', abmUserId: null, username: 'admin' };
 
 const LOGIN_SESSION_PROFILES = {
-    admin: { dominio: 'Banco', rol: 'ADMIN' },
-    administrador: { dominio: 'Banco', rol: 'ADMIN' },
-    ana: { dominio: 'EGP', rol: 'ADMIN' },
-    carlos: { dominio: 'EGP', rol: 'OPERADOR' },
-    laura: { dominio: 'Proveedor', rol: 'ADMIN' },
-    proveedor: { dominio: 'Proveedor', rol: 'ADMIN' },
-    supervisor: { dominio: 'Proveedor', rol: 'SUPERVISOR' },
+    admin: { dominio: 'Banco', rol: 'ADMIN', documento: '9000001', abmUserId: null },
+    administrador: { dominio: 'Banco', rol: 'ADMIN', documento: '9000001', abmUserId: null },
+    ana: { dominio: 'EGP', rol: 'ADMIN', abmUserId: 1 },
+    carlos: { dominio: 'EGP', rol: 'OPERADOR', abmUserId: 2 },
+    laura: { dominio: 'Proveedor', rol: 'ADMIN', abmUserId: 3 },
+    proveedor: { dominio: 'Proveedor', rol: 'ADMIN', abmUserId: 3 },
+    supervisor: { dominio: 'Proveedor', rol: 'SUPERVISOR', documento: '9000002', abmUserId: null },
 };
 
 function syncLoggedSessionFromLogin(username) {
-    const key = String(username || 'admin').trim().toLowerCase().split('@')[0].split('.')[0];
-    loggedSession = LOGIN_SESSION_PROFILES[key] ? { ...LOGIN_SESSION_PROFILES[key] } : { dominio: 'Banco', rol: 'ADMIN' };
+    const raw = String(username || 'admin').trim();
+    const key = raw.toLowerCase().split('@')[0].split('.')[0];
+    const profile = LOGIN_SESSION_PROFILES[key] || { dominio: 'Banco', rol: 'ADMIN', documento: '9000001', abmUserId: null };
+    const linkedUser = profile.abmUserId ? abmUsers.find(u => u.id === profile.abmUserId) : null;
+    loggedSession = {
+        ...profile,
+        username: raw || 'admin',
+        documento: linkedUser?.documento || profile.documento || '',
+    };
 }
 
 function getLoggedSession() {
     return loggedSession;
+}
+
+function getLoggedSessionRoleRecord() {
+    const { dominio, rol } = getLoggedSession();
+    return abmRoles.find(r => r.dominio === dominio && r.rol === rol) || null;
+}
+
+function loggedSessionHasPermission(permission) {
+    const role = getLoggedSessionRoleRecord();
+    if (!role) {
+        return loggedSession.dominio === 'Banco' && loggedSession.rol === 'ADMIN';
+    }
+    return (role.permisos || []).includes(permission);
+}
+
+function canAuthorizeAbmUsers() {
+    return loggedSessionHasPermission('Autorización de usuarios');
+}
+
+function canAccessAbmUsersModule() {
+    return loggedSessionHasPermission('Ver pantalla ABM')
+        && (loggedSessionHasPermission('ABM de usuarios — Ver')
+            || loggedSessionHasPermission('ABM de usuarios — Modificar')
+            || loggedSessionHasPermission('Autorización de usuarios'));
+}
+
+function normalizeDocumento(value) {
+    return String(value || '').trim().replace(/\s+/g, '');
+}
+
+function getLoggedAuthorizerDocumento() {
+    return normalizeDocumento(getLoggedSession().documento);
+}
+
+function logAbmAudit(entry) {
+    const record = {
+        id: nextAbmAuditLogId++,
+        timestamp: new Date().toISOString(),
+        actorUsername: getLoggedSession().username || '—',
+        actorDocumento: getLoggedAuthorizerDocumento() || '—',
+        actorDominio: getLoggedSession().dominio,
+        actorRol: getLoggedSession().rol,
+        ...entry,
+    };
+    abmAuditLog.unshift(record);
+    if (typeof console !== 'undefined' && console.info) {
+        console.info('[ABM Audit]', record);
+    }
+    return record;
+}
+
+function buildAbmUserFormPayload() {
+    return {
+        nombre: document.getElementById('nu-nombre').value.trim(),
+        apellido: document.getElementById('nu-apellido').value.trim(),
+        documento: document.getElementById('nu-doc').value.trim(),
+        telefono: document.getElementById('nu-telefono').value.trim(),
+        email: document.getElementById('nu-email').value.trim(),
+        enteId: parseInt(document.getElementById('nu-ente-id').value, 10),
+        rolId: parseInt(document.getElementById('nu-rol-id').value, 10),
+    };
+}
+
+function validateAbmUserRequiredFields(payload) {
+    if (!payload.nombre || !payload.apellido || !payload.telefono || !payload.email || !payload.enteId || !payload.rolId) {
+        showCustomAlert('Complete los campos obligatorios (nombre, apellido, teléfono, correo, ente asociado y rol).', 'Datos incompletos');
+        return false;
+    }
+    return true;
+}
+
+function hasRequiredAbmUserChanges(snapshot, payload) {
+    if (!snapshot) return true;
+    const requiredKeys = ['nombre', 'apellido', 'telefono', 'email', 'enteId', 'rolId'];
+    return requiredKeys.some(key => String(snapshot[key] ?? '') !== String(payload[key] ?? ''));
+}
+
+function finalizeAbmUserAuthorization(u, { action, previousEstado, details = {} }) {
+    logAbmAudit({
+        action,
+        targetUserId: u.id,
+        targetUserEmail: u.email,
+        targetUserDocumento: u.documento || '—',
+        details: {
+            estadoAnterior: previousEstado,
+            estadoNuevo: u.estado,
+            ...details,
+        },
+    });
+    renderAbmUsers();
+    switchAbmTab('usuarios');
 }
 
 function canEditProveedorAdminFields() {
@@ -1251,6 +1354,10 @@ function toggleAbmUserBlock(id) {
 }
 
 function openUserAuthModal(id) {
+    if (!canAuthorizeAbmUsers()) {
+        showCustomAlert('Su dominio/rol no tiene permiso para autorizar usuarios en el ABM.', 'Acción no disponible');
+        return;
+    }
     const u = abmUsers.find(x => x.id === id);
     if (!u) return;
     const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
@@ -1260,40 +1367,97 @@ function openUserAuthModal(id) {
     }
     managingAbmUserAuthId = id;
     const ente = getUserAssociatedEnte(u);
-    const summary = document.getElementById('user-auth-summary');
-    if (summary) {
-        summary.innerHTML = `
-            <p><strong>${u.nombre} ${u.apellido}</strong></p>
-            <p style="font-size:13px;color:#6b7280;margin:0;">${u.email}${ente ? ` · ${ente.razon}` : ''}</p>
+    const rolLabel = getAbmRoleLabel(u.rolId);
+    const fields = document.getElementById('user-auth-fields');
+    if (fields) {
+        fields.innerHTML = `
+            ${abmViewField('Cédula de Identidad', u.documento || '—')}
+            <div class="form-row">
+                ${abmViewField('Nombre', u.nombre)}
+                ${abmViewField('Apellido', u.apellido)}
+            </div>
+            <div class="form-row">
+                ${abmViewField('Rol', rolLabel)}
+                ${abmViewField('Ente Asociado', ente ? ente.razon : '—')}
+            </div>
         `;
     }
-    document.querySelectorAll('input[name="user-auth-estado"]').forEach(radio => { radio.checked = false; });
+    const motivoInput = document.getElementById('user-auth-motivo');
+    const rejectBlock = document.getElementById('user-auth-reject-block');
+    if (motivoInput) motivoInput.value = '';
+    if (rejectBlock) rejectBlock.classList.add('hidden');
     openModal('user-auth-modal');
 }
 
-function submitUserAuthModal() {
-    const selected = document.querySelector('input[name="user-auth-estado"]:checked')?.value;
-    if (!selected) {
-        showCustomAlert('Seleccione Autorizado o Rechazado.', 'Campos incompletos');
-        return;
-    }
+function authorizeManagedAbmUser() {
     const u = abmUsers.find(x => x.id === managingAbmUserAuthId);
     if (!u) return;
-    if ((u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) !== ABM_USER_STATES.PENDIENTE_AUTORIZACION) {
+    const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    if (userEstado !== ABM_USER_STATES.PENDIENTE_AUTORIZACION) {
         showCustomAlert('El usuario ya no está pendiente de autorización.', 'Acción no disponible');
         closeModal('user-auth-modal');
         managingAbmUserAuthId = null;
         renderAbmUsers();
         return;
     }
-    u.estado = selected;
+    const targetDoc = normalizeDocumento(u.documento);
+    const authorizerDoc = getLoggedAuthorizerDocumento();
+    if (targetDoc && authorizerDoc && targetDoc === authorizerDoc) {
+        showCustomAlert(
+            'No es posible autorizar un usuario que comparte su misma Cédula de Identidad, póngase en contacto con su administrador',
+            'Autorización no permitida'
+        );
+        return;
+    }
+    const previousEstado = u.estado;
+    u.estado = ABM_USER_STATES.AUTORIZADO;
+    u.motivoRechazo = '';
     closeModal('user-auth-modal');
     managingAbmUserAuthId = null;
-    renderAbmUsers();
-    showCustomAlert(
-        `Usuario "${u.nombre} ${u.apellido}" actualizado a estado "${selected}".`,
-        'Autorización gestionada'
-    );
+    finalizeAbmUserAuthorization(u, {
+        action: 'AUTORIZAR_USUARIO',
+        previousEstado,
+    });
+    showCustomAlert(`Usuario "${u.nombre} ${u.apellido}" autorizado correctamente.`, 'Usuario autorizado');
+}
+
+function rejectManagedAbmUser() {
+    const u = abmUsers.find(x => x.id === managingAbmUserAuthId);
+    if (!u) return;
+    const rejectBlock = document.getElementById('user-auth-reject-block');
+    const motivoInput = document.getElementById('user-auth-motivo');
+    const motivo = motivoInput?.value?.trim() || '';
+    if (rejectBlock?.classList.contains('hidden')) {
+        rejectBlock.classList.remove('hidden');
+        motivoInput?.focus();
+        return;
+    }
+    if (!motivo) {
+        showCustomAlert('Ingrese el motivo de rechazo.', 'Motivo obligatorio');
+        motivoInput?.focus();
+        return;
+    }
+    const previousEstado = u.estado;
+    u.estado = ABM_USER_STATES.RECHAZADO;
+    u.motivoRechazo = motivo;
+    closeModal('user-auth-modal');
+    managingAbmUserAuthId = null;
+    finalizeAbmUserAuthorization(u, {
+        action: 'RECHAZAR_USUARIO',
+        previousEstado,
+        details: { motivoRechazo: motivo },
+    });
+    showCustomAlert(`Usuario "${u.nombre} ${u.apellido}" rechazado.`, 'Usuario rechazado');
+}
+
+function syncUserModalMode(user = null) {
+    const isRejectedEdit = user && (user.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) === ABM_USER_STATES.RECHAZADO;
+    const badge = document.getElementById('user-modal-rejected-badge');
+    const btnSave = document.getElementById('user-modal-btn-save');
+    const btnConfirmAuth = document.getElementById('user-modal-btn-confirm-auth');
+    if (badge) badge.classList.toggle('hidden', !isRejectedEdit);
+    if (btnSave) btnSave.classList.toggle('hidden', isRejectedEdit);
+    if (btnConfirmAuth) btnConfirmAuth.classList.toggle('hidden', !isRejectedEdit);
 }
 
 function userMatchesUsuariosFilters(u) {
@@ -1433,7 +1597,7 @@ function renderAbmUsers() {
         const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(blocked)}">${getAbmAccessLabel(blocked)}</span>`;
         const rolLabel = getAbmRoleLabel(u.rolId);
         const isPendingAuth = userEstado === ABM_USER_STATES.PENDIENTE_AUTORIZACION;
-        const manageBtn = isPendingAuth
+        const manageBtn = isPendingAuth && canAuthorizeAbmUsers()
             ? `<button type="button" class="btn-abm-manage" onclick="openUserAuthModal(${u.id})" title="Gestionar autorización" aria-label="Gestionar autorización">Gestionar</button>`
             : '';
         const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
@@ -2707,58 +2871,57 @@ function populateUserEnteSelect() {
 }
 
 function openUserModal(id = null) {
+    if (id != null && !canAccessAbmUsersModule()) {
+        showCustomAlert('Su dominio/rol no tiene permiso para editar usuarios en el ABM.', 'Acción no disponible');
+        return;
+    }
     editingAbmUserId = id;
+    editingAbmUserSnapshot = null;
     const form = document.getElementById('user-form');
     if (form) form.reset();
     populateUserEnteSelect();
     populateUserRoleSelect();
     const title = document.getElementById('user-modal-title');
+    let currentUser = null;
     if (id != null) {
-        const u = abmUsers.find(x => x.id === id);
-        if (!u) return;
+        currentUser = abmUsers.find(x => x.id === id);
+        if (!currentUser) return;
         if (title) title.textContent = 'Editar Usuario';
-        document.getElementById('nu-nombre').value = u.nombre;
-        document.getElementById('nu-apellido').value = u.apellido;
-        document.getElementById('nu-doc').value = u.documento || '';
-        document.getElementById('nu-telefono').value = u.telefono;
-        document.getElementById('nu-email').value = u.email;
-        document.getElementById('nu-ente-id').value = String(u.enteId);
-        populateUserRoleSelect(u.rolId);
+        document.getElementById('nu-nombre').value = currentUser.nombre;
+        document.getElementById('nu-apellido').value = currentUser.apellido;
+        document.getElementById('nu-doc').value = currentUser.documento || '';
+        document.getElementById('nu-telefono').value = currentUser.telefono;
+        document.getElementById('nu-email').value = currentUser.email;
+        document.getElementById('nu-ente-id').value = String(currentUser.enteId);
+        populateUserRoleSelect(currentUser.rolId);
+        if ((currentUser.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) === ABM_USER_STATES.RECHAZADO) {
+            editingAbmUserSnapshot = {
+                nombre: currentUser.nombre,
+                apellido: currentUser.apellido,
+                telefono: currentUser.telefono,
+                email: currentUser.email,
+                enteId: currentUser.enteId,
+                rolId: currentUser.rolId,
+            };
+        }
     } else {
         if (title) title.textContent = 'Nuevo Usuario';
     }
+    syncUserModalMode(currentUser);
     openModal('user-modal');
 }
 
 function submitUserModal() {
-    const nombre = document.getElementById('nu-nombre').value.trim();
-    const apellido = document.getElementById('nu-apellido').value.trim();
-    const documento = document.getElementById('nu-doc').value.trim();
-    const telefono = document.getElementById('nu-telefono').value.trim();
-    const email = document.getElementById('nu-email').value.trim();
-    const enteId = document.getElementById('nu-ente-id').value;
-    const rolId = document.getElementById('nu-rol-id').value;
-    if (!nombre || !apellido || !telefono || !email || !enteId || !rolId) {
-        showCustomAlert('Complete los campos obligatorios (nombre, apellido, teléfono, correo, ente asociado y rol).', 'Datos incompletos');
-        return;
-    }
-    const ente = participants.find(p => String(p.id) === enteId);
-    const rol = getAbmRoleById(parseInt(rolId, 10));
-    const payload = {
-        nombre,
-        apellido,
-        email,
-        telefono,
-        enteId: parseInt(enteId, 10),
-        rolId: parseInt(rolId, 10),
-        documento,
-    };
+    const payload = buildAbmUserFormPayload();
+    if (!validateAbmUserRequiredFields(payload)) return;
+    const ente = participants.find(p => p.id === payload.enteId);
+    const rol = getAbmRoleById(payload.rolId);
     closeModal('user-modal');
     if (editingAbmUserId != null) {
         const idx = abmUsers.findIndex(x => x.id === editingAbmUserId);
         if (idx >= 0) abmUsers[idx] = { ...abmUsers[idx], ...payload };
         showCustomAlert(
-            `Usuario "${nombre} ${apellido}" actualizado correctamente.`,
+            `Usuario "${payload.nombre} ${payload.apellido}" actualizado correctamente.`,
             'Usuario actualizado'
         );
     } else {
@@ -2769,13 +2932,63 @@ function submitUserModal() {
             bloqueado: false,
         });
         showCustomAlert(
-            `Usuario "${nombre} ${apellido}" (${email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} con rol ${rol ? getAbmRoleLabel(rol.id) : '—'} guardado correctamente.`,
+            `Usuario "${payload.nombre} ${payload.apellido}" (${payload.email}) asociado a ${ente ? `${ente.razon} (${ente.tipo})` : 'ente'} con rol ${rol ? getAbmRoleLabel(rol.id) : '—'} guardado correctamente.`,
             'Usuario registrado'
         );
     }
     editingAbmUserId = null;
+    editingAbmUserSnapshot = null;
     renderAbmUsers();
     switchAbmTab('usuarios');
+}
+
+function submitUserConfirmAuthorize() {
+    if (editingAbmUserId == null) return;
+    const u = abmUsers.find(x => x.id === editingAbmUserId);
+    if (!u || (u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) !== ABM_USER_STATES.RECHAZADO) {
+        showCustomAlert('Esta acción solo está disponible para usuarios rechazados.', 'Acción no disponible');
+        return;
+    }
+    const payload = buildAbmUserFormPayload();
+    if (!validateAbmUserRequiredFields(payload)) return;
+    const targetDoc = normalizeDocumento(payload.documento || u.documento);
+    const authorizerDoc = getLoggedAuthorizerDocumento();
+    if (targetDoc && authorizerDoc && targetDoc === authorizerDoc) {
+        showCustomAlert(
+            'No es posible autorizar un usuario que comparte su misma Cédula de Identidad, póngase en contacto con su administrador',
+            'Autorización no permitida'
+        );
+        return;
+    }
+    const changed = hasRequiredAbmUserChanges(editingAbmUserSnapshot, payload);
+    const applyAuthorization = () => {
+        const previousEstado = u.estado;
+        const motivoRechazoAnterior = u.motivoRechazo || '';
+        Object.assign(u, payload);
+        u.estado = ABM_USER_STATES.AUTORIZADO;
+        u.motivoRechazo = '';
+        closeModal('user-modal');
+        finalizeAbmUserAuthorization(u, {
+            action: 'CONFIRMAR_AUTORIZAR_USUARIO',
+            previousEstado,
+            details: {
+                camposModificados: changed,
+                motivoRechazoAnterior,
+            },
+        });
+        editingAbmUserId = null;
+        editingAbmUserSnapshot = null;
+        showCustomAlert(`Usuario "${u.nombre} ${u.apellido}" autorizado correctamente.`, 'Usuario autorizado');
+    };
+    if (!changed) {
+        showCustomConfirm(
+            'Se autoriza la activación del usuario, con la misma información provista anteriormente',
+            applyAuthorization,
+            'Confirmar autorización'
+        );
+        return;
+    }
+    applyAuthorization();
 }
 
 function renderRolePermissionsCheckboxes() {
