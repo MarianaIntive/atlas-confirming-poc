@@ -1,8 +1,8 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.4.2 (`v2.4.2`)  
+**Versión documento / POC:** 2.5.0 (`v2.5.0`)  
 **Estado:** Proof of Concept — iteración activa  
-**Última actualización:** 2 de Junio, 2026  
+**Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
 
 ---
@@ -125,6 +125,13 @@ Catálogo por dominio (`ABM_ROLES_BY_DOMINIO`):
 ```javascript
 { id, dominio: 'Banco'|'EGP'|'Proveedor', rol: string, permisos: string[] }
 ```
+
+Catálogo de permisos (`ROLE_PERMISSION_CATALOG` en `app.js`):
+
+- **Pantalla ABM (18):** acceso a pantalla, ABM entes (ver/crear/borrar/modificar), bloqueo EGP, ABM usuarios (CRUD), autorización/bloqueo usuarios, roles y perfiles, ABM notificaciones (CRUD no sistema), filtros ABM.
+- **Pantalla Confirming (21):** acceso a pantalla, filtros, grillas (vigentes / no vigentes / no operables), carga manual/masiva, edición datos y fecha de pago, habilitar/bloquear, simular adelanto, aprobar desembolso EGP/Banco, revertir (1ra y 2da aprobación), info sensible EGP/Proveedor, documentos y descarga de grilla.
+
+El modal de rol renderiza checkboxes desde el catálogo; los mocks `abmRoles` incluyen sets representativos por dominio/rol.
 
 ### 4.5 Notificación ABM (`abmNotifications`)
 
@@ -268,6 +275,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.5.0 — 2026-05-19
+
+- **ABM Roles:** catálogo granular de permisos por pantalla (ABM y Confirming); modal renderizado desde `ROLE_PERMISSION_CATALOG`; mocks `abmRoles` actualizados con sets por dominio/rol.
 
 ### v2.4.2 — 2026-06-02
 

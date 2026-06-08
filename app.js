@@ -209,17 +209,201 @@ const ABM_ROLES_BY_DOMINIO = {
     Proveedor: ['ADMIN', 'OPERADOR'],
 };
 
+// Catálogo granular de permisos por pantalla (modal de roles)
+const ROLE_PERMISSION_CATALOG = [
+    {
+        screen: 'ABM',
+        groups: [
+            {
+                title: 'Pantalla ABM',
+                items: [
+                    { value: 'Ver pantalla ABM', label: 'Ver pantalla ABM' },
+                    { value: 'ABM de EGPs y Proveedores — Ver', label: 'ABM de EGPs y Proveedores — Ver entes' },
+                    { value: 'ABM de EGPs y Proveedores — Crear', label: 'ABM de EGPs y Proveedores — Crear entes' },
+                    { value: 'ABM de EGPs y Proveedores — Borrar', label: 'ABM de EGPs y Proveedores — Borrar entes' },
+                    { value: 'ABM de EGPs y Proveedores — Modificar', label: 'ABM de EGPs y Proveedores — Modificar entes' },
+                    { value: 'Bloqueo de EGP', label: 'Bloqueo de EGP' },
+                    { value: 'ABM de usuarios — Ver', label: 'ABM de usuarios — Ver usuarios' },
+                    { value: 'ABM de usuarios — Crear', label: 'ABM de usuarios — Crear usuarios' },
+                    { value: 'ABM de usuarios — Borrar', label: 'ABM de usuarios — Borrar usuarios' },
+                    { value: 'ABM de usuarios — Modificar', label: 'ABM de usuarios — Modificar usuarios' },
+                    { value: 'Autorización de usuarios', label: 'Autorización de usuarios' },
+                    { value: 'Bloqueo de usuarios', label: 'Bloqueo de usuarios' },
+                    { value: 'Configuración de Roles y Perfiles', label: 'Configuración de Roles y Perfiles' },
+                    { value: 'ABM Notificaciones — Ver', label: 'ABM Notificaciones — Ver notificaciones' },
+                    { value: 'ABM Notificaciones — Crear', label: 'ABM Notificaciones — Crear notificaciones (no sistema)' },
+                    { value: 'ABM Notificaciones — Borrar', label: 'ABM Notificaciones — Borrar notificaciones (no sistema)' },
+                    { value: 'ABM Notificaciones — Modificar', label: 'ABM Notificaciones — Modificar notificaciones (no sistema)' },
+                    { value: 'Utilizar filtros ABM', label: 'Utilizar filtros ABM' },
+                ],
+            },
+        ],
+    },
+    {
+        screen: 'Confirming',
+        groups: [
+            {
+                title: 'Pantalla Confirming',
+                items: [
+                    { value: 'Ver pantalla Confirming', label: 'Ver pantalla Confirming' },
+                    { value: 'Utilizar filtros Confirming', label: 'Utilizar filtros Confirming' },
+                ],
+            },
+            {
+                title: 'Ver grilla',
+                items: [
+                    { value: 'Ver grilla — Facturas vigentes', label: 'Pestaña facturas vigentes' },
+                    { value: 'Ver grilla — Facturas no vigentes', label: 'Pestaña facturas no vigentes' },
+                    { value: 'Ver grilla — Facturas no operables', label: 'Pestaña facturas no operables' },
+                ],
+            },
+            {
+                title: 'Operaciones sobre facturas',
+                items: [
+                    { value: 'Cargar Factura — manual', label: 'Cargar Factura — manual' },
+                    { value: 'Cargar Factura — masivo', label: 'Cargar Factura — masivo' },
+                    { value: 'Editar Factura — datos cargados', label: 'Editar Factura — datos cargados' },
+                    { value: 'Editar Factura — Fecha de Pago', label: 'Editar Factura — Fecha de Pago' },
+                    { value: 'Habilitar Factura', label: 'Habilitar Factura' },
+                    { value: 'Bloquear Factura', label: 'Bloquear Factura' },
+                    { value: 'Simular adelanto', label: 'Simular adelanto' },
+                    { value: 'Aprobar desembolso EGP', label: 'Aprobar desembolso EGP' },
+                    { value: 'Aprobar desembolso Banco', label: 'Aprobar desembolso Banco' },
+                    { value: 'Revertir factura', label: 'Revertir factura' },
+                    { value: 'Revertir factura 2da aprobación', label: 'Revertir factura 2da aprobación' },
+                ],
+            },
+            {
+                title: 'Información y documentos',
+                items: [
+                    { value: 'Ver información sensible EGP', label: 'Ver información sensible EGP' },
+                    { value: 'Ver información sensible Proveedor', label: 'Ver información sensible Proveedor' },
+                    { value: 'Ver Documentos', label: 'Ver Documentos' },
+                    { value: 'Descargar Documentos', label: 'Descargar Documentos' },
+                    { value: 'Descargar Grilla', label: 'Descargar Grilla' },
+                ],
+            },
+        ],
+    },
+];
+
+function getAllRolePermissionValues() {
+    return ROLE_PERMISSION_CATALOG.flatMap(section =>
+        section.groups.flatMap(group => group.items.map(item => item.value))
+    );
+}
+
+const ABM_SCREEN_PERMS = ROLE_PERMISSION_CATALOG.find(s => s.screen === 'ABM').groups.flatMap(g => g.items.map(i => i.value));
+const CONFIRMING_SCREEN_PERMS = ROLE_PERMISSION_CATALOG.find(s => s.screen === 'Confirming').groups.flatMap(g => g.items.map(i => i.value));
+
 let abmRoles = [
-    { id: 1, dominio: 'Banco', rol: 'ADMIN', permisos: ['Ver ABM', 'Editar ABM', 'Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Aprobar Desembolsos', 'Revertir Adelantos'] },
-    { id: 2, dominio: 'Banco', rol: 'SUPERVISOR', permisos: ['Ver ABM', 'Ver Confirming', 'Ver Facturas', 'Aprobar Desembolsos', 'Revertir Adelantos'] },
-    { id: 3, dominio: 'Banco', rol: 'OPERADOR', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas'] },
-    { id: 4, dominio: 'Banco', rol: 'APROBADOR', permisos: ['Ver Confirming', 'Ver Facturas', 'Aprobar Desembolsos'] },
-    { id: 5, dominio: 'Banco', rol: 'GERENTE', permisos: ['Ver ABM', 'Ver Confirming', 'Ver Info Financiera Ente', 'Configurar Info Financiera Ente'] },
-    { id: 6, dominio: 'Banco', rol: 'EJECUTIVO DE CUENTAS', permisos: ['Ver Confirming', 'Ver Facturas', 'Ver Info Financiera Ente'] },
-    { id: 7, dominio: 'EGP', rol: 'ADMIN', permisos: ['Ver Confirming', 'Editar Confirming', 'Ver Facturas', 'Adelantar Facturas', 'Ver Info Financiera Ente'] },
-    { id: 8, dominio: 'EGP', rol: 'OPERADOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
-    { id: 9, dominio: 'Proveedor', rol: 'ADMIN', permisos: ['Ver Confirming', 'Ver Facturas', 'Adelantar Facturas'] },
-    { id: 10, dominio: 'Proveedor', rol: 'OPERADOR', permisos: ['Ver Confirming', 'Ver Facturas'] },
+    {
+        id: 1,
+        dominio: 'Banco',
+        rol: 'ADMIN',
+        permisos: [...ABM_SCREEN_PERMS, ...CONFIRMING_SCREEN_PERMS],
+    },
+    {
+        id: 2,
+        dominio: 'Banco',
+        rol: 'SUPERVISOR',
+        permisos: [
+            'Ver pantalla ABM', 'ABM de EGPs y Proveedores — Ver', 'ABM de usuarios — Ver',
+            'Autorización de usuarios', 'Bloqueo de usuarios', 'ABM Notificaciones — Ver', 'Utilizar filtros ABM',
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming',
+            'Ver grilla — Facturas vigentes', 'Ver grilla — Facturas no vigentes', 'Ver grilla — Facturas no operables',
+            'Editar Factura — datos cargados', 'Editar Factura — Fecha de Pago', 'Habilitar Factura', 'Bloquear Factura',
+            'Simular adelanto', 'Aprobar desembolso EGP', 'Aprobar desembolso Banco',
+            'Revertir factura', 'Revertir factura 2da aprobación',
+            'Ver información sensible EGP', 'Ver información sensible Proveedor',
+            'Ver Documentos', 'Descargar Documentos', 'Descargar Grilla',
+        ],
+    },
+    {
+        id: 3,
+        dominio: 'Banco',
+        rol: 'OPERADOR',
+        permisos: [
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming',
+            'Ver grilla — Facturas vigentes', 'Ver grilla — Facturas no vigentes', 'Ver grilla — Facturas no operables',
+            'Cargar Factura — manual', 'Editar Factura — datos cargados', 'Editar Factura — Fecha de Pago',
+            'Habilitar Factura', 'Bloquear Factura', 'Simular adelanto',
+            'Ver Documentos', 'Descargar Documentos', 'Descargar Grilla',
+        ],
+    },
+    {
+        id: 4,
+        dominio: 'Banco',
+        rol: 'APROBADOR',
+        permisos: [
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming', 'Ver grilla — Facturas vigentes',
+            'Aprobar desembolso Banco', 'Revertir factura', 'Revertir factura 2da aprobación',
+            'Ver información sensible EGP',
+        ],
+    },
+    {
+        id: 5,
+        dominio: 'Banco',
+        rol: 'GERENTE',
+        permisos: [
+            'Ver pantalla ABM', 'Utilizar filtros ABM',
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming',
+            'Ver grilla — Facturas vigentes', 'Ver grilla — Facturas no vigentes', 'Ver grilla — Facturas no operables',
+            'Ver información sensible EGP', 'Ver información sensible Proveedor',
+        ],
+    },
+    {
+        id: 6,
+        dominio: 'Banco',
+        rol: 'EJECUTIVO DE CUENTAS',
+        permisos: [
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming',
+            'Ver grilla — Facturas vigentes', 'Ver grilla — Facturas no vigentes', 'Ver grilla — Facturas no operables',
+            'Ver información sensible EGP', 'Ver información sensible Proveedor',
+            'Ver Documentos', 'Descargar Documentos',
+        ],
+    },
+    {
+        id: 7,
+        dominio: 'EGP',
+        rol: 'ADMIN',
+        permisos: [
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming',
+            'Ver grilla — Facturas vigentes', 'Ver grilla — Facturas no vigentes', 'Ver grilla — Facturas no operables',
+            'Cargar Factura — manual', 'Cargar Factura — masivo',
+            'Editar Factura — datos cargados', 'Editar Factura — Fecha de Pago',
+            'Habilitar Factura', 'Bloquear Factura', 'Simular adelanto', 'Aprobar desembolso EGP', 'Revertir factura',
+            'Ver información sensible EGP', 'Ver Documentos', 'Descargar Documentos', 'Descargar Grilla',
+        ],
+    },
+    {
+        id: 8,
+        dominio: 'EGP',
+        rol: 'OPERADOR',
+        permisos: [
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming',
+            'Ver grilla — Facturas vigentes', 'Ver grilla — Facturas no vigentes',
+            'Cargar Factura — manual', 'Editar Factura — datos cargados', 'Editar Factura — Fecha de Pago',
+            'Habilitar Factura', 'Bloquear Factura', 'Simular adelanto',
+        ],
+    },
+    {
+        id: 9,
+        dominio: 'Proveedor',
+        rol: 'ADMIN',
+        permisos: [
+            'Ver pantalla Confirming', 'Utilizar filtros Confirming', 'Ver grilla — Facturas vigentes',
+            'Simular adelanto', 'Ver Documentos', 'Descargar Documentos',
+        ],
+    },
+    {
+        id: 10,
+        dominio: 'Proveedor',
+        rol: 'OPERADOR',
+        permisos: [
+            'Ver pantalla Confirming', 'Ver grilla — Facturas vigentes',
+        ],
+    },
 ];
 let nextAbmRoleId = 11;
 let editingAbmRoleId = null;
@@ -2197,8 +2381,37 @@ function submitUserModal() {
     switchAbmTab('usuarios');
 }
 
+function renderRolePermissionsCheckboxes() {
+    const container = document.getElementById('role-permissions-list');
+    if (!container) return;
+    container.innerHTML = ROLE_PERMISSION_CATALOG.map(section => {
+        const groupsHtml = section.groups.map(group => {
+            const itemsHtml = group.items.map(item => `
+                <label class="checkbox-label permission-row">
+                    <input type="checkbox" name="role-perm" value="${item.value}">
+                    <span class="checkbox-custom"></span>
+                    <span>${item.label}</span>
+                </label>
+            `).join('');
+            return `
+                <div class="permission-group">
+                    <p class="permission-group-title">${group.title}</p>
+                    ${itemsHtml}
+                </div>
+            `;
+        }).join('');
+        return `
+            <div class="permission-screen-block">
+                <p class="permission-screen-title">${section.screen}</p>
+                ${groupsHtml}
+            </div>
+        `;
+    }).join('');
+}
+
 function openRoleModal(id = null) {
     editingAbmRoleId = id;
+    renderRolePermissionsCheckboxes();
     const form = document.getElementById('role-form');
     if (form) form.reset();
     document.querySelectorAll('#role-form input[name="role-perm"]').forEach(cb => { cb.checked = false; });
