@@ -892,8 +892,33 @@ function initDashboardChart() {
 
 // ====== MODALES GLOBALES ======
 
-function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+const MODAL_BASE_Z_INDEX = 100;
+let openModalStack = [];
+
+function syncModalStackZIndex() {
+    openModalStack.forEach((modalId, index) => {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.style.zIndex = String(MODAL_BASE_Z_INDEX + index);
+    });
+}
+
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    openModalStack = openModalStack.filter(x => x !== id);
+    openModalStack.push(id);
+    syncModalStackZIndex();
+    modal.classList.add('active');
+}
+
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.style.zIndex = '';
+    openModalStack = openModalStack.filter(x => x !== id);
+    syncModalStackZIndex();
+}
 
 function showCustomAlert(message, title = "Aviso") {
     document.getElementById('alert-title').textContent = title;

@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.8.0 (`v2.8.0`)  
+**Versión documento / POC:** 2.8.1 (`v2.8.1`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -284,6 +284,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.8.1 — 2026-05-19
+
+- **Modales:** apilamiento con `z-index` dinámico para que alertas/confirmaciones queden siempre sobre modales de edición abiertos.
 
 ### v2.8.0 — 2026-05-19
 
