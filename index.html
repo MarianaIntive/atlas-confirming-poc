@@ -294,7 +294,7 @@
                         <div class="abm-add-dropdown" id="abm-add-dropdown">
                             <button type="button" class="btn-add-only" id="abm-add-toggle" aria-expanded="false" aria-haspopup="true" title="Agregar" onclick="event.stopPropagation(); toggleAbmAddMenu();">+</button>
                             <div id="abm-add-menu" class="dropdown-menu-abm hidden" role="menu">
-                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('entes'); openAbmModal();">Nuevo Ente</button>
+                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('egp'); openAbmModal();">Nuevo Ente</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('usuarios'); openUserModal();">Nuevo Usuario</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('roles'); openRoleModal();">Nuevo Rol</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('notificaciones'); openNotificationModal();">Nueva Notificación</button>
@@ -304,41 +304,65 @@
 
                     <div class="abm-tabbed-block">
                     <nav class="abm-tabs-bar" role="tablist" aria-label="Tipo de registro ABM">
-                        <button type="button" class="abm-tab active" role="tab" aria-selected="true" aria-controls="abm-panel-entes" id="abm-tab-entes" data-abm-tab="entes">Entes</button>
+                        <button type="button" class="abm-tab active" role="tab" aria-selected="true" aria-controls="abm-panel-egp" id="abm-tab-egp" data-abm-tab="egp">EGP</button>
+                        <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-proveedor" id="abm-tab-proveedor" data-abm-tab="proveedor">Proveedor</button>
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-usuarios" id="abm-tab-usuarios" data-abm-tab="usuarios">Usuarios</button>
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-roles" id="abm-tab-roles" data-abm-tab="roles">Roles</button>
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-notificaciones" id="abm-tab-notificaciones" data-abm-tab="notificaciones">Notificaciones</button>
                     </nav>
 
-                    <div id="abm-panel-entes" class="abm-tab-panel active" role="tabpanel" aria-labelledby="abm-tab-entes">
-                        <p class="abm-panel-caption">Entes registrados</p>
-                        <div class="abm-filters">
-                            <div class="filters-row filters-row-main">
-                                <div class="filter-field filter-field--search">
-                                    <label class="filter-field-label" for="filter-entes-search">Buscar (RUC / Razón Social)</label>
-                                    <div class="search-box">
-                                        <i class="ph ph-magnifying-glass"></i>
-                                        <input type="text" id="filter-entes-search" placeholder="RUC o razón social...">
-                                    </div>
-                                </div>
-                                <div class="filter-field filter-field--status">
-                                    <label class="filter-field-label" for="filter-entes-cliente-atlas">Cliente Atlas</label>
-                                    <select id="filter-entes-cliente-atlas" class="select-input">
-                                        <option value="all">Ambos</option>
-                                        <option value="si">Sí</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field filter-field--status">
-                                    <label class="filter-field-label" for="filter-entes-estado">Estado</label>
-                                    <select id="filter-entes-estado" class="select-input">
-                                        <option value="all">Todos</option>
-                                        <option value="activo">Activo</option>
-                                        <option value="bloqueado">Bloqueado</option>
-                                    </select>
+                    <div id="abm-entes-filters-wrap" class="abm-filters">
+                        <div class="filters-row filters-row-main">
+                            <div class="filter-field filter-field--search">
+                                <label class="filter-field-label" for="filter-entes-search">Buscar (RUC / Razón Social)</label>
+                                <div class="search-box">
+                                    <i class="ph ph-magnifying-glass"></i>
+                                    <input type="text" id="filter-entes-search" placeholder="RUC o razón social...">
                                 </div>
                             </div>
+                            <div class="filter-field filter-field--status">
+                                <label class="filter-field-label" for="filter-entes-cliente-atlas">Cliente Atlas</label>
+                                <select id="filter-entes-cliente-atlas" class="select-input">
+                                    <option value="all">Ambos</option>
+                                    <option value="si">Sí</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="filter-field filter-field--status">
+                                <label class="filter-field-label" for="filter-entes-estado">Estado</label>
+                                <select id="filter-entes-estado" class="select-input">
+                                    <option value="all">Todos</option>
+                                    <option value="activo">Activo</option>
+                                    <option value="bloqueado">Bloqueado</option>
+                                </select>
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="abm-panel-egp" class="abm-tab-panel active" role="tabpanel" aria-labelledby="abm-tab-egp">
+                        <p class="abm-panel-caption">Empresas Gran Pagador (EGP)</p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>RUC</th>
+                                        <th>Razón Social</th>
+                                        <th>Email</th>
+                                        <th>Monedas</th>
+                                        <th>Línea de crédito</th>
+                                        <th>Cliente Atlas</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="egp-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="egp-pagination" class="abm-pagination-wrap"></div>
+                    </div>
+
+                    <div id="abm-panel-proveedor" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-proveedor">
+                        <p class="abm-panel-caption">Proveedores</p>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
@@ -347,18 +371,15 @@
                                         <th>Razón Social</th>
                                         <th>EGP</th>
                                         <th>Email</th>
-                                        <th>Monedas</th>
-                                        <th>Línea de Crédito</th>
-                                        <th>TNA %</th>
                                         <th>Cliente Atlas</th>
-                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody id="participants-tbody">
+                                <tbody id="proveedor-tbody">
                                 </tbody>
                             </table>
                         </div>
+                        <div id="proveedor-pagination" class="abm-pagination-wrap"></div>
                     </div>
 
                     <div id="abm-panel-usuarios" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-usuarios">
@@ -412,6 +433,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div id="usuarios-pagination" class="abm-pagination-wrap"></div>
                     </div>
 
                     <div id="abm-panel-roles" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-roles">
@@ -449,6 +471,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div id="roles-pagination" class="abm-pagination-wrap"></div>
                     </div>
 
                     <div id="abm-panel-notificaciones" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-notificaciones">
@@ -482,6 +505,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div id="notificaciones-pagination" class="abm-pagination-wrap"></div>
                     </div>
                     </div>
                 </section>
@@ -967,15 +991,18 @@
         </div>
     </div>
 
-    <!-- Modal Ver Ente (solo lectura) -->
-    <div id="abm-view-modal" class="modal">
+    <!-- Modal Ver detalle ABM (solo lectura) -->
+    <div id="abm-detail-modal" class="modal">
         <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3 id="abm-view-modal-title">Ver Ente</h3>
-                <button class="btn-close" onclick="closeModal('abm-view-modal')"><i class="ph ph-x"></i></button>
+                <h3 id="abm-detail-modal-title">Ver detalle</h3>
+                <button class="btn-close" onclick="closeModal('abm-detail-modal')"><i class="ph ph-x"></i></button>
             </div>
-            <div class="modal-body" id="abm-view-modal-body">
+            <div class="modal-body" id="abm-detail-modal-body">
                 <!-- Se inyecta por JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('abm-detail-modal')">Cerrar</button>
             </div>
         </div>
     </div>
@@ -1157,5 +1184,6 @@
     <!-- Script de la App -->
     <script src="version.js"></script>
     <script src="app.js"></script>
+    <script src="abm-grids.js"></script>
 </body>
 </html>

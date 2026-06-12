@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.8.1 (`v2.8.1`)  
+**Versión documento / POC:** 2.9.0 (`v2.9.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -23,7 +23,7 @@ Este documento es la guía técnica del **Portal de Confirming Banco Atlas (POC)
 
 - Estado centralizado en memoria (`invoices`, `participants`, `abmUsers`, `abmRoles`, `abmNotifications`).
 - Vistas con clases `.view` / `.page-view` y toggle `.active`.
-- Sin bundler; `index.html` + `version.js` + `app.js` + `styles.css`.
+- Sin bundler; `index.html` + `version.js` + `app.js` + `abm-grids.js` + `styles.css`.
 
 ### 2.2 Estructura de archivos
 
@@ -32,6 +32,7 @@ atlas-confirming-poc/
 ├── index.html              # Vistas, modales, topbar con usuario y versión POC
 ├── version.js              # Versión de iteración (actualizar en cada release)
 ├── app.js                  # Lógica, máquina de estados, ABM, bulk upload
+├── abm-grids.js            # Grillas EGP/Proveedor, paginado y modales de detalle ABM
 ├── styles.css              # Design tokens y layout
 └── assets/
     ├── logo-banco-atlas.png
@@ -284,6 +285,11 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.9.0 — 2026-05-19
+
+- **ABM Entes:** pestaña única reemplazada por **EGP** y **Proveedor** con columnas y formatos específicos por tipo; paginado de 25 registros por página en todas las grillas ABM.
+- **ABM — Ver detalle (ojito):** modal unificado en EGP, Proveedor, Usuarios, Roles y Notificaciones; permisos agrupados en vista de rol; adjuntos descargables simulados; campos bancarios/titular en proveedor no cliente Atlas.
 
 ### v2.8.1 — 2026-05-19
 

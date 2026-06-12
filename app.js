@@ -557,12 +557,12 @@ abmUsers.forEach(u => {
 
 // Notificaciones del sistema (disparadas por avance en la máquina de estados)
 let abmNotifications = [
-    { id: 1, nombre: 'Factura cargada — Pendiente', estadoDisparador: INVOICE_STATES.PENDIENTE, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Factura en estado Pendiente: lista para Habilitar o Bloquear por el aprobador EGP.' },
-    { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
-    { id: 3, nombre: 'Desembolso en curso', estadoDisparador: INVOICE_STATES.PENDIENTE_DESEMBOLSO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Factura en Pendiente de desembolso: CORE BANKING procesando el pago.' },
-    { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, dominio: 'Banco', rol: 'APROBADOR', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
-    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
-    { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
+    { id: 1, nombre: 'Factura cargada — Pendiente', estadoDisparador: INVOICE_STATES.PENDIENTE, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Factura en estado Pendiente: lista para Habilitar o Bloquear por el aprobador EGP.' },
+    { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
+    { id: 3, nombre: 'Desembolso en curso', estadoDisparador: INVOICE_STATES.PENDIENTE_DESEMBOLSO, tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Factura en Pendiente de desembolso: CORE BANKING procesando el pago.' },
+    { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, tipoEnvio: 'Email', dominio: 'Banco', rol: 'APROBADOR', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
+    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, tipoEnvio: 'Email', dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
+    { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
 ];
 let nextAbmNotificationId = 7;
 let editingNotificationId = null;
@@ -1118,81 +1118,6 @@ function abmViewField(label, value) {
     `;
 }
 
-function openAbmViewModal(participantId) {
-    const p = participants.find(x => x.id === participantId);
-    if (!p) return;
-    switchAbmTab('entes');
-
-    const viz = getAbmVisualizationDefaults(p);
-    const tipoLabel = p.tipo === 'EGP' ? 'Empresa Gran Pagador (EGP)' : 'Proveedor';
-    const egpPadre = p.tipo === 'Proveedor' ? (getParticipantEgpPadreRazon(p) || '—') : '—';
-    const monedasLabel = viz.monedas.map(m => (m === 'GS' ? 'GS — Guaraníes' : 'USD — Dólares')).join(', ') || '—';
-    const atlasLabel = viz.clienteAtlas ? 'Sí' : 'No';
-    const relations = getEnteEgpProveedorRelations(p);
-    const adminDefaults = getProveedorAdminFieldDefaults(p.ruc);
-    const adminFieldsHtml = (p.cuentaCredito || p.banco || p.tipoDocumento || p.numeroDocumento || p.nombreApellido || p.monedaOperacion)
-        ? `
-            <p class="form-section-title" style="margin-top:24px">Datos bancarios y titular</p>
-            <div class="form-row">
-                ${abmViewField('Cuenta crédito', p.cuentaCredito || adminDefaults.cuentaCredito)}
-                ${abmViewField('Banco', p.banco || adminDefaults.banco)}
-            </div>
-            <div class="form-row">
-                ${abmViewField('Moneda', p.monedaOperacion || adminDefaults.monedaOperacion)}
-                ${abmViewField('Tipo de documento', p.tipoDocumento)}
-            </div>
-            <div class="form-row">
-                ${abmViewField('Número de documento', p.numeroDocumento)}
-                ${abmViewField('Nombre y Apellido', p.nombreApellido)}
-            </div>
-        `
-        : '';
-
-    const body = document.getElementById('abm-view-modal-body');
-    if (body) {
-        body.innerHTML = `
-            <p class="form-section-title">Datos Generales</p>
-            <div class="form-row">
-                ${abmViewField('Tipo de Ente', tipoLabel)}
-                ${p.tipo === 'Proveedor' ? abmViewField('EGP Padre', egpPadre) : ''}
-            </div>
-            <div class="form-row">
-                ${abmViewField('RUC', p.ruc)}
-            </div>
-            ${abmViewField('Razón Social', `<strong>${p.razon}</strong>`)}
-            <div class="form-row">
-                ${abmViewField('Email de Contacto', p.email)}
-                ${abmViewField('Teléfono', p.telefono)}
-            </div>
-            ${abmViewField('Monedas Habilitadas para Operar', monedasLabel)}
-            ${abmViewField('Línea de Crédito Asignada (Gs.)', viz.lineaCredito > 0 ? formatCurrency(viz.lineaCredito, 'GS') : '—')}
-            <p class="form-section-title abm-readonly-block" style="margin-top:24px">Condiciones Financieras</p>
-            <div class="form-row">
-                ${abmViewField('% Interés (TNA)', `${viz.tasaInteres}%`)}
-                ${abmViewField('% Comisión', `${viz.tasaComision}%`)}
-                ${abmViewField('% IVA', `${viz.iva}%`)}
-            </div>
-            ${abmViewField('Condiciones Especiales', viz.condiciones)}
-            <p class="form-section-title" style="margin-top:24px">Configuración</p>
-            <div class="form-row">
-                ${abmViewField('Cliente Atlas', atlasLabel)}
-                ${abmViewField('Desembolsos Automáticos', 'Siempre activo')}
-                ${abmViewField('Estado de acceso', getAbmAccessLabel(isParticipantBlocked(p)))}
-            </div>
-            ${adminFieldsHtml}
-            <p class="form-section-title" style="margin-top:24px">Documentación Legal</p>
-            <div class="abm-view-value abm-view-docs">Sin documentos cargados en esta demostración.</div>
-            <p class="form-section-title" style="margin-top:24px">Relaciones EGP–Proveedor</p>
-            <p class="abm-panel-caption">Relaciones del ente según RUC <strong>${p.ruc}</strong> en la plataforma.</p>
-            ${renderEnteRelationsPanel(relations)}
-        `;
-    }
-
-    const title = document.getElementById('abm-view-modal-title');
-    if (title) title.textContent = `Ver Ente — ${p.razon}`;
-    openModal('abm-view-modal');
-}
-
 function getAbmVisualizationDefaults(existing) {
     const base = existing || {};
     return {
@@ -1524,68 +1449,12 @@ function notificationMatchesNotificacionesFilters(n) {
 }
 
 function renderParticipants() {
-    const tbody = document.getElementById('participants-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const filtered = participants.filter(participantMatchesEntesFilters);
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron entes con los filtros aplicados.</div></td></tr>';
-        return;
-    }
-
-    filtered.forEach(p => {
-        const monedasHtml = p.monedas.map(m =>
-            `<span class="badge-moneda ${m.toLowerCase()}">${m}</span>`
-        ).join('');
-
-        const atlasIcon = p.clienteAtlas
-            ? `<i class="ph ph-check-circle text-success" style="font-size:18px;"></i>`
-            : `<i class="ph ph-x-circle" style="font-size:18px;color:#d1d5db;"></i>`;
-
-        const egpCol = p.tipo === 'Proveedor'
-            ? (getParticipantEgpPadreRazon(p) || '—')
-            : '';
-
-        const blocked = isParticipantBlocked(p);
-        const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(blocked)}">${getAbmAccessLabel(blocked)}</span>`;
-        const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
-        const blockBtnTitle = blocked ? 'Desbloquear ente' : 'Bloquear ente';
-        const blockBtnIcon = blocked ? 'ph-lock-open' : 'ph-lock';
-
-        const tr = document.createElement('tr');
-        if (blocked) tr.classList.add('abm-row-blocked');
-        tr.innerHTML = `
-            <td>${p.ruc}</td>
-            <td><strong>${p.razon}</strong></td>
-            <td style="font-size:13px;">${egpCol ? `<strong>${egpCol}</strong>` : '—'}</td>
-            <td style="font-size:13px;color:#6b7280;">${p.email || '—'}</td>
-            <td>${monedasHtml}</td>
-            <td style="font-weight:600;">${p.lineaCredito > 0 ? formatCurrency(p.lineaCredito, 'GS') : '—'}</td>
-            <td>${p.tasaInteres}%</td>
-            <td style="text-align:center;">${atlasIcon}</td>
-            <td>${accessBadge}</td>
-            <td class="abm-actions-cell">
-                <button type="button" class="btn-icon-action btn-icon-action--view" onclick="openAbmViewModal(${p.id})" title="Ver ente" aria-label="Ver ente">
-                    <i class="ph ph-eye"></i>
-                </button>
-                <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openAbmModal(${p.id})" title="Editar ente" aria-label="Editar ente">
-                    <i class="ph ph-pencil-simple"></i>
-                </button>
-                <button type="button" class="btn-icon-action ${blockBtnClass}" onclick="toggleParticipantBlock(${p.id})" title="${blockBtnTitle}" aria-label="${blockBtnTitle}">
-                    <i class="ph ${blockBtnIcon}"></i>
-                </button>
-                <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteParticipant(${p.id})" title="Eliminar ente" aria-label="Eliminar ente">
-                    <i class="ph ph-x"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+    renderEgpGrid();
+    renderProveedorGrid();
 }
 
 function switchAbmTab(tabKey) {
-    const valid = ['entes', 'usuarios', 'roles', 'notificaciones'];
+    const valid = ['egp', 'proveedor', 'usuarios', 'roles', 'notificaciones'];
     if (!valid.includes(tabKey)) return;
     document.querySelectorAll('.abm-tab').forEach(btn => {
         const on = btn.dataset.abmTab === tabKey;
@@ -1596,6 +1465,9 @@ function switchAbmTab(tabKey) {
         const on = panel.id === `abm-panel-${tabKey}`;
         panel.classList.toggle('active', on);
     });
+    if (typeof syncAbmEntesFiltersVisibility === 'function') {
+        syncAbmEntesFiltersVisibility(tabKey);
+    }
     closeAbmAddMenu();
 }
 
@@ -1605,12 +1477,17 @@ function renderAbmUsers() {
     tbody.innerHTML = '';
 
     const filtered = abmUsers.filter(userMatchesUsuariosFilters);
-    if (filtered.length === 0) {
+    const { slice, total } = typeof paginateAbmGrid === 'function'
+        ? paginateAbmGrid(filtered, 'usuarios')
+        : { slice: filtered, total: filtered.length };
+
+    if (!slice.length) {
         tbody.innerHTML = '<tr><td colspan="11"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        if (typeof renderAbmPagination === 'function') renderAbmPagination('usuarios-pagination', 'usuarios', total);
         return;
     }
 
-    filtered.forEach(u => {
+    slice.forEach(u => {
         const ente = getUserAssociatedEnte(u);
         const enteRazon = ente ? ente.razon : '—';
         const tipoBadge = !ente ? '—' : (ente.tipo === 'EGP'
@@ -1628,6 +1505,9 @@ function renderAbmUsers() {
         const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
         const blockBtnTitle = blocked ? 'Desbloquear usuario' : 'Bloquear usuario';
         const blockBtnIcon = blocked ? 'ph-lock-open' : 'ph-lock';
+        const viewBtn = typeof canViewAbmUsersDetail === 'function' && canViewAbmUsersDetail()
+            ? `<button type="button" class="btn-icon-action btn-icon-action--view" onclick="openUserDetailModal(${u.id})" title="Ver detalle" aria-label="Ver detalle"><i class="ph ph-eye"></i></button>`
+            : '';
         const tr = document.createElement('tr');
         if (blocked) tr.classList.add('abm-row-blocked');
         tr.innerHTML = `
@@ -1642,6 +1522,7 @@ function renderAbmUsers() {
             <td>${estadoBadge}</td>
             <td>${accessBadge}</td>
             <td class="abm-actions-cell">
+                ${viewBtn}
                 ${manageBtn}
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openUserModal(${u.id})" title="Editar usuario" aria-label="Editar usuario">
                     <i class="ph ph-pencil-simple"></i>
@@ -1656,6 +1537,7 @@ function renderAbmUsers() {
         `;
         tbody.appendChild(tr);
     });
+    if (typeof renderAbmPagination === 'function') renderAbmPagination('usuarios-pagination', 'usuarios', total);
 }
 
 function renderAbmRoles() {
@@ -1664,22 +1546,31 @@ function renderAbmRoles() {
     tbody.innerHTML = '';
 
     const filtered = abmRoles.filter(roleMatchesRolesFilters);
-    if (filtered.length === 0) {
+    const { slice, total } = typeof paginateAbmGrid === 'function'
+        ? paginateAbmGrid(filtered, 'roles')
+        : { slice: filtered, total: filtered.length };
+
+    if (!slice.length) {
         tbody.innerHTML = '<tr><td colspan="4"><div class="table-empty">No se encontraron roles con los filtros aplicados.</div></td></tr>';
+        if (typeof renderAbmPagination === 'function') renderAbmPagination('roles-pagination', 'roles', total);
         return;
     }
 
-    filtered.forEach(r => {
+    slice.forEach(r => {
         const n = r.permisos.length;
         const summary = n === 0
             ? 'Sin permisos'
             : `${n} — ${r.permisos.slice(0, 2).join(', ')}${n > 2 ? '…' : ''}`;
+        const viewBtn = typeof canViewAbmRolesDetail === 'function' && canViewAbmRolesDetail()
+            ? `<button type="button" class="btn-icon-action btn-icon-action--view" onclick="openRoleDetailModal(${r.id})" title="Ver detalle" aria-label="Ver detalle"><i class="ph ph-eye"></i></button>`
+            : '';
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${r.dominio}</td>
             <td><strong>${r.rol}</strong></td>
             <td style="font-size:12px;color:#6b7280;max-width:360px;">${summary}</td>
             <td class="abm-actions-cell">
+                ${viewBtn}
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openRoleModal(${r.id})" title="Editar rol" aria-label="Editar rol">
                     <i class="ph ph-pencil-simple"></i>
                 </button>
@@ -1690,6 +1581,7 @@ function renderAbmRoles() {
         `;
         tbody.appendChild(tr);
     });
+    if (typeof renderAbmPagination === 'function') renderAbmPagination('roles-pagination', 'roles', total);
 }
 
 function renderAbmNotifications() {
@@ -1698,12 +1590,20 @@ function renderAbmNotifications() {
     tbody.innerHTML = '';
 
     const filtered = abmNotifications.filter(notificationMatchesNotificacionesFilters);
-    if (filtered.length === 0) {
+    const { slice, total } = typeof paginateAbmGrid === 'function'
+        ? paginateAbmGrid(filtered, 'notificaciones')
+        : { slice: filtered, total: filtered.length };
+
+    if (!slice.length) {
         tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">No se encontraron notificaciones con los filtros aplicados.</div></td></tr>';
+        if (typeof renderAbmPagination === 'function') renderAbmPagination('notificaciones-pagination', 'notificaciones', total);
         return;
     }
 
-    filtered.forEach(n => {
+    slice.forEach(n => {
+        const viewBtn = typeof canViewAbmNotificationsDetail === 'function' && canViewAbmNotificationsDetail()
+            ? `<button type="button" class="btn-icon-action btn-icon-action--view" onclick="openNotificationDetailModal(${n.id})" title="Ver detalle" aria-label="Ver detalle"><i class="ph ph-eye"></i></button>`
+            : '';
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${n.nombre}</strong></td>
@@ -1714,6 +1614,7 @@ function renderAbmNotifications() {
             <td style="font-size:12px;color:#6b7280;max-width:280px;">${n.mensaje}</td>
             <td>${n.activa ? '<span class="badge-egp">Activa</span>' : '<span class="badge-proveedor">Inactiva</span>'}</td>
             <td class="abm-actions-cell">
+                ${viewBtn}
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openNotificationModal(${n.id})" title="Editar notificación" aria-label="Editar notificación">
                     <i class="ph ph-pencil-simple"></i>
                 </button>
@@ -1724,6 +1625,7 @@ function renderAbmNotifications() {
         `;
         tbody.appendChild(tr);
     });
+    if (typeof renderAbmPagination === 'function') renderAbmPagination('notificaciones-pagination', 'notificaciones', total);
 }
 
 function openNotificationModal(id = null) {
@@ -1768,7 +1670,7 @@ function submitNotificationForm() {
         showCustomAlert('Complete nombre, rol, emails y mensaje.', 'Datos incompletos');
         return;
     }
-    const payload = { nombre, estadoDisparador, dominio, rol, emails, mensaje, activa };
+    const payload = { nombre, estadoDisparador, tipoEnvio: 'Email', dominio, rol, emails, mensaje, activa };
     if (editingNotificationId != null) {
         const idx = abmNotifications.findIndex(x => x.id === editingNotificationId);
         if (idx >= 0) abmNotifications[idx] = { ...abmNotifications[idx], ...payload };
@@ -1796,27 +1698,55 @@ function deleteAbmNotification(id) {
     );
 }
 
+function onEntesFiltersChange() {
+    if (typeof abmGridPages !== 'undefined') {
+        abmGridPages.egp = 1;
+        abmGridPages.proveedor = 1;
+    }
+    renderParticipants();
+}
+
+function onAbmUsersFiltersChange() {
+    if (typeof abmGridPages !== 'undefined') abmGridPages.usuarios = 1;
+    renderAbmUsers();
+}
+
+function onAbmRolesFiltersChange() {
+    if (typeof abmGridPages !== 'undefined') abmGridPages.roles = 1;
+    renderAbmRoles();
+}
+
+function onAbmNotificationsFiltersChange() {
+    if (typeof abmGridPages !== 'undefined') abmGridPages.notificaciones = 1;
+    renderAbmNotifications();
+}
+
 document.querySelectorAll('.abm-tab').forEach(btn => {
     btn.addEventListener('click', () => switchAbmTab(btn.dataset.abmTab));
 });
 
-document.getElementById('filter-entes-search')?.addEventListener('input', renderParticipants);
-document.getElementById('filter-entes-cliente-atlas')?.addEventListener('change', renderParticipants);
-document.getElementById('filter-entes-estado')?.addEventListener('change', renderParticipants);
-document.getElementById('filter-usuarios-ente')?.addEventListener('input', renderAbmUsers);
-document.getElementById('filter-usuarios-cedula')?.addEventListener('input', renderAbmUsers);
-document.getElementById('filter-usuarios-apellido')?.addEventListener('input', renderAbmUsers);
-document.getElementById('filter-usuarios-estado')?.addEventListener('change', renderAbmUsers);
-document.getElementById('filter-roles-dominio')?.addEventListener('change', renderAbmRoles);
-document.getElementById('filter-roles-rol')?.addEventListener('change', renderAbmRoles);
-document.getElementById('filter-notificaciones-nombre')?.addEventListener('input', renderAbmNotifications);
+document.getElementById('filter-entes-search')?.addEventListener('input', onEntesFiltersChange);
+document.getElementById('filter-entes-cliente-atlas')?.addEventListener('change', onEntesFiltersChange);
+document.getElementById('filter-entes-estado')?.addEventListener('change', onEntesFiltersChange);
+document.getElementById('filter-usuarios-ente')?.addEventListener('input', onAbmUsersFiltersChange);
+document.getElementById('filter-usuarios-cedula')?.addEventListener('input', onAbmUsersFiltersChange);
+document.getElementById('filter-usuarios-apellido')?.addEventListener('input', onAbmUsersFiltersChange);
+document.getElementById('filter-usuarios-estado')?.addEventListener('change', onAbmUsersFiltersChange);
+document.getElementById('filter-roles-dominio')?.addEventListener('change', onAbmRolesFiltersChange);
+document.getElementById('filter-roles-rol')?.addEventListener('change', onAbmRolesFiltersChange);
+document.getElementById('filter-notificaciones-nombre')?.addEventListener('input', onAbmNotificationsFiltersChange);
 
 document.querySelectorAll('.confirming-invoice-tab').forEach(btn => {
     btn.addEventListener('click', () => switchInvoiceViewTab(btn.dataset.invoiceTab));
 });
 
 function openAbmModal(participantId = null) {
-    switchAbmTab('entes');
+    if (participantId) {
+        const p = participants.find(x => x.id === participantId);
+        switchAbmTab(p?.tipo === 'Proveedor' ? 'proveedor' : 'egp');
+    } else {
+        switchAbmTab('egp');
+    }
     editingParticipantId = participantId;
     const form = document.getElementById('abm-form');
     form.reset();
