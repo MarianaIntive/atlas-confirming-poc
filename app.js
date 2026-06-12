@@ -1004,15 +1004,6 @@ function syncAbmTipoFields() {
     if (!isProv) sel.value = '';
 }
 
-function applyAbmModalReadonlyDefaults() {
-    document.getElementById('abm-cliente-atlas').checked = false;
-    const desAuto = document.getElementById('abm-desembolso-auto');
-    if (desAuto) {
-        desAuto.checked = true;
-        desAuto.disabled = true;
-    }
-}
-
 function syncAbmModalTipoPreset(presetTipo) {
     const tipoSel = document.getElementById('abm-tipo');
     if (!tipoSel) return;
@@ -1820,8 +1811,6 @@ function openAbmModal(participantId = null, presetTipo = null) {
         document.getElementById('abm-razon').value = p.razon;
         document.getElementById('abm-email').value = p.email || '';
         document.getElementById('abm-telefono').value = p.telefono || '';
-        const viz = getAbmVisualizationDefaults(p);
-        document.getElementById('abm-cliente-atlas').checked = viz.clienteAtlas;
         if (p.tipo === 'Proveedor' && p.egpPadreId != null) {
             populateAbmEgpPadreSelect(p.egpPadreId);
         }
@@ -1836,14 +1825,8 @@ function openAbmModal(participantId = null, presetTipo = null) {
             document.getElementById('abm-tipo').value = tipo;
             syncAbmModalTipoPreset(tipo);
         }
-        applyAbmModalReadonlyDefaults();
     }
 
-    const desAuto = document.getElementById('abm-desembolso-auto');
-    if (desAuto) {
-        desAuto.checked = true;
-        desAuto.disabled = true;
-    }
     syncAbmTipoFields();
     openModal('abm-modal');
 }

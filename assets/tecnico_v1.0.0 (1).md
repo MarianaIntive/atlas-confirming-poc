@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.9.1 (`v2.9.1`)  
+**Versión documento / POC:** 2.9.2 (`v2.9.2`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -285,6 +285,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.9.2 — 2026-05-19
+
+- **ABM Alta/Edición EGP y Proveedor:** se quita sección Configuración (Cliente Atlas, Desembolsos automáticos) del modal de alta/edición; visible solo en modal Ver detalle.
 
 ### v2.9.1 — 2026-05-19
 
