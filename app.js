@@ -172,25 +172,6 @@ function patchNoElegibleInvoiceMocks() {
 }
 
 // Participantes (EGPs y Proveedores)
-let participants = [
-    { id: 1, tipo: 'EGP', ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 500000000, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: 'Pago a 30/60/90 días', clienteAtlas: true, desembolsoAuto: true },
-    { id: 2, tipo: 'EGP', ruc: '80054321-7', razon: 'Tigo Paraguay', email: 'finanzas@tigo.com.py', telefono: '+595 21 654321', monedas: ['GS'], lineaCredito: 2000000000, tasaInteres: 11, tasaComision: 1.2, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false },
-    { id: 3, tipo: 'EGP', ruc: '80067890-1', razon: 'Cervepar', email: 'cuentas@cervepar.com.py', telefono: '+595 21 789012', monedas: ['GS', 'USD'], lineaCredito: 800000000, tasaInteres: 13, tasaComision: 1.8, iva: 10, condiciones: 'Límite USD 50,000 por operación', clienteAtlas: true, desembolsoAuto: true },
-    { id: 4, tipo: 'Proveedor', egpPadreId: 1, ruc: '80099999-2', razon: 'Tech Solutions S.A.', email: 'pagos@techsolutions.com.py', telefono: '+595 21 999888', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
-    { id: 5, tipo: 'Proveedor', egpPadreId: 2, ruc: '80011111-3', razon: 'Logistica Integral', email: 'cobranzas@logistica.com.py', telefono: '+595 21 111222', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
-    { id: 6, tipo: 'Proveedor', egpPadreId: 3, ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
-    { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
-    { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
-    { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true, bloqueado: false },
-];
-
-let nextParticipantId = 10;
-let editingParticipantId = null;
-
-participants.forEach(p => {
-    if (p.bloqueado == null) p.bloqueado = false;
-});
-
 const ABM_USER_STATES = {
     PENDIENTE_AUTORIZACION: 'Pendiente de Autorización',
     AUTORIZADO: 'Autorizado',
@@ -201,6 +182,26 @@ const ABM_ACCESS_STATES = {
     ACTIVO: 'Activo',
     BLOQUEADO: 'Bloqueado',
 };
+
+let participants = [
+    { id: 1, tipo: 'EGP', ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 500000000, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: 'Pago a 30/60/90 días', clienteAtlas: true, desembolsoAuto: true },
+    { id: 2, tipo: 'EGP', ruc: '80054321-7', razon: 'Tigo Paraguay', email: 'finanzas@tigo.com.py', telefono: '+595 21 654321', monedas: ['GS'], lineaCredito: 2000000000, tasaInteres: 11, tasaComision: 1.2, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: false, estado: 'Pendiente de Autorización' },
+    { id: 3, tipo: 'EGP', ruc: '80067890-1', razon: 'Cervepar', email: 'cuentas@cervepar.com.py', telefono: '+595 21 789012', monedas: ['GS', 'USD'], lineaCredito: 800000000, tasaInteres: 13, tasaComision: 1.8, iva: 10, condiciones: 'Límite USD 50,000 por operación', clienteAtlas: true, desembolsoAuto: true },
+    { id: 4, tipo: 'Proveedor', egpPadreId: 1, ruc: '80099999-2', razon: 'Tech Solutions S.A.', email: 'pagos@techsolutions.com.py', telefono: '+595 21 999888', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
+    { id: 5, tipo: 'Proveedor', egpPadreId: 2, ruc: '80011111-3', razon: 'Logistica Integral', email: 'cobranzas@logistica.com.py', telefono: '+595 21 111222', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
+    { id: 6, tipo: 'Proveedor', egpPadreId: 3, ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true, bloqueado: true },
+    { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
+    { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
+    { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true, bloqueado: false },
+];
+
+let nextParticipantId = 10;
+let editingParticipantId = null;
+
+participants.forEach(p => {
+    if (p.bloqueado == null) p.bloqueado = false;
+    if (!p.estado) p.estado = ABM_USER_STATES.AUTORIZADO;
+});
 
 let abmUsers = [
     { id: 1, nombre: 'Ana', apellido: 'Gómez', documento: '1234567', email: 'a.gomez@retail.com.py', telefono: '+595 981 111222', enteId: 1, rolId: 7, estado: ABM_USER_STATES.AUTORIZADO, bloqueado: false },
@@ -1205,16 +1206,24 @@ function getAbmEntesFilterValues() {
     };
 }
 
+function matchesAbmEstadoFilter(item, filterValue) {
+    if (!filterValue || filterValue === 'all') return true;
+    const bloqueado = item?.bloqueado === true;
+    const estado = item?.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    if (filterValue === ABM_ACCESS_STATES.BLOQUEADO) return bloqueado;
+    if (filterValue === ABM_ACCESS_STATES.ACTIVO) return !bloqueado && estado === ABM_USER_STATES.AUTORIZADO;
+    if (filterValue === ABM_USER_STATES.AUTORIZADO) return estado === ABM_USER_STATES.AUTORIZADO;
+    if (filterValue === ABM_USER_STATES.PENDIENTE_AUTORIZACION) return estado === ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    return true;
+}
+
 function participantMatchesEntesFilters(p) {
     const { search, clienteAtlas, estado } = getAbmEntesFilterValues();
     const matchSearch = !search || abmTextIncludes(p.ruc, search) || abmTextIncludes(p.razon, search);
     let matchAtlas = true;
     if (clienteAtlas === 'si') matchAtlas = p.clienteAtlas === true;
     else if (clienteAtlas === 'no') matchAtlas = !p.clienteAtlas;
-    let matchEstado = true;
-    if (estado === 'activo') matchEstado = !isParticipantBlocked(p);
-    else if (estado === 'bloqueado') matchEstado = isParticipantBlocked(p);
-    return matchSearch && matchAtlas && matchEstado;
+    return matchSearch && matchAtlas && matchesAbmEstadoFilter(p, estado);
 }
 
 function getUserAssociatedEnte(u) {
@@ -1467,9 +1476,7 @@ function userMatchesUsuariosFilters(u) {
     ));
     const matchCedula = !cedula || abmTextIncludes(u.documento || '', cedula);
     const matchApellido = !apellido || abmTextIncludes(u.apellido, apellido);
-    const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
-    const matchEstado = estado === 'all' || userEstado === estado;
-    return matchEnte && matchCedula && matchApellido && matchEstado;
+    return matchEnte && matchCedula && matchApellido && matchesAbmEstadoFilter(u, estado);
 }
 
 function getAbmRolesFilterValues() {
@@ -1878,6 +1885,7 @@ function submitParticipant() {
         desembolsoAuto: true,
         egpPadreId: tipo === 'Proveedor' ? parseInt(egpPadreRaw, 10) : null,
         bloqueado: existing?.bloqueado ?? false,
+        estado: existing?.estado ?? ABM_USER_STATES.PENDIENTE_AUTORIZACION,
     };
 
     if (editingParticipantId && canEditProveedorAdminFields()) {
