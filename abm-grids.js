@@ -358,10 +358,7 @@ function openUserDetailModal(userId) {
             ${abmViewField('Email', u.email)}
             ${abmViewField('Teléfono', u.telefono)}
         </div>
-        <div class="form-row">
-            ${abmViewField('Tipo de ente asociado', ente?.tipo || '—')}
-            ${abmViewField('Ente asociado', ente?.razon || '—')}
-        </div>
+        ${abmViewField('Ente asociado', ente?.razon || '—')}
         ${abmViewField('Rol', getAbmRoleLabel(u.rolId))}
     `;
     openAbmDetailModal(`Ver detalle — ${u.nombre} ${u.apellido}`, body);

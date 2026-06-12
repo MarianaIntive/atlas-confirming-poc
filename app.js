@@ -1529,7 +1529,7 @@ function renderAbmUsers() {
         : { slice: filtered, total: filtered.length };
 
     if (!slice.length) {
-        tbody.innerHTML = '<tr><td colspan="11"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
         if (typeof renderAbmPagination === 'function') renderAbmPagination('usuarios-pagination', 'usuarios', total);
         return;
     }
@@ -1537,9 +1537,6 @@ function renderAbmUsers() {
     slice.forEach(u => {
         const ente = getUserAssociatedEnte(u);
         const enteRazon = ente ? ente.razon : '—';
-        const tipoBadge = !ente ? '—' : (ente.tipo === 'EGP'
-            ? '<span class="badge-egp">EGP</span>'
-            : '<span class="badge-proveedor">Proveedor</span>');
         const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
         const estadoBadge = `<span class="status-badge ${abmUserEstadoBadgeClass(userEstado)}">${userEstado}</span>`;
         const blocked = isAbmUserBlocked(u);
@@ -1564,7 +1561,6 @@ function renderAbmUsers() {
             <td style="font-size:13px;color:#6b7280;">${u.email}</td>
             <td>${u.telefono}</td>
             <td><strong>${enteRazon}</strong></td>
-            <td>${tipoBadge}</td>
             <td><strong>${rolLabel}</strong></td>
             <td>${estadoBadge}</td>
             <td>${accessBadge}</td>
@@ -2857,7 +2853,7 @@ function populateUserEnteSelect() {
         .forEach(p => {
             const opt = document.createElement('option');
             opt.value = String(p.id);
-            opt.textContent = `${p.razon} (${p.tipo})`;
+            opt.textContent = p.razon;
             sel.appendChild(opt);
         });
     if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;

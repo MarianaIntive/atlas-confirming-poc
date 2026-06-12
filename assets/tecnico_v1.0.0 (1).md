@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.9.2 (`v2.9.2`)  
+**Versión documento / POC:** 2.9.3 (`v2.9.3`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -285,6 +285,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.9.3 — 2026-05-19
+
+- **ABM Usuarios:** se quita columna **Tipo ente** de la grilla y el campo **Tipo de ente asociado** del modal de detalle; selector de ente sin indicar tipo en el modal de alta/edición.
 
 ### v2.9.2 — 2026-05-19
 
