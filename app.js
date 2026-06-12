@@ -341,9 +341,8 @@ function finalizeAbmUserAuthorization(u, { action, previousEstado, details = {} 
     switchAbmTab('usuarios');
 }
 
-function canEditProveedorAdminFields() {
-    const { dominio, rol } = getLoggedSession();
-    return dominio === 'Proveedor' && (rol === 'ADMIN' || rol === 'SUPERVISOR');
+function shouldShowProveedorBankEditFields(p) {
+    return p?.tipo === 'Proveedor' && !p.clienteAtlas;
 }
 
 // Catálogo de roles permitidos por dominio (POC)
@@ -1065,10 +1064,10 @@ function clearProveedorAdminFields() {
     if (pygRadio) pygRadio.checked = true;
 }
 
-function syncAbmProveedorAdminBlock(isEdit) {
+function syncAbmProveedorAdminBlock(participant) {
     const block = document.getElementById('abm-proveedor-admin-block');
     if (!block) return;
-    block.classList.toggle('hidden', !(isEdit && canEditProveedorAdminFields()));
+    block.classList.toggle('hidden', !shouldShowProveedorBankEditFields(participant));
 }
 
 function getEnteEgpProveedorRelations(participant) {
@@ -1795,7 +1794,7 @@ function openAbmModal(participantId = null, presetTipo = null) {
     document.getElementById('abm-file-list').innerHTML = '';
     populateAbmEgpPadreSelect();
     clearProveedorAdminFields();
-    syncAbmProveedorAdminBlock(false);
+    syncAbmProveedorAdminBlock(null);
     syncAbmModalTipoPreset(null);
 
     if (participantId) {
@@ -1810,8 +1809,8 @@ function openAbmModal(participantId = null, presetTipo = null) {
         if (p.tipo === 'Proveedor' && p.egpPadreId != null) {
             populateAbmEgpPadreSelect(p.egpPadreId);
         }
-        syncAbmProveedorAdminBlock(true);
-        if (canEditProveedorAdminFields()) {
+        syncAbmProveedorAdminBlock(p);
+        if (shouldShowProveedorBankEditFields(p)) {
             populateProveedorAdminFields(p);
         }
     } else {
@@ -1867,7 +1866,7 @@ function submitParticipant() {
         estado: existing?.estado ?? ABM_USER_STATES.PENDIENTE_AUTORIZACION,
     };
 
-    if (editingParticipantId && canEditProveedorAdminFields()) {
+    if (editingParticipantId && existing && shouldShowProveedorBankEditFields(existing)) {
         const defaults = getProveedorAdminFieldDefaults(ruc);
         data.cuentaCredito = document.getElementById('abm-cuenta-credito').value.trim() || defaults.cuentaCredito;
         data.banco = document.getElementById('abm-banco').value.trim() || defaults.banco;

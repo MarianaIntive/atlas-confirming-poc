@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.9.3 (`v2.9.3`)  
+**Versión documento / POC:** 2.9.4 (`v2.9.4`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -285,6 +285,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.9.4 — 2026-05-19
+
+- **ABM Editar Proveedor:** datos bancarios y titular visibles solo al editar proveedores **no Cliente Atlas**; no aparecen en alta. Defaults: cuenta `CC-{RUC}`, banco Banco Atlas, moneda PYG.
 
 ### v2.9.3 — 2026-05-19
 
