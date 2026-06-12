@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.8.1 (`v2.8.1`)  
+**Versión documento / POC:** 2.9.0 (`v2.9.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -284,6 +284,11 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.9.0 — 2026-05-19
+
+- **ABM — Alta:** menú + con opciones **Nuevo EGP** y **Nuevo Proveedor**; modal de alta sin monedas, línea de crédito ni condiciones financieras (visibles en grilla / ver detalle).
+- **ABM Notificaciones:** columna **Agrupador** (ABM, Login, Simulación, Gestión de facturas); catálogo mock ampliado con 20 notificaciones según eventos de ABM, login, simulación de adelantos y máquina de estados.
 
 ### v2.8.1 — 2026-05-19
 

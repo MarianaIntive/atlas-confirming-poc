@@ -2371,6 +2371,35 @@ textarea.input-text {
     color: var(--atlas-primary);
 }
 
+.badge-notif {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.badge-notif-abm {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+.badge-notif-login {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+.badge-notif-simulacion {
+    background: #fef3c7;
+    color: #b45309;
+}
+.badge-notif-gestion {
+    background: #ecfdf5;
+    color: #047857;
+}
+.badge-notif-default {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
 .abm-row-blocked {
     opacity: 0.72;
 }

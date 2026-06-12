@@ -555,16 +555,42 @@ abmUsers.forEach(u => {
     if (u.rolId == null && abmRoles.length > 0) u.rolId = abmRoles[0].id;
 });
 
-// Notificaciones del sistema (disparadas por avance en la máquina de estados)
+// Agrupadores de notificaciones del sistema
+const NOTIFICATION_AGRUPADORES = {
+    ABM: 'ABM',
+    LOGIN: 'LOGIN',
+    SIMULACION: 'Simulación',
+    GESTION_FACTURAS: 'Gestión de facturas',
+};
+
+// Notificaciones del sistema (disparadas por eventos ABM, login, simulación o máquina de estados)
 let abmNotifications = [
-    { id: 1, nombre: 'Factura cargada — Pendiente', estadoDisparador: INVOICE_STATES.PENDIENTE, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Factura en estado Pendiente: lista para Habilitar o Bloquear por el aprobador EGP.' },
-    { id: 2, nombre: 'Solicitud adelanto — Aprobación EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Factura pendiente de aprobación EGP del adelanto solicitado por el proveedor.' },
-    { id: 3, nombre: 'Desembolso en curso', estadoDisparador: INVOICE_STATES.PENDIENTE_DESEMBOLSO, dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Factura en Pendiente de desembolso: CORE BANKING procesando el pago.' },
-    { id: 4, nombre: 'Aprobación banco manual (MVP2)', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, dominio: 'Banco', rol: 'APROBADOR', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'EGP sin desembolso automático: requiere aprobación bancaria manual.' },
-    { id: 5, nombre: 'Factura financiada', estadoDisparador: INVOICE_STATES.FINANCIADA, dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Adelanto acreditado: factura en estado Financiada.' },
-    { id: 6, nombre: 'Factura no elegible', estadoDisparador: INVOICE_STATES.NO_ELEGIBLE, dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Factura marcada NO ELEGIBLE (fecha de pago menor a 30 días).' },
+    // —— ABM ——
+    { id: 1, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de alta de ente EGP/PROVEEDOR', estadoDisparador: 'Confirmación de alta de un ente en la plataforma', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Se registró un nuevo ente (EGP o Proveedor) en la plataforma Confirming.' },
+    { id: 2, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de alta de usuario BANCO pendiente de autorización', estadoDisparador: 'Confirmación de alta del usuario en el ABM para usuarios banco', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Nuevo usuario Banco pendiente de autorización en el ABM.' },
+    { id: 3, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de alta de usuario EGP pendiente de autorización', estadoDisparador: 'Confirmación de alta del usuario en el ABM para usuarios EGP', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Nuevo usuario EGP pendiente de autorización en el ABM.' },
+    { id: 4, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de alta de usuario PROVEEDOR pendiente de autorización', estadoDisparador: 'Confirmación de alta del usuario en el ABM para usuarios proveedor', tipoEnvio: 'Email', dominio: 'Proveedor', rol: 'ADMIN', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Nuevo usuario Proveedor pendiente de autorización en el ABM.' },
+    { id: 5, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de modificación del ente asociado de un usuario previamente autorizado', estadoDisparador: 'Modificación del campo ente asociado y estado a Pendiente de autorizar del usuario', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Un usuario autorizado cambió su ente asociado y requiere nueva autorización.' },
+    { id: 6, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de modificación de Rol de un usuario previamente autorizado', estadoDisparador: 'Modificación del campo rol y estado a Pendiente de autorizar del usuario', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Un usuario autorizado cambió su rol y requiere nueva autorización.' },
+    { id: 7, agrupador: NOTIFICATION_AGRUPADORES.ABM, nombre: 'Notificación de bloqueo de usuario por reintentos fallidos de logueo con Keycloak', estadoDisparador: 'Actualización a estado Bloqueado y motivo de reintentos fallidos', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Usuario bloqueado por reintentos fallidos de logueo en Keycloak.' },
+    // —— LOGIN ——
+    { id: 8, agrupador: NOTIFICATION_AGRUPADORES.LOGIN, nombre: 'Notificación de primer login usuarios BANCO', estadoDisparador: 'Autorización de alta del usuario en el ABM para usuarios banco', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Mail de bienvenida y clave de acceso temporal para usuarios banco.' },
+    { id: 9, agrupador: NOTIFICATION_AGRUPADORES.LOGIN, nombre: 'Notificación de primer login usuarios externos', estadoDisparador: 'Autorización de alta del usuario en el ABM para usuarios no banco', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Mail de bienvenida y clave de acceso temporal para usuarios externos (EGP/Proveedor).' },
+    // —— SIMULACIÓN DE ADELANTOS ——
+    { id: 10, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de solicitud de aprobación de adelanto al EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Se solicitó simulación de adelanto: requiere aprobación del EGP.' },
+    { id: 11, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de aprobación automática del adelanto para el banco', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'La simulación fue aprobada automáticamente y pasó a Pendiente de aprobación banco.' },
+    { id: 12, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de aprobación del adelanto para la EGP', estadoDisparador: INVOICE_STATES.FINANCIADA, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Se aprobó la simulación: la EGP tomó compromiso/préstamo (Financiada).' },
+    { id: 13, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de aprobación del adelanto para el proveedor', estadoDisparador: INVOICE_STATES.FINANCIADA, tipoEnvio: 'Email', dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Se aprobó la simulación y el desembolso al proveedor está en curso.' },
+    { id: 14, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de rechazo de solicitud de adelanto por cambio de fecha de pago', estadoDisparador: `${INVOICE_STATES.PENDIENTE_APROBACION_EGP} → ${INVOICE_STATES.BLOQUEADA}`, tipoEnvio: 'Email', dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'La EGP rechazó la simulación de adelanto por cambio de fecha de pago (Bloqueada).' },
+    // —— GESTIÓN DE FACTURAS (máquina de estados) ——
+    { id: 15, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de nueva factura cargada pendiente de habilitar', estadoDisparador: 'Carga individual o masiva de facturas', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Nueva factura cargada en estado Pendiente: lista para Habilitar o Bloquear.' },
+    { id: 16, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas por vencer', estadoDisparador: 'Fecha actual a menos de 15 días corridos de la fecha de vencimiento', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas próximas a alcanzar la fecha de vencimiento (alerta 15 días).' },
+    { id: 17, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas por vencer CRÍTICA', estadoDisparador: 'Fecha actual a menos de 5 días corridos de la fecha de vencimiento', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas en alerta crítica: vencimiento en menos de 5 días.' },
+    { id: 18, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas con fecha de pago por vencer', estadoDisparador: 'Fecha actual a menos de 31 días corridos de la fecha de pago', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas con fecha de pago próxima (30–31 días para alcanzar la fecha de pago).' },
+    { id: 19, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de pago', estadoDisparador: `Fecha de pago = día anterior y/o estado ${INVOICE_STATES.NO_ELEGIBLE}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas que alcanzaron la fecha de pago (NO ELEGIBLE).' },
+    { id: 20, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de vencimiento', estadoDisparador: `Fecha de vencimiento = día anterior y/o estado ${INVOICE_STATES.VENCIDA}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas que alcanzaron la fecha de vencimiento (Vencida).' },
 ];
-let nextAbmNotificationId = 7;
+let nextAbmNotificationId = 21;
 let editingNotificationId = null;
 
 let currentSimulationInvoice = null;
@@ -978,19 +1004,42 @@ function syncAbmTipoFields() {
 }
 
 function applyAbmModalReadonlyDefaults() {
-    document.getElementById('abm-moneda-gs').checked = true;
-    document.getElementById('abm-moneda-usd').checked = false;
-    document.getElementById('abm-linea').value = '';
-    document.getElementById('abm-interes').value = 12;
-    document.getElementById('abm-comision').value = 1.5;
-    document.getElementById('abm-iva').value = 10;
-    document.getElementById('abm-condiciones').value = '';
     document.getElementById('abm-cliente-atlas').checked = false;
     const desAuto = document.getElementById('abm-desembolso-auto');
     if (desAuto) {
         desAuto.checked = true;
         desAuto.disabled = true;
     }
+}
+
+function syncAbmModalTipoPreset(presetTipo) {
+    const tipoSel = document.getElementById('abm-tipo');
+    if (!tipoSel) return;
+    const locked = presetTipo === 'EGP' || presetTipo === 'Proveedor';
+    tipoSel.disabled = locked;
+    if (locked) tipoSel.value = presetTipo;
+}
+
+function renderNotificationAgrupadorBadge(agrupador) {
+    const key = String(agrupador || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '-');
+    const cls = {
+        abm: 'badge-notif-abm',
+        login: 'badge-notif-login',
+        simulacion: 'badge-notif-simulacion',
+        'gestion-de-facturas': 'badge-notif-gestion',
+    }[key] || 'badge-notif-default';
+    return `<span class="badge-notif ${cls}">${agrupador || '—'}</span>`;
+}
+
+function populateNotificationAgrupadorSelect(selected = '') {
+    const sel = document.getElementById('notif-agrupador');
+    if (!sel) return;
+    sel.innerHTML = Object.values(NOTIFICATION_AGRUPADORES).map(v =>
+        `<option value="${v}">${v}</option>`
+    ).join('');
+    if (selected && [...sel.options].some(o => o.value === selected)) sel.value = selected;
 }
 
 function getProveedorAdminFieldDefaults(ruc) {
@@ -1699,15 +1748,16 @@ function renderAbmNotifications() {
 
     const filtered = abmNotifications.filter(notificationMatchesNotificacionesFilters);
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">No se encontraron notificaciones con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron notificaciones con los filtros aplicados.</div></td></tr>';
         return;
     }
 
     filtered.forEach(n => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
+            <td>${renderNotificationAgrupadorBadge(n.agrupador)}</td>
             <td><strong>${n.nombre}</strong></td>
-            <td><span class="status-badge status-pendiente" style="text-transform:none;font-size:10px;">${n.estadoDisparador}</span></td>
+            <td><span class="status-badge status-pendiente" style="text-transform:none;font-size:10px;white-space:normal;max-width:220px;display:inline-block;">${n.estadoDisparador}</span></td>
             <td>${n.dominio}</td>
             <td>${n.rol}</td>
             <td style="font-size:12px;color:#6b7280;max-width:200px;word-break:break-all;">${n.emails}</td>
@@ -1731,16 +1781,12 @@ function openNotificationModal(id = null) {
     const title = document.getElementById('notification-modal-title');
     const form = document.getElementById('notification-form');
     form.reset();
-    const estadoSel = document.getElementById('notif-estado');
-    if (estadoSel) {
-        estadoSel.innerHTML = Object.values(INVOICE_STATES).map(s =>
-            `<option value="${s}">${s}</option>`
-        ).join('');
-    }
+    populateNotificationAgrupadorSelect();
     if (id != null) {
         const n = abmNotifications.find(x => x.id === id);
         if (!n) return;
         if (title) title.textContent = 'Editar Notificación';
+        document.getElementById('notif-agrupador').value = n.agrupador || NOTIFICATION_AGRUPADORES.GESTION_FACTURAS;
         document.getElementById('notif-nombre').value = n.nombre;
         document.getElementById('notif-estado').value = n.estadoDisparador;
         document.getElementById('notif-dominio').value = n.dominio;
@@ -1751,24 +1797,26 @@ function openNotificationModal(id = null) {
     } else {
         if (title) title.textContent = 'Nueva Notificación';
         document.getElementById('notif-activa').checked = true;
+        document.getElementById('notif-agrupador').value = NOTIFICATION_AGRUPADORES.GESTION_FACTURAS;
         document.getElementById('notif-estado').value = INVOICE_STATES.PENDIENTE;
     }
     openModal('notification-modal');
 }
 
 function submitNotificationForm() {
+    const agrupador = document.getElementById('notif-agrupador').value;
     const nombre = document.getElementById('notif-nombre').value.trim();
-    const estadoDisparador = document.getElementById('notif-estado').value;
+    const estadoDisparador = document.getElementById('notif-estado').value.trim();
     const dominio = document.getElementById('notif-dominio').value;
     const rol = document.getElementById('notif-rol').value.trim();
     const emails = document.getElementById('notif-emails').value.trim();
     const mensaje = document.getElementById('notif-mensaje').value.trim();
     const activa = document.getElementById('notif-activa').checked;
-    if (!nombre || !rol || !emails || !mensaje) {
-        showCustomAlert('Complete nombre, rol, emails y mensaje.', 'Datos incompletos');
+    if (!agrupador || !nombre || !estadoDisparador || !rol || !emails || !mensaje) {
+        showCustomAlert('Complete agrupador, nombre, evento/estado, rol, emails y mensaje.', 'Datos incompletos');
         return;
     }
-    const payload = { nombre, estadoDisparador, dominio, rol, emails, mensaje, activa };
+    const payload = { agrupador, nombre, estadoDisparador, tipoEnvio: 'Email', dominio, rol, emails, mensaje, activa };
     if (editingNotificationId != null) {
         const idx = abmNotifications.findIndex(x => x.id === editingNotificationId);
         if (idx >= 0) abmNotifications[idx] = { ...abmNotifications[idx], ...payload };
@@ -1815,7 +1863,7 @@ document.querySelectorAll('.confirming-invoice-tab').forEach(btn => {
     btn.addEventListener('click', () => switchInvoiceViewTab(btn.dataset.invoiceTab));
 });
 
-function openAbmModal(participantId = null) {
+function openAbmModal(participantId = null, presetTipo = null) {
     switchAbmTab('entes');
     editingParticipantId = participantId;
     const form = document.getElementById('abm-form');
@@ -1824,24 +1872,18 @@ function openAbmModal(participantId = null) {
     populateAbmEgpPadreSelect();
     clearProveedorAdminFields();
     syncAbmProveedorAdminBlock(false);
+    syncAbmModalTipoPreset(null);
 
     if (participantId) {
         const p = participants.find(x => x.id === participantId);
         if (!p) return;
-        const viz = getAbmVisualizationDefaults(p);
-        document.getElementById('abm-modal-title').textContent = 'Editar Ente';
+        document.getElementById('abm-modal-title').textContent = p.tipo === 'EGP' ? 'Editar EGP' : 'Editar Proveedor';
         document.getElementById('abm-tipo').value = p.tipo;
         document.getElementById('abm-ruc').value = p.ruc;
         document.getElementById('abm-razon').value = p.razon;
         document.getElementById('abm-email').value = p.email || '';
         document.getElementById('abm-telefono').value = p.telefono || '';
-        document.getElementById('abm-moneda-gs').checked = viz.monedas.includes('GS');
-        document.getElementById('abm-moneda-usd').checked = viz.monedas.includes('USD');
-        document.getElementById('abm-linea').value = viz.lineaCredito || '';
-        document.getElementById('abm-interes').value = viz.tasaInteres;
-        document.getElementById('abm-comision').value = viz.tasaComision;
-        document.getElementById('abm-iva').value = viz.iva;
-        document.getElementById('abm-condiciones').value = viz.condiciones;
+        const viz = getAbmVisualizationDefaults(p);
         document.getElementById('abm-cliente-atlas').checked = viz.clienteAtlas;
         if (p.tipo === 'Proveedor' && p.egpPadreId != null) {
             populateAbmEgpPadreSelect(p.egpPadreId);
@@ -1851,7 +1893,12 @@ function openAbmModal(participantId = null) {
             populateProveedorAdminFields(p);
         }
     } else {
-        document.getElementById('abm-modal-title').textContent = 'Nuevo Ente';
+        const tipo = presetTipo === 'Proveedor' ? 'Proveedor' : (presetTipo === 'EGP' ? 'EGP' : '');
+        document.getElementById('abm-modal-title').textContent = tipo === 'Proveedor' ? 'Nuevo Proveedor' : (tipo === 'EGP' ? 'Nuevo EGP' : 'Nuevo Ente');
+        if (tipo) {
+            document.getElementById('abm-tipo').value = tipo;
+            syncAbmModalTipoPreset(tipo);
+        }
         applyAbmModalReadonlyDefaults();
     }
 

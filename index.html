@@ -294,7 +294,8 @@
                         <div class="abm-add-dropdown" id="abm-add-dropdown">
                             <button type="button" class="btn-add-only" id="abm-add-toggle" aria-expanded="false" aria-haspopup="true" title="Agregar" onclick="event.stopPropagation(); toggleAbmAddMenu();">+</button>
                             <div id="abm-add-menu" class="dropdown-menu-abm hidden" role="menu">
-                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('entes'); openAbmModal();">Nuevo Ente</button>
+                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('entes'); openAbmModal(null, 'EGP');">Nuevo EGP</button>
+                                <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('entes'); openAbmModal(null, 'Proveedor');">Nuevo Proveedor</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('usuarios'); openUserModal();">Nuevo Usuario</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('roles'); openRoleModal();">Nuevo Rol</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('notificaciones'); openNotificationModal();">Nueva Notificación</button>
@@ -468,8 +469,9 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
+                                        <th>Agrupador</th>
                                         <th>Nombre</th>
-                                        <th>Estado disparador</th>
+                                        <th>Evento / Estado disparador</th>
                                         <th>Dominio</th>
                                         <th>Rol</th>
                                         <th>Emails</th>
@@ -849,47 +851,6 @@
                         </div>
                     </div>
 
-                    <div class="form-group abm-readonly-block" id="abm-block-monedas">
-                        <label>Monedas Habilitadas para Operar <span class="abm-viz-tag">(solo visualización)</span></label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="abm-moneda-gs" value="GS" disabled>
-                                <span class="checkbox-custom"></span>
-                                <span>GS &mdash; Guaraníes</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="abm-moneda-usd" value="USD" disabled>
-                                <span class="checkbox-custom"></span>
-                                <span>USD &mdash; Dólares</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group abm-readonly-block" id="abm-block-linea">
-                        <label>Línea de Crédito Asignada (Gs.) <span class="abm-viz-tag">(solo visualización)</span></label>
-                        <input type="number" id="abm-linea" class="input-text" placeholder="Monto aprobado" readonly tabindex="-1">
-                    </div>
-
-                    <p class="form-section-title abm-readonly-block" style="margin-top:24px">Condiciones Financieras <span class="abm-viz-tag">(solo visualización)</span></p>
-                    <div class="form-row abm-readonly-block" id="abm-block-financieras">
-                        <div class="form-group">
-                            <label>% Interés (TNA)</label>
-                            <input type="number" id="abm-interes" class="input-text" placeholder="Ej: 12.0" step="0.1" readonly tabindex="-1">
-                        </div>
-                        <div class="form-group">
-                            <label>% Comisión</label>
-                            <input type="number" id="abm-comision" class="input-text" placeholder="Ej: 1.5" step="0.1" readonly tabindex="-1">
-                        </div>
-                        <div class="form-group">
-                            <label>% IVA</label>
-                            <input type="number" id="abm-iva" class="input-text" placeholder="Ej: 10" step="0.1" readonly tabindex="-1">
-                        </div>
-                    </div>
-                    <div class="form-group abm-readonly-block" id="abm-block-condiciones">
-                        <label>Condiciones Especiales <span class="abm-viz-tag">(solo visualización)</span></label>
-                        <textarea id="abm-condiciones" class="input-text" rows="3" placeholder="Detalle condiciones especiales acordadas..." readonly tabindex="-1"></textarea>
-                    </div>
-
                     <p class="form-section-title" style="margin-top:24px">Configuración</p>
                     <div class="toggles-row">
                         <label class="toggle-label toggle-label--readonly abm-readonly-block" id="abm-block-cliente-atlas">
@@ -1108,14 +1069,20 @@
             </div>
             <div class="modal-body">
                 <form id="notification-form" onsubmit="event.preventDefault(); submitNotificationForm();">
-                    <div class="form-group">
-                        <label for="notif-nombre">Nombre *</label>
-                        <input type="text" id="notif-nombre" class="input-text" required placeholder="Ej: Factura pendiente de habilitación">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="notif-agrupador">Agrupador *</label>
+                            <select id="notif-agrupador" class="select-input" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="notif-nombre">Nombre *</label>
+                            <input type="text" id="notif-nombre" class="input-text" required placeholder="Ej: Factura pendiente de habilitación">
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="notif-estado">Estado disparador *</label>
-                            <select id="notif-estado" class="select-input" required></select>
+                            <label for="notif-estado">Evento / Estado disparador *</label>
+                            <input type="text" id="notif-estado" class="input-text" required placeholder="Evento o estado que dispara la notificación">
                         </div>
                         <div class="form-group">
                             <label for="notif-dominio">Dominio *</label>
