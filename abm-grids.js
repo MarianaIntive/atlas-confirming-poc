@@ -409,8 +409,9 @@ function openNotificationDetailModal(notificationId) {
     const n = abmNotifications.find(x => x.id === notificationId);
     if (!n) return;
     const body = `
+        ${abmViewField('Agrupador', n.agrupador || '—')}
         ${abmViewField('Nombre de la notificación', n.nombre)}
-        ${abmViewField('Estado disparador', n.estadoDisparador)}
+        ${abmViewField('Evento / Estado disparador', n.estadoDisparador)}
         ${abmViewField('Tipo de envío de notificación', n.tipoEnvio || 'Email')}
         ${abmViewField('Dominio / Rol', `${n.dominio} / ${n.rol}`)}
         ${abmViewField('Emails', n.emails)}

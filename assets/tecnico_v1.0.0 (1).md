@@ -290,6 +290,8 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 
 - **ABM Entes:** pestaña única reemplazada por **EGP** y **Proveedor** con columnas y formatos específicos por tipo; paginado de 25 registros por página en todas las grillas ABM.
 - **ABM — Ver detalle (ojito):** modal unificado en EGP, Proveedor, Usuarios, Roles y Notificaciones; permisos agrupados en vista de rol; adjuntos descargables simulados; campos bancarios/titular en proveedor no cliente Atlas.
+- **ABM — Alta:** menú + con opciones **Nuevo EGP** y **Nuevo Proveedor**; modal de alta sin monedas, línea de crédito ni condiciones financieras (visibles en grilla / ver detalle).
+- **ABM Notificaciones:** columna **Agrupador** (ABM, Login, Simulación, Gestión de facturas); catálogo mock ampliado con 20 notificaciones según eventos de ABM, login, simulación de adelantos y máquina de estados.
 
 ### v2.8.1 — 2026-05-19
 
