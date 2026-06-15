@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.10.0 (`v2.10.0`)  
+**Versión documento / POC:** 2.10.1 (`v2.10.1`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -285,6 +285,11 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.10.1 — 2026-05-19
+
+- **ABM EGP / Proveedor:** columna **Estado** en grillas (badge de autorización: Pendiente de Autorización, Autorizado, Rechazado).
+- Mock **Distribuidora Norte** — proveedor en estado *Pendiente de Autorización* (EGP padre Retail S.A.).
 
 ### v2.10.0 — 2026-05-19
 

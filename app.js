@@ -193,9 +193,10 @@ let participants = [
     { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
     { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true, estado: ABM_USER_STATES.RECHAZADO, motivoRechazo: 'Documentación de respaldo incompleta' },
     { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true, bloqueado: false },
+    { id: 10, tipo: 'Proveedor', egpPadreId: 1, ruc: '80055555-7', razon: 'Distribuidora Norte', email: 'contacto@distnorte.com.py', telefono: '+595 21 555666', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true, estado: 'Pendiente de Autorización' },
 ];
 
-let nextParticipantId = 10;
+let nextParticipantId = 11;
 let editingParticipantId = null;
 let managingAbmEnteAuthId = null;
 let editingParticipantSnapshot = null;

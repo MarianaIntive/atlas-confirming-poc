@@ -149,6 +149,16 @@ function renderClienteAtlasGridCell(p) {
         : '<i class="ph ph-x-circle" style="font-size:18px;color:#d1d5db;"></i>';
 }
 
+function renderParticipantEstadoGridCell(p) {
+    const estado = typeof getParticipantEstadoLabel === 'function'
+        ? getParticipantEstadoLabel(p)
+        : (p.estado || 'Autorizado');
+    const badgeClass = typeof abmUserEstadoBadgeClass === 'function'
+        ? abmUserEstadoBadgeClass(estado)
+        : '';
+    return `<span class="status-badge ${badgeClass}">${estado}</span>`;
+}
+
 function buildParticipantActionButtons(p) {
     const blocked = isParticipantBlocked(p);
     const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
@@ -191,7 +201,7 @@ function renderEgpGrid() {
     const tbody = document.getElementById('egp-tbody');
     if (!tbody) return;
     if (!canViewEgpGrid()) {
-        tbody.innerHTML = '<tr><td colspan="7"><div class="table-empty">Su perfil no tiene permiso para visualizar la grilla de EGP.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">Su perfil no tiene permiso para visualizar la grilla de EGP.</div></td></tr>';
         renderAbmPagination('egp-pagination', 'egp', 0);
         if (panel) panel.classList.toggle('abm-panel--denied', true);
         return;
@@ -202,7 +212,7 @@ function renderEgpGrid() {
     const { slice, total } = paginateAbmGrid(filtered, 'egp');
     tbody.innerHTML = '';
     if (!slice.length) {
-        tbody.innerHTML = '<tr><td colspan="7"><div class="table-empty">No se encontraron EGP con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">No se encontraron EGP con los filtros aplicados.</div></td></tr>';
         renderAbmPagination('egp-pagination', 'egp', total);
         return;
     }
@@ -216,6 +226,7 @@ function renderEgpGrid() {
             <td>${formatMonedasGridCell(p)}</td>
             <td style="font-weight:600;">${formatLineaCreditoGridCell(p)}</td>
             <td style="text-align:center;">${renderClienteAtlasGridCell(p)}</td>
+            <td>${renderParticipantEstadoGridCell(p)}</td>
             <td class="abm-actions-cell">${buildParticipantActionButtons(p)}</td>
         `;
         tbody.appendChild(tr);
@@ -228,7 +239,7 @@ function renderProveedorGrid() {
     const tbody = document.getElementById('proveedor-tbody');
     if (!tbody) return;
     if (!canViewProveedorGrid()) {
-        tbody.innerHTML = '<tr><td colspan="6"><div class="table-empty">Su perfil no tiene permiso para visualizar la grilla de Proveedor.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7"><div class="table-empty">Su perfil no tiene permiso para visualizar la grilla de Proveedor.</div></td></tr>';
         renderAbmPagination('proveedor-pagination', 'proveedor', 0);
         if (panel) panel.classList.add('abm-panel--denied');
         return;
@@ -239,7 +250,7 @@ function renderProveedorGrid() {
     const { slice, total } = paginateAbmGrid(filtered, 'proveedor');
     tbody.innerHTML = '';
     if (!slice.length) {
-        tbody.innerHTML = '<tr><td colspan="6"><div class="table-empty">No se encontraron proveedores con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7"><div class="table-empty">No se encontraron proveedores con los filtros aplicados.</div></td></tr>';
         renderAbmPagination('proveedor-pagination', 'proveedor', total);
         return;
     }
@@ -253,6 +264,7 @@ function renderProveedorGrid() {
             <td style="font-size:13px;">${egpCol ? `<strong>${egpCol}</strong>` : ''}</td>
             <td style="font-size:13px;color:#6b7280;">${p.email || ''}</td>
             <td style="text-align:center;">${renderClienteAtlasGridCell(p)}</td>
+            <td>${renderParticipantEstadoGridCell(p)}</td>
             <td class="abm-actions-cell">${buildParticipantActionButtons(p)}</td>
         `;
         tbody.appendChild(tr);
