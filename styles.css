@@ -1441,6 +1441,23 @@ tr.row-select-locked {
     transform: rotate(45deg) translate(-1px, -1px);
 }
 
+.notif-envio-fields {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    background: #fafafa;
+}
+.form-group--disabled > label {
+    color: var(--text-muted, #9ca3af);
+}
+.input-text:disabled {
+    background: #f3f3f3;
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
 .radio-group {
     display: flex;
     flex-wrap: wrap;

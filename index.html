@@ -1125,29 +1125,9 @@
                             <input type="text" id="notif-nombre" class="input-text" required placeholder="Ej: Factura pendiente de habilitación">
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="notif-estado">Evento / Estado disparador *</label>
-                            <input type="text" id="notif-estado" class="input-text" required placeholder="Evento o estado que dispara la notificación">
-                        </div>
-                        <div class="form-group">
-                            <label for="notif-dominio">Dominio *</label>
-                            <select id="notif-dominio" class="select-input" required>
-                                <option value="Banco">Banco</option>
-                                <option value="EGP">EGP</option>
-                                <option value="Proveedor">Proveedor</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="notif-rol">Rol destino</label>
-                            <input type="text" id="notif-rol" class="input-text" placeholder="Ej: ADMIN, SUPERVISOR">
-                        </div>
-                        <div class="form-group">
-                            <label for="notif-emails">Emails (separados por coma)</label>
-                            <input type="text" id="notif-emails" class="input-text" placeholder="a@empresa.com, b@empresa.com">
-                        </div>
+                    <div class="form-group">
+                        <label for="notif-estado">Evento / Estado disparador *</label>
+                        <input type="text" id="notif-estado" class="input-text" required placeholder="Evento o estado que dispara la notificación">
                     </div>
                     <div class="form-group">
                         <label>Tipo de notificación *</label>
@@ -1169,6 +1149,26 @@
                             </label>
                         </div>
                         <p class="abm-panel-caption" style="margin-top:8px">Seleccione uno o más medios de envío. <strong>Ambas</strong> habilita Dominio/Rol y Email a la vez.</p>
+                        <div class="notif-envio-fields" id="notif-envio-fields">
+                            <div class="form-row">
+                                <div class="form-group" id="notif-dominio-group">
+                                    <label for="notif-dominio">Dominio</label>
+                                    <select id="notif-dominio" class="select-input" disabled>
+                                        <option value="Banco">Banco</option>
+                                        <option value="EGP">EGP</option>
+                                        <option value="Proveedor">Proveedor</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="notif-rol-group">
+                                    <label for="notif-rol">Rol destino</label>
+                                    <input type="text" id="notif-rol" class="input-text" disabled placeholder="Ej: ADMIN, SUPERVISOR">
+                                </div>
+                            </div>
+                            <div class="form-group" id="notif-emails-group">
+                                <label for="notif-emails">Emails (separados por coma)</label>
+                                <input type="text" id="notif-emails" class="input-text" disabled placeholder="a@empresa.com, b@empresa.com">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="notif-mensaje">Mensaje *</label>

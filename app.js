@@ -702,9 +702,25 @@ function syncNotificationTipoFields() {
     const dominioEl = document.getElementById('notif-dominio');
     const rolEl = document.getElementById('notif-rol');
     const emailsEl = document.getElementById('notif-emails');
-    if (dominioEl) dominioEl.required = needsDominioRol;
-    if (rolEl) rolEl.required = needsDominioRol;
-    if (emailsEl) emailsEl.required = needsEmail;
+    const dominioGroup = document.getElementById('notif-dominio-group');
+    const rolGroup = document.getElementById('notif-rol-group');
+    const emailsGroup = document.getElementById('notif-emails-group');
+
+    if (dominioEl) {
+        dominioEl.disabled = !needsDominioRol;
+        dominioEl.required = needsDominioRol;
+    }
+    if (rolEl) {
+        rolEl.disabled = !needsDominioRol;
+        rolEl.required = needsDominioRol;
+    }
+    if (emailsEl) {
+        emailsEl.disabled = !needsEmail;
+        emailsEl.required = needsEmail;
+    }
+    dominioGroup?.classList.toggle('form-group--disabled', !needsDominioRol);
+    rolGroup?.classList.toggle('form-group--disabled', !needsDominioRol);
+    emailsGroup?.classList.toggle('form-group--disabled', !needsEmail);
 }
 
 function initNotificationTipoCheckboxes() {

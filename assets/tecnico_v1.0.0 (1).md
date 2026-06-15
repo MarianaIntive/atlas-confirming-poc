@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.10.2 (`v2.10.2`)  
+**Versión documento / POC:** 2.10.3 (`v2.10.3`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -287,6 +287,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.10.3 — 2026-05-19
+
+- **ABM Notificaciones — Modal:** Dominio, Rol destino y Emails se muestran agrupados debajo de **Tipo de notificación**; campos habilitados/deshabilitados según checkboxes seleccionados.
 
 ### v2.10.2 — 2026-05-19
 
