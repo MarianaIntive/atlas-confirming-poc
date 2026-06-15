@@ -499,6 +499,7 @@
                                         <th>Agrupador</th>
                                         <th>Nombre</th>
                                         <th>Evento / Estado disparador</th>
+                                        <th>Tipo</th>
                                         <th>Dominio</th>
                                         <th>Rol</th>
                                         <th>Emails</th>
@@ -1140,13 +1141,34 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="notif-rol">Rol destino *</label>
-                            <input type="text" id="notif-rol" class="input-text" required placeholder="Ej: ADMIN, SUPERVISOR">
+                            <label for="notif-rol">Rol destino</label>
+                            <input type="text" id="notif-rol" class="input-text" placeholder="Ej: ADMIN, SUPERVISOR">
                         </div>
                         <div class="form-group">
-                            <label for="notif-emails">Emails (separados por coma) *</label>
-                            <input type="text" id="notif-emails" class="input-text" required placeholder="a@empresa.com, b@empresa.com">
+                            <label for="notif-emails">Emails (separados por coma)</label>
+                            <input type="text" id="notif-emails" class="input-text" placeholder="a@empresa.com, b@empresa.com">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de notificación *</label>
+                        <div class="checkbox-group" id="notif-tipos-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="notif-tipo-dominio-rol" value="Dominio y Rol">
+                                <span class="checkbox-custom"></span>
+                                <span>Dominio y Rol</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="notif-tipo-email" value="Email">
+                                <span class="checkbox-custom"></span>
+                                <span>Email</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="notif-tipo-ambas" value="Ambas">
+                                <span class="checkbox-custom"></span>
+                                <span>Ambas</span>
+                            </label>
+                        </div>
+                        <p class="abm-panel-caption" style="margin-top:8px">Seleccione uno o más medios de envío. <strong>Ambas</strong> habilita Dominio/Rol y Email a la vez.</p>
                     </div>
                     <div class="form-group">
                         <label for="notif-mensaje">Mensaje *</label>

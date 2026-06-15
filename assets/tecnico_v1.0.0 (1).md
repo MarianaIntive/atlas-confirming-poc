@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.10.1 (`v2.10.1`)  
+**Versión documento / POC:** 2.10.2 (`v2.10.2`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -138,8 +138,10 @@ El modal de rol renderiza checkboxes desde el catálogo; los mocks `abmRoles` in
 ### 4.5 Notificación ABM (`abmNotifications`)
 
 ```javascript
-{ id, nombre, estadoDisparador, dominio, rol, emails, mensaje, activa }
+{ id, agrupador, nombre, estadoDisparador, tiposNotificacion: ['Dominio y Rol' | 'Email'], tipoEnvio, dominio, rol, emails, mensaje, activa }
 ```
+
+`tipoEnvio` es etiqueta derivada (`Email`, `Dominio y Rol` o `Ambas`) según los tipos seleccionados en el modal.
 
 ### 4.6 Auditoría ABM (`abmAuditLog`)
 
@@ -285,6 +287,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.10.2 — 2026-05-19
+
+- **ABM Notificaciones — Alta/edición:** checkboxes **Tipo de notificación** (Dominio y Rol, Email, Ambas) con selección múltiple; validación condicional de rol/emails; columna **Tipo** en grilla y detalle.
 
 ### v2.10.1 — 2026-05-19
 

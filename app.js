@@ -637,6 +637,96 @@ const NOTIFICATION_AGRUPADORES = {
     GESTION_FACTURAS: 'Gestión de facturas',
 };
 
+const NOTIFICATION_TIPOS = {
+    DOMINIO_ROL: 'Dominio y Rol',
+    EMAIL: 'Email',
+    AMBAS: 'Ambas',
+};
+
+function normalizeNotificationTipos(raw, legacyTipoEnvio) {
+    if (Array.isArray(raw) && raw.length) {
+        const expanded = [];
+        raw.forEach((t) => {
+            if (t === NOTIFICATION_TIPOS.AMBAS) {
+                expanded.push(NOTIFICATION_TIPOS.DOMINIO_ROL, NOTIFICATION_TIPOS.EMAIL);
+            } else if (Object.values(NOTIFICATION_TIPOS).includes(t)) {
+                expanded.push(t);
+            }
+        });
+        return [...new Set(expanded.filter(t => t !== NOTIFICATION_TIPOS.AMBAS))];
+    }
+    const legacy = legacyTipoEnvio || NOTIFICATION_TIPOS.EMAIL;
+    if (legacy === NOTIFICATION_TIPOS.DOMINIO_ROL) return [NOTIFICATION_TIPOS.DOMINIO_ROL];
+    if (legacy === NOTIFICATION_TIPOS.AMBAS) return [NOTIFICATION_TIPOS.DOMINIO_ROL, NOTIFICATION_TIPOS.EMAIL];
+    return [NOTIFICATION_TIPOS.EMAIL];
+}
+
+function formatNotificationTiposLabel(tipos) {
+    const normalized = normalizeNotificationTipos(tipos);
+    if (normalized.includes(NOTIFICATION_TIPOS.DOMINIO_ROL) && normalized.includes(NOTIFICATION_TIPOS.EMAIL)) {
+        return NOTIFICATION_TIPOS.AMBAS;
+    }
+    return normalized.join(', ') || '—';
+}
+
+function getSelectedNotificationTipos() {
+    const dominioRol = document.getElementById('notif-tipo-dominio-rol');
+    const email = document.getElementById('notif-tipo-email');
+    const selected = [];
+    if (dominioRol?.checked) selected.push(NOTIFICATION_TIPOS.DOMINIO_ROL);
+    if (email?.checked) selected.push(NOTIFICATION_TIPOS.EMAIL);
+    return selected;
+}
+
+function setNotificationTiposCheckboxes(tipos) {
+    const normalized = normalizeNotificationTipos(tipos);
+    const dominioRol = document.getElementById('notif-tipo-dominio-rol');
+    const email = document.getElementById('notif-tipo-email');
+    const ambas = document.getElementById('notif-tipo-ambas');
+    const hasDominioRol = normalized.includes(NOTIFICATION_TIPOS.DOMINIO_ROL);
+    const hasEmail = normalized.includes(NOTIFICATION_TIPOS.EMAIL);
+    if (dominioRol) dominioRol.checked = hasDominioRol;
+    if (email) email.checked = hasEmail;
+    if (ambas) ambas.checked = hasDominioRol && hasEmail;
+    syncNotificationTipoFields();
+}
+
+function resetNotificationTiposCheckboxes(defaultEmailOnly = true) {
+    setNotificationTiposCheckboxes(defaultEmailOnly ? [NOTIFICATION_TIPOS.EMAIL] : []);
+}
+
+function syncNotificationTipoFields() {
+    const tipos = getSelectedNotificationTipos();
+    const needsDominioRol = tipos.includes(NOTIFICATION_TIPOS.DOMINIO_ROL);
+    const needsEmail = tipos.includes(NOTIFICATION_TIPOS.EMAIL);
+    const dominioEl = document.getElementById('notif-dominio');
+    const rolEl = document.getElementById('notif-rol');
+    const emailsEl = document.getElementById('notif-emails');
+    if (dominioEl) dominioEl.required = needsDominioRol;
+    if (rolEl) rolEl.required = needsDominioRol;
+    if (emailsEl) emailsEl.required = needsEmail;
+}
+
+function initNotificationTipoCheckboxes() {
+    const ambas = document.getElementById('notif-tipo-ambas');
+    const dominioRol = document.getElementById('notif-tipo-dominio-rol');
+    const email = document.getElementById('notif-tipo-email');
+    if (!ambas || !dominioRol || !email) return;
+
+    ambas.addEventListener('change', () => {
+        dominioRol.checked = ambas.checked;
+        email.checked = ambas.checked;
+        syncNotificationTipoFields();
+    });
+
+    const syncAmbasFromIndividuals = () => {
+        ambas.checked = dominioRol.checked && email.checked;
+        syncNotificationTipoFields();
+    };
+    dominioRol.addEventListener('change', syncAmbasFromIndividuals);
+    email.addEventListener('change', syncAmbasFromIndividuals);
+}
+
 // Notificaciones del sistema (disparadas por eventos ABM, login, simulación o máquina de estados)
 let abmNotifications = [
     // —— ABM ——
@@ -651,19 +741,23 @@ let abmNotifications = [
     { id: 8, agrupador: NOTIFICATION_AGRUPADORES.LOGIN, nombre: 'Notificación de primer login usuarios BANCO', estadoDisparador: 'Autorización de alta del usuario en el ABM para usuarios banco', tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'Mail de bienvenida y clave de acceso temporal para usuarios banco.' },
     { id: 9, agrupador: NOTIFICATION_AGRUPADORES.LOGIN, nombre: 'Notificación de primer login usuarios externos', estadoDisparador: 'Autorización de alta del usuario en el ABM para usuarios no banco', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Mail de bienvenida y clave de acceso temporal para usuarios externos (EGP/Proveedor).' },
     // —— SIMULACIÓN DE ADELANTOS ——
-    { id: 10, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de solicitud de aprobación de adelanto al EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Se solicitó simulación de adelanto: requiere aprobación del EGP.' },
+    { id: 10, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de solicitud de aprobación de adelanto al EGP', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_EGP, tiposNotificacion: [NOTIFICATION_TIPOS.DOMINIO_ROL], dominio: 'EGP', rol: 'ADMIN', emails: '', activa: true, mensaje: 'Se solicitó simulación de adelanto: requiere aprobación del EGP.' },
     { id: 11, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de aprobación automática del adelanto para el banco', estadoDisparador: INVOICE_STATES.PENDIENTE_APROBACION_BANCO, tipoEnvio: 'Email', dominio: 'Banco', rol: 'ADMIN', emails: 'operaciones@bancoatlas.com.py', activa: true, mensaje: 'La simulación fue aprobada automáticamente y pasó a Pendiente de aprobación banco.' },
     { id: 12, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de aprobación del adelanto para la EGP', estadoDisparador: INVOICE_STATES.FINANCIADA, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py', activa: true, mensaje: 'Se aprobó la simulación: la EGP tomó compromiso/préstamo (Financiada).' },
     { id: 13, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de aprobación del adelanto para el proveedor', estadoDisparador: INVOICE_STATES.FINANCIADA, tipoEnvio: 'Email', dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'Se aprobó la simulación y el desembolso al proveedor está en curso.' },
     { id: 14, agrupador: NOTIFICATION_AGRUPADORES.SIMULACION, nombre: 'Notificación de rechazo de solicitud de adelanto por cambio de fecha de pago', estadoDisparador: `${INVOICE_STATES.PENDIENTE_APROBACION_EGP} → ${INVOICE_STATES.BLOQUEADA}`, tipoEnvio: 'Email', dominio: 'Proveedor', rol: 'OPERADOR', emails: 'pagos@techsolutions.com.py', activa: true, mensaje: 'La EGP rechazó la simulación de adelanto por cambio de fecha de pago (Bloqueada).' },
     // —— GESTIÓN DE FACTURAS (máquina de estados) ——
-    { id: 15, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de nueva factura cargada pendiente de habilitar', estadoDisparador: 'Carga individual o masiva de facturas', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Nueva factura cargada en estado Pendiente: lista para Habilitar o Bloquear.' },
+    { id: 15, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de nueva factura cargada pendiente de habilitar', estadoDisparador: 'Carga individual o masiva de facturas', tiposNotificacion: [NOTIFICATION_TIPOS.DOMINIO_ROL, NOTIFICATION_TIPOS.EMAIL], dominio: 'EGP', rol: 'ADMIN', emails: 'supervisor@retail.com.py, a.gomez@retail.com.py', activa: true, mensaje: 'Nueva factura cargada en estado Pendiente: lista para Habilitar o Bloquear.' },
     { id: 16, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas por vencer', estadoDisparador: 'Fecha actual a menos de 15 días corridos de la fecha de vencimiento', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas próximas a alcanzar la fecha de vencimiento (alerta 15 días).' },
     { id: 17, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas por vencer CRÍTICA', estadoDisparador: 'Fecha actual a menos de 5 días corridos de la fecha de vencimiento', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas en alerta crítica: vencimiento en menos de 5 días.' },
     { id: 18, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas con fecha de pago por vencer', estadoDisparador: 'Fecha actual a menos de 31 días corridos de la fecha de pago', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas con fecha de pago próxima (30–31 días para alcanzar la fecha de pago).' },
     { id: 19, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de pago', estadoDisparador: `Fecha de pago = día anterior y/o estado ${INVOICE_STATES.NO_ELEGIBLE}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas que alcanzaron la fecha de pago (NO ELEGIBLE).' },
     { id: 20, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de vencimiento', estadoDisparador: `Fecha de vencimiento = día anterior y/o estado ${INVOICE_STATES.VENCIDA}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas que alcanzaron la fecha de vencimiento (Vencida).' },
 ];
+abmNotifications.forEach((n) => {
+    n.tiposNotificacion = normalizeNotificationTipos(n.tiposNotificacion, n.tipoEnvio);
+    n.tipoEnvio = formatNotificationTiposLabel(n.tiposNotificacion);
+});
 let nextAbmNotificationId = 21;
 let editingNotificationId = null;
 
@@ -884,6 +978,7 @@ function syncLoggedUserDisplayFromLogin() {
 
 document.addEventListener('DOMContentLoaded', () => {
     applyPocVersionLabels();
+    initNotificationTipoCheckboxes();
 });
 
 // ====== NAVEGACIÓN Y LOGIN ======
@@ -1804,7 +1899,7 @@ function renderAbmNotifications() {
         : { slice: filtered, total: filtered.length };
 
     if (!slice.length) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron notificaciones con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron notificaciones con los filtros aplicados.</div></td></tr>';
         if (typeof renderAbmPagination === 'function') renderAbmPagination('notificaciones-pagination', 'notificaciones', total);
         return;
     }
@@ -1818,6 +1913,7 @@ function renderAbmNotifications() {
             <td>${renderNotificationAgrupadorBadge(n.agrupador)}</td>
             <td><strong>${n.nombre}</strong></td>
             <td><span class="status-badge status-pendiente" style="text-transform:none;font-size:10px;white-space:normal;max-width:220px;display:inline-block;">${n.estadoDisparador}</span></td>
+            <td>${formatNotificationTiposLabel(n.tiposNotificacion || n.tipoEnvio)}</td>
             <td>${n.dominio}</td>
             <td>${n.rol}</td>
             <td style="font-size:12px;color:#6b7280;max-width:200px;word-break:break-all;">${n.emails}</td>
@@ -1856,11 +1952,13 @@ function openNotificationModal(id = null) {
         document.getElementById('notif-emails').value = n.emails;
         document.getElementById('notif-mensaje').value = n.mensaje;
         document.getElementById('notif-activa').checked = n.activa;
+        setNotificationTiposCheckboxes(n.tiposNotificacion || n.tipoEnvio);
     } else {
         if (title) title.textContent = 'Nueva Notificación';
         document.getElementById('notif-activa').checked = true;
         document.getElementById('notif-agrupador').value = NOTIFICATION_AGRUPADORES.GESTION_FACTURAS;
         document.getElementById('notif-estado').value = INVOICE_STATES.PENDIENTE;
+        resetNotificationTiposCheckboxes(true);
     }
     openModal('notification-modal');
 }
@@ -1874,11 +1972,37 @@ function submitNotificationForm() {
     const emails = document.getElementById('notif-emails').value.trim();
     const mensaje = document.getElementById('notif-mensaje').value.trim();
     const activa = document.getElementById('notif-activa').checked;
-    if (!agrupador || !nombre || !estadoDisparador || !rol || !emails || !mensaje) {
-        showCustomAlert('Complete agrupador, nombre, evento/estado, rol, emails y mensaje.', 'Datos incompletos');
+    const tiposNotificacion = getSelectedNotificationTipos();
+
+    if (!agrupador || !nombre || !estadoDisparador || !mensaje) {
+        showCustomAlert('Complete agrupador, nombre, evento/estado y mensaje.', 'Datos incompletos');
         return;
     }
-    const payload = { agrupador, nombre, estadoDisparador, tipoEnvio: 'Email', dominio, rol, emails, mensaje, activa };
+    if (!tiposNotificacion.length) {
+        showCustomAlert('Seleccione al menos un tipo de notificación.', 'Datos incompletos');
+        return;
+    }
+    if (tiposNotificacion.includes(NOTIFICATION_TIPOS.DOMINIO_ROL) && !rol) {
+        showCustomAlert('Indique el rol destino para notificaciones por Dominio y Rol.', 'Datos incompletos');
+        return;
+    }
+    if (tiposNotificacion.includes(NOTIFICATION_TIPOS.EMAIL) && !emails) {
+        showCustomAlert('Indique al menos un email para notificaciones por Email.', 'Datos incompletos');
+        return;
+    }
+
+    const payload = {
+        agrupador,
+        nombre,
+        estadoDisparador,
+        tiposNotificacion,
+        tipoEnvio: formatNotificationTiposLabel(tiposNotificacion),
+        dominio,
+        rol,
+        emails,
+        mensaje,
+        activa,
+    };
     if (editingNotificationId != null) {
         const idx = abmNotifications.findIndex(x => x.id === editingNotificationId);
         if (idx >= 0) abmNotifications[idx] = { ...abmNotifications[idx], ...payload };

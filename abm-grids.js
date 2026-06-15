@@ -433,7 +433,9 @@ function openNotificationDetailModal(notificationId) {
         ${abmViewField('Agrupador', n.agrupador || '—')}
         ${abmViewField('Nombre de la notificación', n.nombre)}
         ${abmViewField('Evento / Estado disparador', n.estadoDisparador)}
-        ${abmViewField('Tipo de envío de notificación', n.tipoEnvio || 'Email')}
+        ${abmViewField('Tipo de notificación', typeof formatNotificationTiposLabel === 'function'
+            ? formatNotificationTiposLabel(n.tiposNotificacion || n.tipoEnvio)
+            : (n.tipoEnvio || 'Email'))}
         ${abmViewField('Dominio / Rol', `${n.dominio} / ${n.rol}`)}
         ${abmViewField('Emails', n.emails)}
         ${abmViewField('Mensaje', n.mensaje)}
