@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.10.3 (`v2.10.3`)  
+**Versión documento / POC:** 2.10.4 (`v2.10.4`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -287,6 +287,10 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.10.4 — 2026-05-19
+
+- **ABM Ver detalle EGP/Proveedor:** se quita el campo **Estado de acceso** del modal; permanece **Estado de autorización**.
 
 ### v2.10.3 — 2026-05-19
 

@@ -298,7 +298,6 @@ function openAbmViewModal(participantId) {
         ? getParticipantEstadoLabel(p)
         : (p.estado || 'Autorizado');
     const authEstadoBadge = `<span class="status-badge ${typeof abmUserEstadoBadgeClass === 'function' ? abmUserEstadoBadgeClass(authEstado) : ''}">${authEstado}</span>`;
-    const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(isParticipantBlocked(p))}">${getAbmAccessLabel(isParticipantBlocked(p))}</span>`;
     const atlasLabel = p.clienteAtlas == null ? '—' : (p.clienteAtlas ? 'Sí' : 'No');
     const monedasLabel = viz.monedas?.length
         ? viz.monedas.map(m => formatCurrencyCodeLabel(m)).join(', ')
@@ -312,7 +311,6 @@ function openAbmViewModal(participantId) {
         ${abmViewField('RUC', p.ruc)}
         ${abmViewField('Razón Social', `<strong>${p.razon}</strong>`)}
         ${abmViewField('Estado de autorización', authEstadoBadge)}
-        ${abmViewField('Estado de acceso', accessBadge)}
         ${abmViewField('Email de contacto', p.email)}
         ${abmViewField('Teléfono', p.telefono)}
         <div class="form-group abm-view-field">
