@@ -834,7 +834,10 @@
     <div id="abm-modal" class="modal">
         <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3 id="abm-modal-title">Nuevo Ente</h3>
+                <div class="modal-header-title-wrap">
+                    <h3 id="abm-modal-title">Nuevo Ente</h3>
+                    <span id="abm-modal-rejected-badge" class="user-modal-rejected-badge hidden">Ente Rechazado</span>
+                </div>
                 <button class="btn-close" onclick="closeModal('abm-modal')"><i class="ph ph-x"></i></button>
             </div>
             <div class="modal-body">
@@ -935,7 +938,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeModal('abm-modal')">Cancelar</button>
-                <button class="btn-primary" onclick="submitParticipant()">Guardar Ente</button>
+                <button type="button" class="btn-primary" id="abm-modal-btn-save" onclick="submitParticipant()">Guardar Ente</button>
+                <button type="button" class="btn-primary hidden" id="abm-modal-btn-confirm-auth" onclick="submitParticipantConfirmAuthorize()">Confirmar y Autorizar</button>
             </div>
         </div>
     </div>
@@ -976,6 +980,30 @@
                 <button type="button" class="btn-secondary" onclick="closeModal('user-auth-modal')">Cancelar</button>
                 <button type="button" class="btn-secondary btn-danger-outline" onclick="rejectManagedAbmUser()">Rechazar</button>
                 <button type="button" class="btn-primary" onclick="authorizeManagedAbmUser()">Autorizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestionar autorización de ente -->
+    <div id="ente-auth-modal" class="modal">
+        <div class="modal-content modal-md">
+            <div class="modal-header">
+                <h3>Gestionar autorización</h3>
+                <button class="btn-close" onclick="closeModal('ente-auth-modal')"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="ente-auth-fields"></div>
+                <div id="ente-auth-reject-block" class="hidden">
+                    <div class="form-group" style="margin-top:16px">
+                        <label for="ente-auth-motivo">Motivo de rechazo *</label>
+                        <textarea id="ente-auth-motivo" class="input-text" rows="3" placeholder="Indique el motivo del rechazo..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('ente-auth-modal')">Cancelar</button>
+                <button type="button" class="btn-secondary btn-danger-outline" onclick="rejectManagedAbmEnte()">Rechazar</button>
+                <button type="button" class="btn-primary" onclick="authorizeManagedAbmEnte()">Autorizar</button>
             </div>
         </div>
     </div>

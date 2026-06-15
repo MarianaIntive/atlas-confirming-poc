@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.9.4 (`v2.9.4`)  
+**Versión documento / POC:** 2.10.0 (`v2.10.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -285,6 +285,12 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.10.0 — 2026-05-19
+
+- **ABM EGP / Proveedor — Autorización de entes:** flujo **Gestionar** (modal con RUC, Razón Social, Tipo de Ente) para entes en **Pendiente de Autorización** — **Autorizar** o **Rechazar** (motivo obligatorio); auditoría ABM y simulación `POST /api/v1/enviarNotificacion`.
+- **ABM EGP / Proveedor — Entes rechazados:** al editar, badge **Ente Rechazado** y botón **Confirmar y Autorizar**; validación de cambios en campos obligatorios con confirmación si no hubo modificaciones.
+- Altas nuevas de entes quedan en estado **Pendiente de Autorización**; mock con ente rechazado (Agencia Creativa) y pendiente (Tigo).
 
 ### v2.9.4 — 2026-05-19
 

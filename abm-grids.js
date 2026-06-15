@@ -154,8 +154,15 @@ function buildParticipantActionButtons(p) {
     const blockBtnClass = blocked ? 'btn-icon-action--unlock' : 'btn-icon-action--lock';
     const blockBtnTitle = blocked ? 'Desbloquear ente' : 'Bloquear ente';
     const blockBtnIcon = blocked ? 'ph-lock-open' : 'ph-lock';
+    const enteEstado = typeof getParticipantEstadoLabel === 'function'
+        ? getParticipantEstadoLabel(p)
+        : (p.estado || 'Pendiente de Autorización');
+    const isPendingAuth = enteEstado === 'Pendiente de Autorización';
     const buttons = [];
     buttons.push(`<button type="button" class="btn-icon-action btn-icon-action--view" onclick="openAbmViewModal(${p.id})" title="Ver detalle" aria-label="Ver detalle"><i class="ph ph-eye"></i></button>`);
+    if (typeof canAuthorizeAbmEntes === 'function' && canAuthorizeAbmEntes() && isPendingAuth) {
+        buttons.push(`<button type="button" class="btn-abm-manage" onclick="openEnteAuthModal(${p.id})" title="Gestionar autorización" aria-label="Gestionar autorización">Gestionar</button>`);
+    }
     if (canModifyParticipant()) {
         buttons.push(`<button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openAbmModal(${p.id})" title="Editar" aria-label="Editar"><i class="ph ph-pencil-simple"></i></button>`);
     }
@@ -275,7 +282,11 @@ function openAbmViewModal(participantId) {
 
     const viz = getAbmVisualizationDefaults(p);
     const tipoLabel = p.tipo === 'EGP' ? 'Empresa Gran Pagador (EGP)' : 'Proveedor';
-    const estadoLabel = getAbmAccessLabel(isParticipantBlocked(p));
+    const authEstado = typeof getParticipantEstadoLabel === 'function'
+        ? getParticipantEstadoLabel(p)
+        : (p.estado || 'Autorizado');
+    const authEstadoBadge = `<span class="status-badge ${typeof abmUserEstadoBadgeClass === 'function' ? abmUserEstadoBadgeClass(authEstado) : ''}">${authEstado}</span>`;
+    const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(isParticipantBlocked(p))}">${getAbmAccessLabel(isParticipantBlocked(p))}</span>`;
     const atlasLabel = p.clienteAtlas == null ? '—' : (p.clienteAtlas ? 'Sí' : 'No');
     const monedasLabel = viz.monedas?.length
         ? viz.monedas.map(m => formatCurrencyCodeLabel(m)).join(', ')
@@ -288,7 +299,8 @@ function openAbmViewModal(participantId) {
         ${abmViewField('Tipo de Ente', tipoLabel)}
         ${abmViewField('RUC', p.ruc)}
         ${abmViewField('Razón Social', `<strong>${p.razon}</strong>`)}
-        ${abmViewField('Estado', estadoLabel)}
+        ${abmViewField('Estado de autorización', authEstadoBadge)}
+        ${abmViewField('Estado de acceso', accessBadge)}
         ${abmViewField('Email de contacto', p.email)}
         ${abmViewField('Teléfono', p.telefono)}
         <div class="form-group abm-view-field">

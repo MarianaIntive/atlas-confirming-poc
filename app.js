@@ -191,12 +191,14 @@ let participants = [
     { id: 5, tipo: 'Proveedor', egpPadreId: 2, ruc: '80011111-3', razon: 'Logistica Integral', email: 'cobranzas@logistica.com.py', telefono: '+595 21 111222', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
     { id: 6, tipo: 'Proveedor', egpPadreId: 3, ruc: '80022222-4', razon: 'Limpieza Total SRL', email: 'admin@limpiezatotal.com.py', telefono: '+595 21 222333', monedas: ['GS'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true, bloqueado: true },
     { id: 7, tipo: 'Proveedor', egpPadreId: 1, ruc: '80033333-5', razon: 'Servicios IT', email: 'contacto@serviciosit.com.py', telefono: '+595 21 333444', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true },
-    { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true },
+    { id: 8, tipo: 'Proveedor', egpPadreId: 3, ruc: '80044444-6', razon: 'Agencia Creativa', email: 'hola@agenciacreativa.com.py', telefono: '+595 21 444555', monedas: ['USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: false, desembolsoAuto: true, estado: ABM_USER_STATES.RECHAZADO, motivoRechazo: 'Documentación de respaldo incompleta' },
     { id: 9, tipo: 'Proveedor', egpPadreId: 2, ruc: '80012345-6', razon: 'Retail S.A.', email: 'admin@retail.com.py', telefono: '+595 21 123456', monedas: ['GS', 'USD'], lineaCredito: 0, tasaInteres: 12, tasaComision: 1.5, iva: 10, condiciones: '', clienteAtlas: true, desembolsoAuto: true, bloqueado: false },
 ];
 
 let nextParticipantId = 10;
 let editingParticipantId = null;
+let managingAbmEnteAuthId = null;
+let editingParticipantSnapshot = null;
 
 participants.forEach(p => {
     if (p.bloqueado == null) p.bloqueado = false;
@@ -265,6 +267,77 @@ function loggedSessionHasPermission(permission) {
 
 function canAuthorizeAbmUsers() {
     return loggedSessionHasPermission('Autorización de usuarios');
+}
+
+function canAuthorizeAbmEntes() {
+    return loggedSessionHasPermission('ABM de EGPs y Proveedores — Modificar')
+        || loggedSessionHasPermission('Autorización de usuarios');
+}
+
+function getParticipantEstadoLabel(p) {
+    return p?.estado || ABM_USER_STATES.AUTORIZADO;
+}
+
+function postEnviarNotificacionSimulation(context) {
+    const payload = {
+        endpoint: 'POST /api/v1/enviarNotificacion',
+        timestamp: new Date().toISOString(),
+        ...context,
+    };
+    if (typeof console !== 'undefined' && console.info) {
+        console.info('[enviarNotificacion]', payload);
+    }
+    return payload;
+}
+
+function buildParticipantFormPayload() {
+    const tipo = document.getElementById('abm-tipo')?.value || '';
+    const egpPadreRaw = document.getElementById('abm-egp-padre')?.value;
+    return {
+        tipo,
+        ruc: document.getElementById('abm-ruc')?.value?.trim() || '',
+        razon: document.getElementById('abm-razon')?.value?.trim() || '',
+        email: document.getElementById('abm-email')?.value?.trim() || '',
+        telefono: document.getElementById('abm-telefono')?.value?.trim() || '',
+        egpPadreId: tipo === 'Proveedor' && egpPadreRaw ? parseInt(egpPadreRaw, 10) : null,
+    };
+}
+
+function hasRequiredParticipantChanges(snapshot, payload) {
+    if (!snapshot) return true;
+    const keys = ['tipo', 'ruc', 'razon', 'egpPadreId'];
+    return keys.some(key => String(snapshot[key] ?? '') !== String(payload[key] ?? ''));
+}
+
+function finalizeAbmEnteAuthorization(p, { action, previousEstado, details = {} }) {
+    const notifNombre = action.includes('RECHAZAR')
+        ? 'Notificación de alta de ente EGP/PROVEEDOR'
+        : 'Notificación de alta de ente EGP/PROVEEDOR';
+    logAbmAudit({
+        action,
+        targetParticipantId: p.id,
+        targetParticipantRuc: p.ruc,
+        targetParticipantRazon: p.razon,
+        targetParticipantTipo: p.tipo,
+        details: {
+            estadoAnterior: previousEstado,
+            estadoNuevo: p.estado,
+            ...details,
+        },
+    });
+    postEnviarNotificacionSimulation({
+        notificacion: notifNombre,
+        enteId: p.id,
+        ruc: p.ruc,
+        razon: p.razon,
+        tipo: p.tipo,
+        estado: p.estado,
+        action,
+    });
+    renderParticipants();
+    populateOperatingEntitySelect();
+    renderOperatingEntityPanel();
+    switchAbmTab(p.tipo === 'Proveedor' ? 'proveedor' : 'egp');
 }
 
 function canAccessAbmUsersModule() {
@@ -1448,6 +1521,99 @@ function rejectManagedAbmUser() {
     showCustomAlert(`Usuario "${u.nombre} ${u.apellido}" rechazado.`, 'Usuario rechazado');
 }
 
+function openEnteAuthModal(id) {
+    if (!canAuthorizeAbmEntes()) {
+        showCustomAlert('Su dominio/rol no tiene permiso para autorizar entes en el ABM.', 'Acción no disponible');
+        return;
+    }
+    const p = participants.find(x => x.id === id);
+    if (!p) return;
+    const enteEstado = p.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    if (enteEstado !== ABM_USER_STATES.PENDIENTE_AUTORIZACION) {
+        showCustomAlert('Solo se puede gestionar la autorización de entes en estado Pendiente de Autorización.', 'Acción no disponible');
+        return;
+    }
+    managingAbmEnteAuthId = id;
+    const tipoLabel = p.tipo === 'EGP' ? 'Empresa Gran Pagador (EGP)' : 'Proveedor';
+    const fields = document.getElementById('ente-auth-fields');
+    if (fields) {
+        fields.innerHTML = `
+            ${abmViewField('RUC', p.ruc)}
+            ${abmViewField('Razón Social', `<strong>${p.razon}</strong>`)}
+            ${abmViewField('Tipo de Ente', tipoLabel)}
+        `;
+    }
+    const motivoInput = document.getElementById('ente-auth-motivo');
+    const rejectBlock = document.getElementById('ente-auth-reject-block');
+    if (motivoInput) motivoInput.value = '';
+    if (rejectBlock) rejectBlock.classList.add('hidden');
+    openModal('ente-auth-modal');
+}
+
+function authorizeManagedAbmEnte() {
+    const p = participants.find(x => x.id === managingAbmEnteAuthId);
+    if (!p) return;
+    const enteEstado = p.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    if (enteEstado !== ABM_USER_STATES.PENDIENTE_AUTORIZACION) {
+        showCustomAlert('El ente ya no está pendiente de autorización.', 'Acción no disponible');
+        closeModal('ente-auth-modal');
+        managingAbmEnteAuthId = null;
+        renderParticipants();
+        return;
+    }
+    const previousEstado = p.estado;
+    p.estado = ABM_USER_STATES.AUTORIZADO;
+    p.motivoRechazo = '';
+    closeModal('ente-auth-modal');
+    managingAbmEnteAuthId = null;
+    finalizeAbmEnteAuthorization(p, {
+        action: 'AUTORIZAR_ENTE',
+        previousEstado,
+    });
+    showCustomAlert(`Ente "${p.razon}" autorizado correctamente.`, 'Ente autorizado');
+}
+
+function rejectManagedAbmEnte() {
+    const p = participants.find(x => x.id === managingAbmEnteAuthId);
+    if (!p) return;
+    const rejectBlock = document.getElementById('ente-auth-reject-block');
+    const motivoInput = document.getElementById('ente-auth-motivo');
+    const motivo = motivoInput?.value?.trim() || '';
+    if (rejectBlock?.classList.contains('hidden')) {
+        rejectBlock.classList.remove('hidden');
+        motivoInput?.focus();
+        return;
+    }
+    if (!motivo) {
+        showCustomAlert('Ingrese el motivo de rechazo.', 'Motivo obligatorio');
+        motivoInput?.focus();
+        return;
+    }
+    const previousEstado = p.estado;
+    p.estado = ABM_USER_STATES.RECHAZADO;
+    p.motivoRechazo = motivo;
+    closeModal('ente-auth-modal');
+    managingAbmEnteAuthId = null;
+    finalizeAbmEnteAuthorization(p, {
+        action: 'RECHAZAR_ENTE',
+        previousEstado,
+        details: { motivoRechazo: motivo },
+    });
+    showCustomAlert(`Ente "${p.razon}" rechazado.`, 'Ente rechazado');
+}
+
+function syncParticipantModalMode(participant = null) {
+    const isRejectedEdit = participant
+        && canAuthorizeAbmEntes()
+        && (participant.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) === ABM_USER_STATES.RECHAZADO;
+    const badge = document.getElementById('abm-modal-rejected-badge');
+    const btnSave = document.getElementById('abm-modal-btn-save');
+    const btnConfirmAuth = document.getElementById('abm-modal-btn-confirm-auth');
+    if (badge) badge.classList.toggle('hidden', !isRejectedEdit);
+    if (btnSave) btnSave.classList.toggle('hidden', isRejectedEdit);
+    if (btnConfirmAuth) btnConfirmAuth.classList.toggle('hidden', !isRejectedEdit);
+}
+
 function syncUserModalMode(user = null) {
     const isRejectedEdit = user && (user.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) === ABM_USER_STATES.RECHAZADO;
     const badge = document.getElementById('user-modal-rejected-badge');
@@ -1800,6 +1966,17 @@ function openAbmModal(participantId = null, presetTipo = null) {
     if (participantId) {
         const p = participants.find(x => x.id === participantId);
         if (!p) return;
+        editingParticipantSnapshot = null;
+        if ((p.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) === ABM_USER_STATES.RECHAZADO) {
+            editingParticipantSnapshot = {
+                tipo: p.tipo,
+                ruc: p.ruc,
+                razon: p.razon,
+                email: p.email || '',
+                telefono: p.telefono || '',
+                egpPadreId: p.egpPadreId ?? null,
+            };
+        }
         document.getElementById('abm-modal-title').textContent = p.tipo === 'EGP' ? 'Editar EGP' : 'Editar Proveedor';
         document.getElementById('abm-tipo').value = p.tipo;
         document.getElementById('abm-ruc').value = p.ruc;
@@ -1813,13 +1990,16 @@ function openAbmModal(participantId = null, presetTipo = null) {
         if (shouldShowProveedorBankEditFields(p)) {
             populateProveedorAdminFields(p);
         }
+        syncParticipantModalMode(p);
     } else {
+        editingParticipantSnapshot = null;
         const tipo = presetTipo === 'Proveedor' ? 'Proveedor' : (presetTipo === 'EGP' ? 'EGP' : '');
         document.getElementById('abm-modal-title').textContent = tipo === 'Proveedor' ? 'Nuevo Proveedor' : (tipo === 'EGP' ? 'Nuevo EGP' : 'Nuevo Ente');
         if (tipo) {
             document.getElementById('abm-tipo').value = tipo;
             syncAbmModalTipoPreset(tipo);
         }
+        syncParticipantModalMode(null);
     }
 
     syncAbmTipoFields();
@@ -1895,10 +2075,85 @@ function submitParticipant() {
     }
 
     closeModal('abm-modal');
+    editingParticipantId = null;
+    editingParticipantSnapshot = null;
     renderParticipants();
     renderAbmUsers();
     populateOperatingEntitySelect();
     renderOperatingEntityPanel();
+}
+
+function submitParticipantConfirmAuthorize() {
+    if (editingParticipantId == null) return;
+    if (!canAuthorizeAbmEntes()) {
+        showCustomAlert('Su dominio/rol no tiene permiso para autorizar entes en el ABM.', 'Acción no disponible');
+        return;
+    }
+    const p = participants.find(x => x.id === editingParticipantId);
+    if (!p || (p.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION) !== ABM_USER_STATES.RECHAZADO) {
+        showCustomAlert('Esta acción solo está disponible para entes rechazados.', 'Acción no disponible');
+        return;
+    }
+
+    const payload = buildParticipantFormPayload();
+    if (!payload.tipo || !payload.ruc || !payload.razon) {
+        showCustomAlert('Complete Tipo, RUC y Razón Social.', 'Campos incompletos');
+        return;
+    }
+    if (payload.tipo === 'Proveedor' && !payload.egpPadreId) {
+        showCustomAlert('Seleccione el EGP Padre para el proveedor.', 'Campos incompletos');
+        return;
+    }
+
+    const changed = hasRequiredParticipantChanges(editingParticipantSnapshot, payload);
+    const applyAuthorization = () => {
+        const previousEstado = p.estado;
+        const motivoRechazoAnterior = p.motivoRechazo || '';
+        const viz = getAbmVisualizationDefaults(p);
+        Object.assign(p, {
+            ...payload,
+            monedas: p.monedas ?? viz.monedas,
+            lineaCredito: p.lineaCredito ?? viz.lineaCredito,
+            tasaInteres: p.tasaInteres ?? viz.tasaInteres,
+            tasaComision: p.tasaComision ?? viz.tasaComision,
+            iva: p.iva ?? viz.iva,
+            condiciones: p.condiciones ?? viz.condiciones,
+            clienteAtlas: p.clienteAtlas ?? viz.clienteAtlas,
+        });
+        if (shouldShowProveedorBankEditFields(p)) {
+            const defaults = getProveedorAdminFieldDefaults(payload.ruc);
+            p.cuentaCredito = document.getElementById('abm-cuenta-credito').value.trim() || defaults.cuentaCredito;
+            p.banco = document.getElementById('abm-banco').value.trim() || defaults.banco;
+            p.monedaOperacion = document.querySelector('input[name="abm-moneda-operacion"]:checked')?.value || defaults.monedaOperacion;
+            p.tipoDocumento = document.getElementById('abm-tipo-documento').value.trim();
+            p.numeroDocumento = document.getElementById('abm-numero-documento').value.trim();
+            p.nombreApellido = document.getElementById('abm-nombre-apellido').value.trim();
+        }
+        p.estado = ABM_USER_STATES.AUTORIZADO;
+        p.motivoRechazo = '';
+        closeModal('abm-modal');
+        finalizeAbmEnteAuthorization(p, {
+            action: 'CONFIRMAR_AUTORIZAR_ENTE',
+            previousEstado,
+            details: {
+                camposModificados: changed,
+                motivoRechazoAnterior,
+            },
+        });
+        editingParticipantId = null;
+        editingParticipantSnapshot = null;
+        showCustomAlert(`Ente "${p.razon}" autorizado correctamente.`, 'Ente autorizado');
+    };
+
+    if (!changed) {
+        showCustomConfirm(
+            'Se autoriza la activación del ente, con la misma información provista anteriormente',
+            applyAuthorization,
+            'Confirmar autorización'
+        );
+        return;
+    }
+    applyAuthorization();
 }
 
 document.getElementById('abm-tipo')?.addEventListener('change', syncAbmTipoFields);
