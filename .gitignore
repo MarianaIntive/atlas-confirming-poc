@@ -3,3 +3,4 @@ Thumbs.db
 *.log
 .idea/
 *.local
+.cursor/mcp.json

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "jira": {
+      "command": "npx",
+      "args": ["-y", "mcp-atlassian"],
+      "env": {
+        "ATLASSIAN_BASE_URL": "https://bancoatlaspy.atlassian.net",
+        "ATLASSIAN_EMAIL": "YOUR_EMAIL@atlas.com.py",
+        "ATLASSIAN_API_TOKEN": "YOUR_API_TOKEN"
+      }
+    }
+  }
+}
