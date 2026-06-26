@@ -3,12 +3,14 @@
 | Campo | Valor |
 |-------|-------|
 | **Producto** | atlas-confirming-poc |
-| **Versión del documento** | 1.0.0 |
-| **Estado** | POC (Proof of Concept) — demostración funcional |
-| **Fecha** | 2026-06-17 |
+| **Versión del documento** | 2.0.0 |
+| **Estado** | En Desarrollo — fuente de verdad: Jira proyecto MAGIA |
+| **Fecha** | 2026-06-26 |
 | **Audiencia** | Product Owner, Business Designer, UX, Desarrollo, QA, Operaciones Banco |
-| **Fuente de verdad técnica** | `index.html`, `app.js`, `styles.css` |
+| **Fuente de verdad** | **Jira — https://bancoatlaspy.atlassian.net (proyecto MAGIA)** |
 | **Metodologías de referencia** | User Story Mapping (Patton), Value Proposition Design (Osterwalder), Don't Make Me Think (Krug), Software Requirements (Wiegers & Beatty), Specification by Example (Adzic) |
+
+> **IMPORTANTE:** A partir de la versión 2.0.0 la fuente de verdad del producto es **Jira (proyecto MAGIA)**. Este documento es una derivación del backlog de Jira y debe mantenerse sincronizado con él. Ante cualquier discrepancia, prevalece Jira.
 
 ---
 
@@ -21,15 +23,16 @@
 5. [Modelo de dominio y contextos delimitados](#5-modelo-de-dominio-y-contextos-delimitados)
 6. [Arquitectura de información y navegación global](#6-arquitectura-de-información-y-navegación-global)
 7. [Especificación funcional por módulo](#7-especificación-funcional-por-módulo)
-8. [Máquina de estados — Ciclo de vida de la Factura](#8-máquina-de-estados--ciclo-de-vida-de-la-factura)
-9. [Reglas de negocio y cálculos financieros](#9-reglas-de-negocio-y-cálculos-financieros)
-10. [Matriz de permisos y roles](#10-matriz-de-permisos-y-roles)
-11. [User Flows — Notación BPMN 2.0](#11-user-flows--notación-bpmn-20)
-12. [Casos de uso](#12-casos-de-uso)
-13. [User Stories — Criterios de aceptación en Gherkin](#13-user-stories--criterios-de-aceptación-en-gherkin)
-14. [Prototipos Figma](#14-prototipos-figma)
-15. [Limitaciones del POC y backlog sugerido](#15-limitaciones-del-poc-y-backlog-sugerido)
-16. [Anexos](#16-anexos)
+8. [**API Gestión ABM — Contratos de integración (fuente: Jira MAGIA)**](#8-api-gestión-abm--contratos-de-integración-fuente-jira-magia)
+9. [Máquina de estados — Ciclo de vida de la Factura](#9-máquina-de-estados--ciclo-de-vida-de-la-factura)
+10. [Reglas de negocio y cálculos financieros](#10-reglas-de-negocio-y-cálculos-financieros)
+11. [Matriz de permisos y roles](#11-matriz-de-permisos-y-roles)
+12. [User Flows — Notación BPMN 2.0](#12-user-flows--notación-bpmn-20)
+13. [Casos de uso](#13-casos-de-uso)
+14. [User Stories — Criterios de aceptación en Gherkin](#14-user-stories--criterios-de-aceptación-en-gherkin)
+15. [Prototipos Figma](#15-prototipos-figma)
+16. [Limitaciones del POC y backlog sugerido](#16-limitaciones-del-poc-y-backlog-sugerido)
+17. [Anexos](#17-anexos)
 
 ---
 
@@ -799,7 +802,130 @@ Estados: Acreditado, Pagado y Cerrado.
 
 ---
 
-## 8. Máquina de estados — Ciclo de vida de la Factura
+## 8. API Gestión ABM — Contratos de integración (fuente: Jira MAGIA)
+
+> **Fuente de verdad:** Jira proyecto MAGIA — https://bancoatlaspy.atlassian.net  
+> Esta sección es generada a partir de las historias de usuario en Jira y debe mantenerse sincronizada con el backlog.  
+> Para diagramas Mermaid completos ver: `assets/arquitectura_diagramas_v1.0.0.md`
+
+### 8.1 Arquitectura de integración — BFF ENTES
+
+El **BFF ENTES** es el único BFF del módulo Gestión ABM. Cubre los tres dominios: **Entes**, **Usuarios** y **Notificaciones**. El backend está identificado como **API CORE BANKING** (microservicio `api-gestion-abm`).
+
+```
+FE (Portal Confirming SPA)
+    ↓↑
+[BFF ENTES] — api/v1/BFF*
+    ↓↑
+[BE — API Gestión ABM / API CORE BANKING] — api/v1/BE*
+    ↓↑
+Base de datos + Keycloak + Servicio Email
+```
+
+**Regla cross-cutting (de todas las historias MAGIA):**
+> Cuando el servicio responde ERROR a nivel BFF, **el BFF NO realiza llamada al BE**. El error se envía directamente al FE con los códigos de error funcionales definidos.
+
+---
+
+### 8.2 Endpoints BFF ENTES — Dominio Entes
+
+| Historia | Método | Endpoint | Acción de negocio |
+|----------|--------|----------|-------------------|
+| MAGIA-119 | `POST` | `/api/v1/BFFguardarInfoEntes` | Alta de ente EGP o Proveedor |
+| MAGIA-120 | `GET` | `/api/v1/BFFobtenerInfoEnte?ID={id}` | Ver detalle de un ente |
+| MAGIA-136 | `GET` | `/api/v1/BFFcargarGrillaEnte?entity=EGP\|PROVEEDOR&pagelimit=20&status=todos` | Cargar grilla EGP / Proveedor |
+| MAGIA-134 | `PATCH` | `/api/v1/BFFactualizarInfoEntes` | Editar / Bloquear / Gestionar / Borrar ente |
+
+**Criterios de aceptación comunes (MAGIA-119/120/136/134):**
+- Que se exponga el EP correctamente (método POST/GET/PATCH)
+- Que se respeten los parámetros de request definidos
+- Que se respete el payload de response definido
+- Que se implementen los códigos de error
+- Que se llame al servicio de backend correctamente en el flujo OK
+- Que se envíe la novedad de error/ok al FE
+
+---
+
+### 8.3 Endpoints BE API Gestión ABM — Dominio Entes
+
+| Historia | Método | Endpoint | Acción de negocio |
+|----------|--------|----------|-------------------|
+| MAGIA-121 | `POST` | `/api/v1/BEguardarInfoEntes` | Persistir alta ente |
+| MAGIA-122 | `GET` | `/api/v1/BEobtenerInfoEnte?ID={id}` | Obtener detalle ente desde DB |
+| MAGIA-137 | `GET` | `/api/v1/BEcargarGrillaEntes?entity=EGP\|PROVEEDOR&pagelimit=20&status=todos` | Listar entes paginado |
+| MAGIA-135 | `PATCH` | `/api/v1/BEactualizarInfoEntes` | Actualizar ente (editar/bloquear/gestionar/borrar) |
+
+---
+
+### 8.4 Endpoints BFF ENTES — Dominio Usuarios
+
+| Historia | Método | Endpoint | Acción de negocio |
+|----------|--------|----------|-------------------|
+| MAGIA-123 | `POST` | `/api/v1/BFFguardarInfoUsuarios` | Alta de usuario |
+| MAGIA-124 | `GET` | `/api/v1/BFFobtenerInfoUsuario?ID={id}` | Ver detalle usuario |
+| MAGIA-192 | `GET` | `/api/v1/BFFcargarGrillaUsuario?entity=USUARIOS&pagelimit=20&status=todos` | Cargar grilla usuarios |
+| MAGIA-191 | `PATCH` | `/api/v1/BFFactualizarInfoUsuarios` | Editar / Gestionar / Bloquear / Borrar usuario |
+
+**Nota MAGIA-191:** La acción actualizar cubre los flujos: editar, gestionar (autorizar/rechazar), bloquear/desbloquear y borrar.
+
+---
+
+### 8.5 Endpoints BE API Gestión ABM — Dominio Usuarios
+
+| Historia | Método | Endpoint | Acción de negocio |
+|----------|--------|----------|-------------------|
+| MAGIA-125 | `POST` | `/api/v1/BEguardarInfoUsuarios` | Persistir alta usuario |
+| MAGIA-126 | `GET` | `/api/v1/BEobtenerInfoUsuarios?ID={id}` | Obtener detalle usuario desde DB |
+| MAGIA-193 | `GET` | `/api/v1/BEcargarGrillaUsuario?entity=USUARIOS&pagelimit=20&status=todos` | Listar usuarios paginado |
+| MAGIA-190 | `PATCH` | `/api/v1/BEactualizarInfoUsuarios` | Actualizar usuario (editar/gestionar/bloquear/borrar) |
+
+---
+
+### 8.6 Endpoints BFF ENTES — Dominio Notificaciones
+
+| Historia | Método | Endpoint | Estado Jira | Acción de negocio |
+|----------|--------|----------|-------------|-------------------|
+| MAGIA-128 | `GET` | `/api/v1/BFFcargarGrillaNotificaciones?entity=Notificaciones&pagelimit=20&status=todos` | Relevamiento | Cargar catálogo notificaciones |
+| MAGIA-127 | `PATCH` | `/api/v1/BFFactualizarNotificaciones` | **En Espera** | Activar / Inactivar notificación |
+
+---
+
+### 8.7 Endpoints BE API Gestión ABM — Dominio Notificaciones
+
+| Historia | Método | Endpoint | Estado Jira | Acción de negocio |
+|----------|--------|----------|-------------|-------------------|
+| MAGIA-130 | `GET` | `/api/v1/BEcargarGrillaNotificaciones?entity=Notificaciones&pagelimit=20&status=todos` | Relevamiento | Listar notificaciones desde DB |
+| MAGIA-129 | `PATCH` | `/api/v1/BEactualizarNotificaciones` | **En Espera** | Actualizar estado activa/inactiva |
+
+**Nota Notificaciones:** Los endpoints MAGIA-127 y MAGIA-129 están en estado **"En Espera"** en Jira. El flujo de activar/inactivar es el único expuesto; la creación/edición de contenido de notificaciones está fuera del alcance de estas historias.
+
+---
+
+### 8.8 Patrón de error handling (cross-cutting — todas las historias MAGIA)
+
+```mermaid
+flowchart LR
+    FE -->|Request| BFF
+    BFF -->|Validar JWT + permisos| BFF
+    BFF -->|Error en BFF| NoBack["NO llama al BE\nRetorna error funcional al FE"]
+    BFF -->|OK| BE
+    BE -->|Error en BE| ErrBE["Retorna error al BFF\nBFF propaga al FE"]
+    BE -->|OK| DB
+    DB --> BE
+    BE --> BFF
+    BFF --> FE
+```
+
+| Escenario | Comportamiento |
+|-----------|---------------|
+| Error en FE (validación local) | No se realiza llamada al BFF |
+| Error en BFF (token / validación) | BFF **NO llama al BE** — retorna error funcional al FE |
+| Error en BE | BE retorna error → BFF propaga al FE |
+| OK completo | FE → BFF → BE → DB → BE → BFF → FE |
+
+---
+
+## 9. Máquina de estados — Ciclo de vida de la Factura
 
 ```mermaid
 stateDiagram-v2
@@ -835,7 +961,7 @@ stateDiagram-v2
 
 ---
 
-## 9. Reglas de negocio y cálculos financieros
+## 10. Reglas de negocio y cálculos financieros
 
 ### 9.1 Reglas generales
 
@@ -888,7 +1014,7 @@ neto        = montoAdelanto - interes - comision - iva
 
 ---
 
-## 10. Matriz de permisos y roles
+## 11. Matriz de permisos y roles
 
 ### 10.1 Roles precargados (demo)
 
@@ -913,7 +1039,7 @@ neto        = montoAdelanto - interes - comision - iva
 
 ---
 
-## 11. User Flows — Notación BPMN 2.0
+## 12. User Flows — Notación BPMN 2.0
 
 > Los diagramas siguientes usan símbolos BPMN 2.0: **(○)** Evento, **[▭]** Tarea, **{◇}** Gateway, **→** Flujo secuencial.
 
@@ -1055,7 +1181,7 @@ flowchart TD
 
 ---
 
-## 12. Casos de uso
+## 13. Casos de uso
 
 Formato: ID, Nombre, Actor primario, Precondiciones, Flujo principal, Flujos alternos, Postcondiciones.
 
@@ -1198,7 +1324,7 @@ Formato: ID, Nombre, Actor primario, Precondiciones, Flujo principal, Flujos alt
 
 ---
 
-## 13. User Stories — Criterios de aceptación en Gherkin
+## 14. User Stories — Criterios de aceptación en Gherkin
 
 Epic numbering: **E1** Acceso, **E2** Dashboard, **E3** Confirming, **E4** ABM, **E5** Reportes.
 
@@ -1472,7 +1598,7 @@ Feature: Reportes por rol
 
 ---
 
-## 14. Prototipos Figma
+## 15. Prototipos Figma
 
 | Artefacto | Estado | Notas |
 |-----------|--------|-------|
@@ -1496,7 +1622,7 @@ Feature: Reportes por rol
 
 ---
 
-## 15. Limitaciones del POC y backlog sugerido
+## 16. Limitaciones del POC y backlog sugerido
 
 | ID | Limitación | Impacto | Prioridad sugerida |
 |----|------------|---------|-------------------|
@@ -1513,7 +1639,7 @@ Feature: Reportes por rol
 
 ---
 
-## 16. Anexos
+## 17. Anexos
 
 ### 16.1 Datos seed — Facturas demo
 
@@ -1557,12 +1683,13 @@ Feature: Reportes por rol
 | Guardar Usuario | `submitUserModal()` |
 | Guardar Rol | `submitRoleModal()` |
 
-### 16.4 Historial de versiones del documento
+### 17.4 Historial de versiones del documento
 
 | Versión | Fecha | Autor | Cambios |
 |---------|-------|-------|---------|
 | 1.0.0 | 2026-06-17 | PO / Business Design | Creación inicial exhaustiva basada en POC atlas-confirming-poc |
+| 2.0.0 | 2026-06-26 | Cursor Cloud Agent | Actualización con fuente de verdad Jira (proyecto MAGIA): sección 8 API contratos de integración BFF+BE con 20 endpoints y diagramas Mermaid derivados de historias MAGIA-119/120/121/122/123/124/125/126/127/128/129/130/134/135/136/137/190/191/192/193 |
 
 ---
 
-*Fin del documento funcional v1.0.0*
+*Fin del documento funcional v2.0.0*
