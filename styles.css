@@ -2444,6 +2444,16 @@ textarea.input-text {
 }
 .btn-abm-manage:hover {
     background: var(--atlas-active-bg-soft);
+    border-color: var(--atlas-primary);
+}
+.btn-abm-manage--deactivate {
+    color: #6b7280;
+    border-color: #d1d5db;
+}
+.btn-abm-manage--deactivate:hover {
+    background: #fef2f2;
+    border-color: #dc2626;
+    color: #dc2626;
 }
 .user-auth-summary {
     padding: 12px 14px;

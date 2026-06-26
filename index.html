@@ -297,8 +297,12 @@
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('egp'); openAbmModal(null, 'EGP');">Nuevo EGP</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('proveedor'); openAbmModal(null, 'Proveedor');">Nuevo Proveedor</button>
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('usuarios'); openUserModal();">Nuevo Usuario</button>
+                                <!-- POC: alta de roles oculta temporalmente — descomentar para recuperar
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('roles'); openRoleModal();">Nuevo Rol</button>
+                                -->
+                                <!-- POC: alta de notificaciones oculta temporalmente — descomentar para recuperar
                                 <button type="button" class="dropdown-menu-abm-item" role="menuitem" onclick="closeAbmAddMenu(); switchAbmTab('notificaciones'); openNotificationModal();">Nueva Notificación</button>
+                                -->
                             </div>
                         </div>
                     </div>
@@ -308,7 +312,9 @@
                         <button type="button" class="abm-tab active" role="tab" aria-selected="true" aria-controls="abm-panel-egp" id="abm-tab-egp" data-abm-tab="egp">EGP</button>
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-proveedor" id="abm-tab-proveedor" data-abm-tab="proveedor">Proveedor</button>
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-usuarios" id="abm-tab-usuarios" data-abm-tab="usuarios">Usuarios</button>
+                        <!-- POC: pestaña Roles oculta temporalmente — descomentar para recuperar
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-roles" id="abm-tab-roles" data-abm-tab="roles">Roles</button>
+                        -->
                         <button type="button" class="abm-tab" role="tab" aria-selected="false" aria-controls="abm-panel-notificaciones" id="abm-tab-notificaciones" data-abm-tab="notificaciones">Notificaciones</button>
                     </nav>
 
@@ -441,6 +447,7 @@
                         <div id="usuarios-pagination" class="abm-pagination-wrap"></div>
                     </div>
 
+                    <!-- POC: panel Roles oculto temporalmente — descomentar bloque completo para recuperar
                     <div id="abm-panel-roles" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-roles">
                         <p class="abm-panel-caption">Roles y permisos</p>
                         <div class="abm-filters">
@@ -478,6 +485,7 @@
                         </div>
                         <div id="roles-pagination" class="abm-pagination-wrap"></div>
                     </div>
+                    -->
 
                     <div id="abm-panel-notificaciones" class="abm-tab-panel" role="tabpanel" aria-labelledby="abm-tab-notificaciones">
                         <p class="abm-panel-caption">Notificaciones por avance en la máquina de estados (dominio / rol / emails)</p>

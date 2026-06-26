@@ -768,7 +768,7 @@ let abmNotifications = [
     { id: 17, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas por vencer CRÍTICA', estadoDisparador: 'Fecha actual a menos de 5 días corridos de la fecha de vencimiento', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas en alerta crítica: vencimiento en menos de 5 días.' },
     { id: 18, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas con fecha de pago por vencer', estadoDisparador: 'Fecha actual a menos de 31 días corridos de la fecha de pago', tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas con fecha de pago próxima (30–31 días para alcanzar la fecha de pago).' },
     { id: 19, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de pago', estadoDisparador: `Fecha de pago = día anterior y/o estado ${INVOICE_STATES.NO_ELEGIBLE}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas que alcanzaron la fecha de pago (NO ELEGIBLE).' },
-    { id: 20, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de vencimiento', estadoDisparador: `Fecha de vencimiento = día anterior y/o estado ${INVOICE_STATES.VENCIDA}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: true, mensaje: 'Facturas que alcanzaron la fecha de vencimiento (Vencida).' },
+    { id: 20, agrupador: NOTIFICATION_AGRUPADORES.GESTION_FACTURAS, nombre: 'Notificación de facturas que alcanzaron la fecha de vencimiento', estadoDisparador: `Fecha de vencimiento = día anterior y/o estado ${INVOICE_STATES.VENCIDA}`, tipoEnvio: 'Email', dominio: 'EGP', rol: 'ADMIN', emails: 'finanzas@tigo.com.py', activa: false, mensaje: 'Facturas que alcanzaron la fecha de vencimiento (Vencida).' },
 ];
 abmNotifications.forEach((n) => {
     n.tiposNotificacion = normalizeNotificationTipos(n.tiposNotificacion, n.tipoEnvio);
@@ -1921,9 +1921,9 @@ function renderAbmNotifications() {
     }
 
     slice.forEach(n => {
-        const viewBtn = typeof canViewAbmNotificationsDetail === 'function' && canViewAbmNotificationsDetail()
-            ? `<button type="button" class="btn-icon-action btn-icon-action--view" onclick="openNotificationDetailModal(${n.id})" title="Ver detalle" aria-label="Ver detalle"><i class="ph ph-eye"></i></button>`
-            : '';
+        const toggleBtn = n.activa
+            ? `<button type="button" class="btn-abm-manage btn-abm-manage--deactivate" onclick="toggleAbmNotificationActive(${n.id})" title="Desactivar notificación" aria-label="Desactivar notificación">Desactivar</button>`
+            : `<button type="button" class="btn-abm-manage" onclick="toggleAbmNotificationActive(${n.id})" title="Activar notificación" aria-label="Activar notificación">Activar</button>`;
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${renderNotificationAgrupadorBadge(n.agrupador)}</td>
@@ -1936,13 +1936,16 @@ function renderAbmNotifications() {
             <td style="font-size:12px;color:#6b7280;max-width:280px;">${n.mensaje}</td>
             <td>${n.activa ? '<span class="badge-egp">Activa</span>' : '<span class="badge-proveedor">Inactiva</span>'}</td>
             <td class="abm-actions-cell">
-                ${viewBtn}
+                ${toggleBtn}
+                <!-- POC: ver / editar / eliminar ocultos temporalmente
+                <button type="button" class="btn-icon-action btn-icon-action--view" onclick="openNotificationDetailModal(${n.id})" title="Ver detalle" aria-label="Ver detalle"><i class="ph ph-eye"></i></button>
                 <button type="button" class="btn-icon-action btn-icon-action--edit" onclick="openNotificationModal(${n.id})" title="Editar notificación" aria-label="Editar notificación">
                     <i class="ph ph-pencil-simple"></i>
                 </button>
                 <button type="button" class="btn-icon-action btn-icon-action--delete" onclick="deleteAbmNotification(${n.id})" title="Eliminar notificación" aria-label="Eliminar notificación">
                     <i class="ph ph-x"></i>
                 </button>
+                -->
             </td>
         `;
         tbody.appendChild(tr);
@@ -2043,6 +2046,18 @@ function deleteAbmNotification(id) {
             showCustomAlert('Notificación eliminada.', 'ABM Notificaciones');
         },
         'Eliminar notificación'
+    );
+}
+
+function toggleAbmNotificationActive(id) {
+    const n = abmNotifications.find(x => x.id === id);
+    if (!n) return;
+    const willActivate = !n.activa;
+    n.activa = willActivate;
+    renderAbmNotifications();
+    showCustomAlert(
+        `La notificación "${n.nombre}" fue ${willActivate ? 'activada' : 'desactivada'} correctamente.`,
+        willActivate ? 'Notificación activada' : 'Notificación desactivada'
     );
 }
 
