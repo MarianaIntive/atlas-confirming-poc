@@ -5,8 +5,10 @@
 |-------|-------|
 | **Fuente de verdad** | Jira — Proyecto MAGIA |
 | **Issues cubiertos** | MAGIA-119/120/121/122/125/126/127/128/129/130/134/135/136/137/190/191/192/193 |
-| **Versión documento** | 1.0.0 |
+| **Versión documento** | 1.1.0 |
 | **Fecha** | 2026-06-26 |
+
+> **v1.1.0:** Corrección arquitectura — existen **2 BFFs** separados: BFF ENTES (Entes + Usuarios) y BFF NOTIFICACIONES (Notificaciones).
 
 ---
 
@@ -30,7 +32,7 @@
 
 > Nombres exactos extraídos de las historias en Jira (proyecto MAGIA). Estado al 26/06/2026.
 
-### BFF ENTES (BFF único que maneja Entes + Usuarios + Notificaciones)
+### BFF ENTES (Entes + Usuarios)
 
 | Método | Endpoint BFF | Historia | Estado Jira |
 |--------|-------------|----------|-------------|
@@ -42,6 +44,11 @@
 | `GET` | `/api/v1/BFFobtenerInfoUsuario` | MAGIA-124 | Relevamiento |
 | `GET` | `/api/v1/BFFcargarGrillaUsuario` | MAGIA-192 | Relevamiento |
 | `PATCH` | `/api/v1/BFFactualizarInfoUsuarios` | MAGIA-191 | Relevamiento |
+
+### BFF NOTIFICACIONES (Notificaciones)
+
+| Método | Endpoint BFF | Historia | Estado Jira |
+|--------|-------------|----------|-------------|
 | `GET` | `/api/v1/BFFcargarGrillaNotificaciones` | MAGIA-128 | Relevamiento |
 | `PATCH` | `/api/v1/BFFactualizarNotificaciones` | MAGIA-127 | En Espera |
 
@@ -84,32 +91,36 @@ flowchart TB
         APIGW["Kong / NGINX\nTLS · Rate limit · JWT forward"]
     end
 
-    subgraph BFF["BFF ENTES\n(único BFF — cubre Entes + Usuarios + Notificaciones)"]
+    subgraph BFF_E["BFF ENTES\n(Entes + Usuarios)"]
         direction TB
-        B1["POST /BFFguardarInfoEntes (MAGIA-119)"]
-        B2["GET  /BFFobtenerInfoEnte (MAGIA-120)"]
-        B3["GET  /BFFcargarGrillaEnte (MAGIA-136)"]
-        B4["PATCH /BFFactualizarInfoEntes (MAGIA-134)"]
-        B5["POST /BFFguardarInfoUsuarios (MAGIA-123)"]
-        B6["GET  /BFFobtenerInfoUsuario (MAGIA-124)"]
-        B7["GET  /BFFcargarGrillaUsuario (MAGIA-192)"]
-        B8["PATCH /BFFactualizarInfoUsuarios (MAGIA-191)"]
-        B9["GET  /BFFcargarGrillaNotificaciones (MAGIA-128)"]
-        B10["PATCH /BFFactualizarNotificaciones (MAGIA-127)"]
+        BE1["POST /BFFguardarInfoEntes (MAGIA-119)"]
+        BE2["GET  /BFFobtenerInfoEnte (MAGIA-120)"]
+        BE3["GET  /BFFcargarGrillaEnte (MAGIA-136)"]
+        BE4["PATCH /BFFactualizarInfoEntes (MAGIA-134)"]
+        BE5["POST /BFFguardarInfoUsuarios (MAGIA-123)"]
+        BE6["GET  /BFFobtenerInfoUsuario (MAGIA-124)"]
+        BE7["GET  /BFFcargarGrillaUsuario (MAGIA-192)"]
+        BE8["PATCH /BFFactualizarInfoUsuarios (MAGIA-191)"]
+    end
+
+    subgraph BFF_N["BFF NOTIFICACIONES\n(Notificaciones)"]
+        direction TB
+        BN1["GET  /BFFcargarGrillaNotificaciones (MAGIA-128)"]
+        BN2["PATCH /BFFactualizarNotificaciones (MAGIA-127)"]
     end
 
     subgraph BE["BE — API Gestión ABM\n(Microservicio: API CORE BANKING)"]
         direction TB
-        BE1["POST /BEguardarInfoEntes (MAGIA-121)"]
-        BE2["GET  /BEobtenerInfoEnte (MAGIA-122)"]
-        BE3["GET  /BEcargarGrillaEntes (MAGIA-137)"]
-        BE4["PATCH /BEactualizarInfoEntes (MAGIA-135)"]
-        BE5["POST /BEguardarInfoUsuarios (MAGIA-125)"]
-        BE6["GET  /BEobtenerInfoUsuarios (MAGIA-126)"]
-        BE7["GET  /BEcargarGrillaUsuario (MAGIA-193)"]
-        BE8["PATCH /BEactualizarInfoUsuarios (MAGIA-190)"]
-        BE9["GET  /BEcargarGrillaNotificaciones (MAGIA-130)"]
-        BE10["PATCH /BEactualizarNotificaciones (MAGIA-129)"]
+        BE_E1["POST /BEguardarInfoEntes (MAGIA-121)"]
+        BE_E2["GET  /BEobtenerInfoEnte (MAGIA-122)"]
+        BE_E3["GET  /BEcargarGrillaEntes (MAGIA-137)"]
+        BE_E4["PATCH /BEactualizarInfoEntes (MAGIA-135)"]
+        BE_U1["POST /BEguardarInfoUsuarios (MAGIA-125)"]
+        BE_U2["GET  /BEobtenerInfoUsuarios (MAGIA-126)"]
+        BE_U3["GET  /BEcargarGrillaUsuario (MAGIA-193)"]
+        BE_U4["PATCH /BEactualizarInfoUsuarios (MAGIA-190)"]
+        BE_N1["GET  /BEcargarGrillaNotificaciones (MAGIA-130)"]
+        BE_N2["PATCH /BEactualizarNotificaciones (MAGIA-129)"]
     end
 
     subgraph INFRA["Infraestructura compartida"]
@@ -119,12 +130,15 @@ flowchart TB
     end
 
     UI --> APIGW
-    APIGW --> BFF
-    BFF --> BE
+    APIGW --> BFF_E
+    APIGW --> BFF_N
+    BFF_E --> BE
+    BFF_N --> BE
     BE --> DB
     BE --> KC
     BE --> MAIL
-    BFF --> KC
+    BFF_E --> KC
+    BFF_N --> KC
 ```
 
 ---
@@ -135,9 +149,12 @@ flowchart TB
 flowchart LR
     FE(["FE\nPortal Confirming"])
 
-    subgraph BFF_ENTES["BFF ENTES"]
+    subgraph BFF_ENTES["BFF ENTES\n(Entes + Usuarios)"]
         BFF_E["Entes\nMAGIA-119/120/134/136"]
         BFF_U["Usuarios\nMAGIA-123/124/191/192"]
+    end
+
+    subgraph BFF_NOTIF["BFF NOTIFICACIONES\n(Notificaciones)"]
         BFF_N["Notificaciones\nMAGIA-127/128"]
     end
 
@@ -242,7 +259,7 @@ sequenceDiagram
     participant DB as Base de Datos
 
     U->>FE: Ingresa a pestaña EGP o PROVEEDOR
-    
+
     alt Servicio responde OK (MAGIA-136 / MAGIA-137)
         FE->>BFF: GET /api/v1/BFFcargarGrillaEnte\n?entity=EGP|PROVEEDOR&pagelimit=20&status=todos
         BFF->>BFF: Validar token / autorización
@@ -537,7 +554,7 @@ sequenceDiagram
     autonumber
     actor U as Usuario (ABM)
     participant FE as Frontend
-    participant BFF as BFF ENTES
+    participant BFF as BFF NOTIFICACIONES
     participant BE as BE API Gestión ABM
     participant DB as Base de Datos
 
@@ -579,7 +596,7 @@ sequenceDiagram
     autonumber
     actor U as Usuario (ABM)
     participant FE as Frontend
-    participant BFF as BFF ENTES
+    participant BFF as BFF NOTIFICACIONES
     participant BE as BE API Gestión ABM
     participant DB as Base de Datos
 
@@ -622,13 +639,13 @@ flowchart TD
     Start((Inicio)) --> Login[Login Portal Confirming]
     Login --> NavABM[Navegar a Gestión ABM]
     NavABM --> TabEnte{Seleccionar tab}
-    TabEnte -->|EGP| CargarGrillaEGP["GET /BFFcargarGrillaEnte\n?entity=EGP&pagelimit=20&status=todos\nMAGIA-136 → MAGIA-137"]
-    TabEnte -->|PROVEEDOR| CargarGrillaProv["GET /BFFcargarGrillaEnte\n?entity=PROVEEDOR&pagelimit=20&status=todos\nMAGIA-136 → MAGIA-137"]
+    TabEnte -->|EGP| CargarGrillaEGP["GET /BFFcargarGrillaEnte\n?entity=EGP&pagelimit=20&status=todos\nBFF ENTES — MAGIA-136 → MAGIA-137"]
+    TabEnte -->|PROVEEDOR| CargarGrillaProv["GET /BFFcargarGrillaEnte\n?entity=PROVEEDOR&pagelimit=20&status=todos\nBFF ENTES — MAGIA-136 → MAGIA-137"]
 
     CargarGrillaEGP --> AccionEGP{Acción sobre grilla EGP}
     CargarGrillaProv --> AccionProv{Acción sobre grilla Proveedor}
 
-    AccionEGP -->|Ver detalle| ObtenerEnte["GET /BFFobtenerInfoEnte?ID=\nMAGIA-120 → MAGIA-122"]
+    AccionEGP -->|Ver detalle| ObtenerEnte["GET /BFFobtenerInfoEnte?ID=\nBFF ENTES — MAGIA-120 → MAGIA-122"]
     AccionProv -->|Ver detalle| ObtenerEnte
     ObtenerEnte --> ModalDetalle[Modal detalle solo lectura]
     ModalDetalle --> FinDetalle((Fin))
@@ -637,16 +654,16 @@ flowchart TD
     AccionProv -->|Nuevo Proveedor| FormAlta
     FormAlta --> ValFE{Validación FE\ncampos obligatorios}
     ValFE -->|Error| FormAlta
-    ValFE -->|OK| PostEnte["POST /BFFguardarInfoEntes\nMAGIA-119 → MAGIA-121"]
+    ValFE -->|OK| PostEnte["POST /BFFguardarInfoEntes\nBFF ENTES — MAGIA-119 → MAGIA-121"]
     PostEnte --> RespAlta{Response}
     RespAlta -->|OK| NotifAlta[BE dispara notif. email alta ente]
     NotifAlta --> RefreshGrilla[Refrescar grilla]
-    RespAlta -->|ERROR en BFF| ErrBFF["BFF NO llama BE\nMostrar error funcional al FE"]
+    RespAlta -->|ERROR en BFF| ErrBFF["BFF ENTES NO llama BE\nMostrar error funcional al FE"]
     RespAlta -->|ERROR en BE| ErrBE[Mostrar error propagado al FE]
 
     AccionEGP -->|Editar| FormEditar[Formulario Editar Ente]
     AccionProv -->|Editar| FormEditar
-    FormEditar --> PatchEdit["PATCH /BFFactualizarInfoEntes\naction=editar\nMAGIA-134 → MAGIA-135"]
+    FormEditar --> PatchEdit["PATCH /BFFactualizarInfoEntes\naction=editar — BFF ENTES — MAGIA-134 → MAGIA-135"]
     PatchEdit --> RespEdit{Response}
     RespEdit -->|OK| RefreshGrilla
     RespEdit -->|ERROR en BFF| ErrBFF
@@ -655,16 +672,16 @@ flowchart TD
     AccionEGP -->|Gestionar pendiente| FormGestionar[Modal Gestionar Autorización]
     AccionProv -->|Gestionar pendiente| FormGestionar
     FormGestionar --> DecAuth{Decisión}
-    DecAuth -->|Autorizar| PatchAuth["PATCH /BFFactualizarInfoEntes\naction=autorizar\nMAGIA-134 → MAGIA-135"]
-    DecAuth -->|Rechazar + motivo| PatchRej["PATCH /BFFactualizarInfoEntes\naction=rechazar\nMAGIA-134 → MAGIA-135"]
+    DecAuth -->|Autorizar| PatchAuth["PATCH /BFFactualizarInfoEntes\naction=autorizar — BFF ENTES — MAGIA-134 → MAGIA-135"]
+    DecAuth -->|Rechazar + motivo| PatchRej["PATCH /BFFactualizarInfoEntes\naction=rechazar — BFF ENTES — MAGIA-134 → MAGIA-135"]
     PatchAuth --> RefreshGrilla
     PatchRej --> RefreshGrilla
 
-    AccionEGP -->|Bloquear / Desbloquear| PatchBlock["PATCH /BFFactualizarInfoEntes\naction=bloquear|desbloquear\nMAGIA-134 → MAGIA-135"]
+    AccionEGP -->|Bloquear / Desbloquear| PatchBlock["PATCH /BFFactualizarInfoEntes\naction=bloquear|desbloquear — BFF ENTES — MAGIA-134 → MAGIA-135"]
     AccionProv -->|Bloquear / Desbloquear| PatchBlock
     PatchBlock --> RefreshGrilla
 
-    AccionEGP -->|Borrar| PatchBorrar["PATCH /BFFactualizarInfoEntes\naction=borrar\nMAGIA-134 → MAGIA-135"]
+    AccionEGP -->|Borrar| PatchBorrar["PATCH /BFFactualizarInfoEntes\naction=borrar — BFF ENTES — MAGIA-134 → MAGIA-135"]
     AccionProv -->|Borrar| PatchBorrar
     PatchBorrar --> RefreshGrilla
 
@@ -681,28 +698,28 @@ flowchart TD
 flowchart TD
     Start((Inicio)) --> Login[Login Portal Confirming]
     Login --> NavABM[Gestión ABM → Tab Usuarios]
-    NavABM --> CargarGrilla["GET /BFFcargarGrillaUsuario\n?entity=USUARIOS&pagelimit=20&status=todos\nMAGIA-192 → MAGIA-193"]
+    NavABM --> CargarGrilla["GET /BFFcargarGrillaUsuario\n?entity=USUARIOS&pagelimit=20&status=todos\nBFF ENTES — MAGIA-192 → MAGIA-193"]
 
     CargarGrilla --> Accion{Acción sobre grilla}
 
-    Accion -->|Ver detalle| ObtenerUsuario["GET /BFFobtenerInfoUsuario?ID=\nMAGIA-124 → MAGIA-126"]
+    Accion -->|Ver detalle| ObtenerUsuario["GET /BFFobtenerInfoUsuario?ID=\nBFF ENTES — MAGIA-124 → MAGIA-126"]
     ObtenerUsuario --> ModalDet[Modal detalle solo lectura]
     ModalDet --> FinDet((Fin))
 
     Accion -->|Nuevo Usuario| FormNuevo[Formulario Nuevo Usuario]
     FormNuevo --> ValFE{Validación FE\nnombre/apellido/email/teléfono/ente/rol}
     ValFE -->|Error| FormNuevo
-    ValFE -->|OK| PostUsuario["POST /BFFguardarInfoUsuarios\nMAGIA-123 → MAGIA-125"]
+    ValFE -->|OK| PostUsuario["POST /BFFguardarInfoUsuarios\nBFF ENTES — MAGIA-123 → MAGIA-125"]
     PostUsuario --> RespAlta{Response}
     RespAlta -->|OK| NotifPend[BE notifica alta usuario pendiente autorización]
     NotifPend --> RefreshGrilla[Refrescar grilla Usuarios]
-    RespAlta -->|ERROR BFF| ErrBFF["BFF NO llama BE\nError funcional al FE"]
+    RespAlta -->|ERROR BFF| ErrBFF["BFF ENTES NO llama BE\nError funcional al FE"]
     RespAlta -->|ERROR BE| ErrBE[Error propagado al FE]
 
     Accion -->|Editar| FormEditar[Formulario Editar Usuario]
     FormEditar --> CambioCritico{¿Cambió ente o rol?}
-    CambioCritico -->|Sí| PatchReauth["PATCH /BFFactualizarInfoUsuarios\naction=editar + re-pendiente\nMAGIA-191 → MAGIA-190"]
-    CambioCritico -->|No| PatchEdit["PATCH /BFFactualizarInfoUsuarios\naction=editar\nMAGIA-191 → MAGIA-190"]
+    CambioCritico -->|Sí| PatchReauth["PATCH /BFFactualizarInfoUsuarios\naction=editar + re-pendiente\nBFF ENTES — MAGIA-191 → MAGIA-190"]
+    CambioCritico -->|No| PatchEdit["PATCH /BFFactualizarInfoUsuarios\naction=editar\nBFF ENTES — MAGIA-191 → MAGIA-190"]
     PatchReauth --> RefreshGrilla
     PatchEdit --> RefreshGrilla
 
@@ -710,16 +727,16 @@ flowchart TD
     FormGestionar --> DecAuth{Decisión}
     DecAuth -->|Autorizar| ValCI{¿Misma CI que autorizador?}
     ValCI -->|Sí| ErrorCI[Error: no puede auto-autorizarse]
-    ValCI -->|No| PatchAuth["PATCH /BFFactualizarInfoUsuarios\naction=autorizar\nMAGIA-191 → MAGIA-190"]
-    DecAuth -->|Rechazar + motivo| PatchRej["PATCH /BFFactualizarInfoUsuarios\naction=rechazar\nMAGIA-191 → MAGIA-190"]
+    ValCI -->|No| PatchAuth["PATCH /BFFactualizarInfoUsuarios\naction=autorizar\nBFF ENTES — MAGIA-191 → MAGIA-190"]
+    DecAuth -->|Rechazar + motivo| PatchRej["PATCH /BFFactualizarInfoUsuarios\naction=rechazar\nBFF ENTES — MAGIA-191 → MAGIA-190"]
     PatchAuth --> NotifPrimer[BE notifica primer login\nKeycloak activa usuario]
     NotifPrimer --> RefreshGrilla
     PatchRej --> RefreshGrilla
 
-    Accion -->|Bloquear / Desbloquear| PatchBlock["PATCH /BFFactualizarInfoUsuarios\naction=bloquear|desbloquear\nMAGIA-191 → MAGIA-190"]
+    Accion -->|Bloquear / Desbloquear| PatchBlock["PATCH /BFFactualizarInfoUsuarios\naction=bloquear|desbloquear\nBFF ENTES — MAGIA-191 → MAGIA-190"]
     PatchBlock --> RefreshGrilla
 
-    Accion -->|Borrar| PatchBorrar["PATCH /BFFactualizarInfoUsuarios\naction=borrar\nMAGIA-191 → MAGIA-190"]
+    Accion -->|Borrar| PatchBorrar["PATCH /BFFactualizarInfoUsuarios\naction=borrar\nBFF ENTES — MAGIA-191 → MAGIA-190"]
     PatchBorrar --> RefreshGrilla
 
     RefreshGrilla --> Accion
@@ -736,23 +753,23 @@ flowchart TD
 flowchart TD
     Start((Inicio)) --> Login[Login Portal Confirming\npermiso: ABM Notificaciones - Ver]
     Login --> NavABM[Gestión ABM → Tab Notificaciones]
-    NavABM --> CargarGrilla["GET /BFFcargarGrillaNotificaciones\n?entity=Notificaciones&pagelimit=20&status=todos\nMAGIA-128 → MAGIA-130"]
+    NavABM --> CargarGrilla["GET /BFFcargarGrillaNotificaciones\n?entity=Notificaciones&pagelimit=20&status=todos\nBFF NOTIFICACIONES — MAGIA-128 → MAGIA-130"]
 
     CargarGrilla --> VerGrilla[Grilla muestra catálogo notificaciones\nAgrupador · Nombre · Estado disparador · Tipo · Dominio · Rol · Activa]
 
     VerGrilla --> Filtro{¿Filtrar por nombre?}
-    Filtro -->|Sí| ReQuery["GET /BFFcargarGrillaNotificaciones?nombre=...\nMAGIA-128 → MAGIA-130"]
+    Filtro -->|Sí| ReQuery["GET /BFFcargarGrillaNotificaciones?nombre=...\nBFF NOTIFICACIONES — MAGIA-128 → MAGIA-130"]
     ReQuery --> VerGrilla
     Filtro -->|No| Accion{Acción}
 
-    Accion -->|Activar| PatchActivar["PATCH /BFFactualizarNotificaciones\n{id, activa: true}\nMAGIA-127 → MAGIA-129"]
-    Accion -->|Desactivar| PatchDesactivar["PATCH /BFFactualizarNotificaciones\n{id, activa: false}\nMAGIA-127 → MAGIA-129"]
+    Accion -->|Activar| PatchActivar["PATCH /BFFactualizarNotificaciones\n{id, activa: true}\nBFF NOTIFICACIONES — MAGIA-127 → MAGIA-129"]
+    Accion -->|Desactivar| PatchDesactivar["PATCH /BFFactualizarNotificaciones\n{id, activa: false}\nBFF NOTIFICACIONES — MAGIA-127 → MAGIA-129"]
 
     PatchActivar --> RespPatch{Response}
     PatchDesactivar --> RespPatch
 
     RespPatch -->|OK| RefreshGrilla[Refrescar grilla notificaciones]
-    RespPatch -->|ERROR BFF| ErrBFF["BFF NO llama BE\nError funcional al FE"]
+    RespPatch -->|ERROR BFF| ErrBFF["BFF NOTIFICACIONES NO llama BE\nError funcional al FE"]
     RespPatch -->|ERROR BE| ErrBE[Error propagado al FE]
 
     RefreshGrilla --> VerGrilla
@@ -849,28 +866,28 @@ erDiagram
 
 ## 11. Matriz de trazabilidad Jira
 
-| # | Dominio | Capa | Método | Endpoint (Jira) | Historia Jira | Estado |
-|---|---------|------|--------|-----------------|---------------|--------|
-| 1 | Entes | BFF | POST | `/api/v1/BFFguardarInfoEntes` | MAGIA-119 | Relevamiento |
-| 2 | Entes | BFF | GET | `/api/v1/BFFobtenerInfoEnte` | MAGIA-120 | Relevamiento |
-| 3 | Entes | BFF | GET | `/api/v1/BFFcargarGrillaEnte` | MAGIA-136 | Relevamiento |
-| 4 | Entes | BFF | PATCH | `/api/v1/BFFactualizarInfoEntes` | MAGIA-134 | Relevamiento |
-| 5 | Entes | BE | POST | `/api/v1/BEguardarInfoEntes` | MAGIA-121 | Relevamiento |
-| 6 | Entes | BE | GET | `/api/v1/BEobtenerInfoEnte` | MAGIA-122 | Relevamiento |
-| 7 | Entes | BE | GET | `/api/v1/BEcargarGrillaEntes` | MAGIA-137 | Relevamiento |
-| 8 | Entes | BE | PATCH | `/api/v1/BEactualizarInfoEntes` | MAGIA-135 | Relevamiento |
-| 9 | Usuarios | BFF | POST | `/api/v1/BFFguardarInfoUsuarios` | MAGIA-123 | Relevamiento |
-| 10 | Usuarios | BFF | GET | `/api/v1/BFFobtenerInfoUsuario` | MAGIA-124 | Relevamiento |
-| 11 | Usuarios | BFF | GET | `/api/v1/BFFcargarGrillaUsuario` | MAGIA-192 | Relevamiento |
-| 12 | Usuarios | BFF | PATCH | `/api/v1/BFFactualizarInfoUsuarios` | MAGIA-191 | Relevamiento |
-| 13 | Usuarios | BE | POST | `/api/v1/BEguardarInfoUsuarios` | MAGIA-125 | Relevamiento |
-| 14 | Usuarios | BE | GET | `/api/v1/BEobtenerInfoUsuarios` | MAGIA-126 | Relevamiento |
-| 15 | Usuarios | BE | GET | `/api/v1/BEcargarGrillaUsuario` | MAGIA-193 | Relevamiento |
-| 16 | Usuarios | BE | PATCH | `/api/v1/BEactualizarInfoUsuarios` | MAGIA-190 | Relevamiento |
-| 17 | Notificaciones | BFF | GET | `/api/v1/BFFcargarGrillaNotificaciones` | MAGIA-128 | Relevamiento |
-| 18 | Notificaciones | BFF | PATCH | `/api/v1/BFFactualizarNotificaciones` | MAGIA-127 | En Espera |
-| 19 | Notificaciones | BE | GET | `/api/v1/BEcargarGrillaNotificaciones` | MAGIA-130 | Relevamiento |
-| 20 | Notificaciones | BE | PATCH | `/api/v1/BEactualizarNotificaciones` | MAGIA-129 | En Espera |
+| # | Dominio | BFF | Capa | Método | Endpoint (Jira) | Historia Jira | Estado |
+|---|---------|-----|------|--------|-----------------|---------------|--------|
+| 1 | Entes | BFF ENTES | BFF | POST | `/api/v1/BFFguardarInfoEntes` | MAGIA-119 | Relevamiento |
+| 2 | Entes | BFF ENTES | BFF | GET | `/api/v1/BFFobtenerInfoEnte` | MAGIA-120 | Relevamiento |
+| 3 | Entes | BFF ENTES | BFF | GET | `/api/v1/BFFcargarGrillaEnte` | MAGIA-136 | Relevamiento |
+| 4 | Entes | BFF ENTES | BFF | PATCH | `/api/v1/BFFactualizarInfoEntes` | MAGIA-134 | Relevamiento |
+| 5 | Entes | — | BE | POST | `/api/v1/BEguardarInfoEntes` | MAGIA-121 | Relevamiento |
+| 6 | Entes | — | BE | GET | `/api/v1/BEobtenerInfoEnte` | MAGIA-122 | Relevamiento |
+| 7 | Entes | — | BE | GET | `/api/v1/BEcargarGrillaEntes` | MAGIA-137 | Relevamiento |
+| 8 | Entes | — | BE | PATCH | `/api/v1/BEactualizarInfoEntes` | MAGIA-135 | Relevamiento |
+| 9 | Usuarios | BFF ENTES | BFF | POST | `/api/v1/BFFguardarInfoUsuarios` | MAGIA-123 | Relevamiento |
+| 10 | Usuarios | BFF ENTES | BFF | GET | `/api/v1/BFFobtenerInfoUsuario` | MAGIA-124 | Relevamiento |
+| 11 | Usuarios | BFF ENTES | BFF | GET | `/api/v1/BFFcargarGrillaUsuario` | MAGIA-192 | Relevamiento |
+| 12 | Usuarios | BFF ENTES | BFF | PATCH | `/api/v1/BFFactualizarInfoUsuarios` | MAGIA-191 | Relevamiento |
+| 13 | Usuarios | — | BE | POST | `/api/v1/BEguardarInfoUsuarios` | MAGIA-125 | Relevamiento |
+| 14 | Usuarios | — | BE | GET | `/api/v1/BEobtenerInfoUsuarios` | MAGIA-126 | Relevamiento |
+| 15 | Usuarios | — | BE | GET | `/api/v1/BEcargarGrillaUsuario` | MAGIA-193 | Relevamiento |
+| 16 | Usuarios | — | BE | PATCH | `/api/v1/BEactualizarInfoUsuarios` | MAGIA-190 | Relevamiento |
+| 17 | Notificaciones | BFF NOTIFICACIONES | BFF | GET | `/api/v1/BFFcargarGrillaNotificaciones` | MAGIA-128 | Relevamiento |
+| 18 | Notificaciones | BFF NOTIFICACIONES | BFF | PATCH | `/api/v1/BFFactualizarNotificaciones` | MAGIA-127 | En Espera |
+| 19 | Notificaciones | — | BE | GET | `/api/v1/BEcargarGrillaNotificaciones` | MAGIA-130 | Relevamiento |
+| 20 | Notificaciones | — | BE | PATCH | `/api/v1/BEactualizarNotificaciones` | MAGIA-129 | En Espera |
 
 ---
 
