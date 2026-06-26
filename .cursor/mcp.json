@@ -5,11 +5,11 @@
       "args": ["mcp-atlassian"],
       "env": {
         "JIRA_URL": "https://bancoatlaspy.atlassian.net",
-        "JIRA_USERNAME": "${env:JIRA_USERNAME}",
-        "JIRA_API_TOKEN": "${env:JIRA_API_TOKEN}",
+        "JIRA_USERNAME": "${env:ATLASSIAN_EMAIL}",
+        "JIRA_API_TOKEN": "${env:ATLASSIAN_API_TOKEN}",
         "CONFLUENCE_URL": "https://bancoatlaspy.atlassian.net/wiki",
-        "CONFLUENCE_USERNAME": "${env:JIRA_USERNAME}",
-        "CONFLUENCE_API_TOKEN": "${env:JIRA_API_TOKEN}"
+        "CONFLUENCE_USERNAME": "${env:ATLASSIAN_EMAIL}",
+        "CONFLUENCE_API_TOKEN": "${env:ATLASSIAN_API_TOKEN}"
       }
     },
     "atlassian-rovo": {
