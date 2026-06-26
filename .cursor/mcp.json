@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "jira-atlassian": {
+      "command": "${userHome}/.local/bin/uvx",
+      "args": ["mcp-atlassian"],
+      "env": {
+        "JIRA_URL": "https://bancoatlaspy.atlassian.net",
+        "JIRA_USERNAME": "${env:JIRA_USERNAME}",
+        "JIRA_API_TOKEN": "${env:JIRA_API_TOKEN}",
+        "CONFLUENCE_URL": "https://bancoatlaspy.atlassian.net/wiki",
+        "CONFLUENCE_USERNAME": "${env:JIRA_USERNAME}",
+        "CONFLUENCE_API_TOKEN": "${env:JIRA_API_TOKEN}"
+      }
+    },
+    "atlassian-rovo": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.atlassian.com/v1/mcp/authv2"
+      ]
+    }
+  }
+}
