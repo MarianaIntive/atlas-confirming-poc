@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "drawio": {
+      "command": "npx",
+      "args": ["-y", "@drawio/mcp"]
+    },
+    "drawio-app": {
+      "url": "https://mcp.draw.io/mcp"
+    }
+  }
+}
