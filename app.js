@@ -1477,7 +1477,22 @@ function getAbmUsuariosFilterValues() {
 function abmUserEstadoBadgeClass(estado) {
     if (estado === ABM_USER_STATES.AUTORIZADO) return 'status-usuario-autorizado';
     if (estado === ABM_USER_STATES.RECHAZADO) return 'status-usuario-rechazado';
+    if (estado === ABM_ACCESS_STATES.BLOQUEADO) return 'status-acceso-bloqueado';
     return 'status-usuario-pendiente-autorizacion';
+}
+
+function getAbmUserGridEstadoDisplay(u) {
+    if (isAbmUserBlocked(u)) {
+        return {
+            label: ABM_ACCESS_STATES.BLOQUEADO,
+            badgeClass: abmAccessBadgeClass(true),
+        };
+    }
+    const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
+    return {
+        label: userEstado,
+        badgeClass: abmUserEstadoBadgeClass(userEstado),
+    };
 }
 
 function abmAccessBadgeClass(bloqueado) {
@@ -1806,7 +1821,7 @@ function renderAbmUsers() {
         : { slice: filtered, total: filtered.length };
 
     if (!slice.length) {
-        tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">No se encontraron usuarios con los filtros aplicados.</div></td></tr>';
         if (typeof renderAbmPagination === 'function') renderAbmPagination('usuarios-pagination', 'usuarios', total);
         return;
     }
@@ -1814,10 +1829,10 @@ function renderAbmUsers() {
     slice.forEach(u => {
         const ente = getUserAssociatedEnte(u);
         const enteRazon = ente ? ente.razon : '—';
-        const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
-        const estadoBadge = `<span class="status-badge ${abmUserEstadoBadgeClass(userEstado)}">${userEstado}</span>`;
+        const estadoDisplay = getAbmUserGridEstadoDisplay(u);
+        const estadoBadge = `<span class="status-badge ${estadoDisplay.badgeClass}">${estadoDisplay.label}</span>`;
         const blocked = isAbmUserBlocked(u);
-        const accessBadge = `<span class="status-badge ${abmAccessBadgeClass(blocked)}">${getAbmAccessLabel(blocked)}</span>`;
+        const userEstado = u.estado || ABM_USER_STATES.PENDIENTE_AUTORIZACION;
         const rolLabel = getAbmRoleLabel(u.rolId);
         const isPendingAuth = userEstado === ABM_USER_STATES.PENDIENTE_AUTORIZACION;
         const manageBtn = isPendingAuth && canAuthorizeAbmUsers()
@@ -1840,7 +1855,6 @@ function renderAbmUsers() {
             <td><strong>${enteRazon}</strong></td>
             <td><strong>${rolLabel}</strong></td>
             <td>${estadoBadge}</td>
-            <td>${accessBadge}</td>
             <td class="abm-actions-cell">
                 ${viewBtn}
                 ${manageBtn}
