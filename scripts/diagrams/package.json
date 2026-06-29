@@ -1,0 +1,19 @@
+{
+  "name": "diagram-agent-skills",
+  "version": "1.0.0",
+  "description": "Skills para generación automática de diagramas de arquitectura desde Jira",
+  "scripts": {
+    "fetch-jira": "node skills/01_jira_fetcher.js",
+    "render-svg": "bash skills/03_render_svg.sh",
+    "render-png": "node skills/04_svg_to_png.js",
+    "build-outputs": "python3 skills/05_build_outputs.py",
+    "pipeline": "bash run_pipeline.sh"
+  },
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "^11.15.0",
+    "puppeteer": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
