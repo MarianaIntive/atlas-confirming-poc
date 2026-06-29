@@ -1,0 +1,24 @@
+{
+  "_comment": "Configuración del pipeline de generación de diagramas",
+
+  "project_name": "API Gestión ABM",
+
+  "output_assets_dir": "assets/diagramas",
+
+  "jira": {
+    "base_url_env": "ATLASSIAN_BASE_URL",
+    "email_env":    "ATLASSIAN_EMAIL",
+    "token_env":    "ATLASSIAN_API_TOKEN"
+  },
+
+  "render": {
+    "max_width_px": 1600,
+    "device_scale_factor": 2,
+    "puppeteer_args": ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+  },
+
+  "git": {
+    "auto_commit": true,
+    "commit_message_prefix": "Actualizar diagramas de arquitectura"
+  }
+}

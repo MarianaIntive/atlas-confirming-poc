@@ -1,0 +1,30 @@
+{
+  "issues": [
+    "MAGIA-119",
+    "MAGIA-120",
+    "MAGIA-121",
+    "MAGIA-122",
+    "MAGIA-123",
+    "MAGIA-124",
+    "MAGIA-125",
+    "MAGIA-126",
+    "MAGIA-127",
+    "MAGIA-128",
+    "MAGIA-129",
+    "MAGIA-130",
+    "MAGIA-134",
+    "MAGIA-135",
+    "MAGIA-136",
+    "MAGIA-137",
+    "MAGIA-190",
+    "MAGIA-191",
+    "MAGIA-192",
+    "MAGIA-193"
+  ],
+  "projectName": "API Gestión ABM — Portal Confirming Banco Atlas",
+  "bffs": {
+    "BFF ENTES": ["Entes", "Usuarios"],
+    "BFF NOTIFICACIONES": ["Notificaciones"]
+  },
+  "microservicio_be": "API CORE BANKING"
+}

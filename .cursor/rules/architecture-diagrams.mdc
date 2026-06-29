@@ -1,0 +1,154 @@
+---
+description: Genera diagramas de arquitectura (secuencia, flowchart, ER, user flow) desde historias Jira. Activar cuando el usuario pide crear o actualizar diagramas de arquitectura desde Jira.
+globs:
+  - "scripts/diagrams/**"
+  - "assets/diagramas/**"
+  - "assets/arquitectura_diagramas_v*.md"
+alwaysApply: false
+---
+
+# Agent Rule — Generación de Diagramas de Arquitectura desde Jira
+
+## Cuándo aplica
+Cuando el usuario solicite:
+- "generar diagramas de arquitectura desde Jira"
+- "crear diagramas de secuencia para las historias X"
+- "actualizar los diagramas de los endpoints"
+- "generar los diagramas para el proyecto Y"
+- Cualquier variación de lo anterior
+
+---
+
+## Pipeline completo a seguir
+
+### FASE 1 — Leer historias desde Jira
+
+1. Editar `scripts/diagrams/config/issues.json` con los issue keys del nuevo requerimiento
+2. Ejecutar el skill de fetch:
+   ```bash
+   cd scripts/diagrams && node skills/01_jira_fetcher.js
+   ```
+3. Leer `scripts/diagrams/output/jira_stories_summary.md` para entender el contexto
+
+### FASE 2 — Generar diagramas Mermaid (PASO IA)
+
+Analizar las historias y generar `scripts/diagrams/output/diagrams.md` con los siguientes diagramas en orden:
+
+#### 2.1 Arquitectura general (flowchart TB)
+- Identificar cuántos BFFs existen (leer campo `bffs` en `config/issues.json`)
+- Mostrar: FE → API Gateway → BFF(s) → BE → Infraestructura (DB, Keycloak, Email)
+- Cada BFF y el BE deben tener subgraphs con sus endpoints y número de historia
+
+#### 2.2 Diagrama de capas FE → BFF(s) → BE (flowchart LR)
+- Mostrar todos los endpoints con nombre exacto del Jira
+- Agrupar por BFF correcto (no mezclar BFFs)
+- Incluir todas las flechas con el nombre del endpoint
+
+#### 2.3 Diagramas de secuencia — 1 por endpoint
+Para cada endpoint encontrado generar un `sequenceDiagram` con:
+- `autonumber`
+- Participantes: `actor U`, `participant FE`, `participant BFF as BFF [NOMBRE]`, `participant BE`, `participant DB`
+- Agregar `participant MAIL` / `participant KC` solo si aplica
+- **3 bloques `alt`** obligatorios:
+  1. `alt Servicio responde OK` — flujo completo hasta DB
+  2. `alt Servicio responde ERROR en BFF` — `Note over BFF: NO realiza llamada al BE`
+  3. `alt Servicio responde ERROR en BE` — propaga error al FE
+
+#### 2.4 User Flows — 1 por dominio de negocio (flowchart TD)
+- Incluir todos los endpoints del dominio
+- Mostrar validación FE, llamadas BFF, responses OK/ERROR
+- Agregar el nombre del BFF en cada nodo de llamada
+
+#### 2.5 Modelo de datos (erDiagram)
+- Entidades principales con sus atributos y tipos
+- Relaciones con cardinalidad
+
+### FASE 3 — Renderizar y publicar
+
+Ejecutar el resto del pipeline de renderización:
+
+```bash
+cd scripts/diagrams
+bash run_pipeline.sh --skip-fetch --skip-agent
+```
+
+Esto ejecuta automáticamente:
+- Skill 02: Extrae .mmd del diagrams.md
+- Skill 03: Renderiza SVGs con mermaid-cli
+- Skill 04: Convierte SVGs a PNGs @2x con Puppeteer
+- Skill 05: Copia PNGs al directorio destino y genera .drawio
+- Git commit y push automático
+
+---
+
+## Reglas de nomenclatura de endpoints
+
+Respetar **exactamente** los nombres del Jira:
+- BFF: `BFF[accion][Entidad]` → ej: `BFFguardarInfoEntes`, `BFFcargarGrillaUsuario`
+- BE:  `BE[accion][Entidad]`  → ej: `BEguardarInfoEntes`, `BEcargarGrillaEntes`
+- Ruta: `/api/v1/[endpoint]`
+
+## Reglas de arquitectura
+
+- Identificar BFFs desde el campo `bffs` en `config/issues.json`
+- Identificar el microservicio BE desde `microservicio_be` en `config/issues.json`
+- Query params estándar para grillas: `entity=X&pagelimit=20&status=todos`
+- Query param para detalle: `ID={id}`
+- El BFF **NUNCA** llama al BE cuando hay error en la validación BFF
+
+## Estructura del output/diagrams.md
+
+```markdown
+# Diagramas de Arquitectura — [Nombre Proyecto]
+
+## 1. Arquitectura general
+```mermaid
+flowchart TB
+...
+```
+
+## 2. Capas FE → BFF → BE
+```mermaid
+flowchart LR
+...
+```
+
+## 3.1 Secuencia — POST /[endpoint] ([MAGIA-XXX] / [MAGIA-YYY])
+```mermaid
+sequenceDiagram
+...
+```
+...continúa para cada endpoint...
+
+## N. User Flow — [Dominio]
+```mermaid
+flowchart TD
+...
+```
+
+## Modelo de datos
+```mermaid
+erDiagram
+...
+```
+```
+
+---
+
+## Instrucciones para actualizar config al usar en otro proyecto
+
+1. Editar `scripts/diagrams/config/issues.json`:
+   - `issues`: lista de issue keys de Jira
+   - `projectName`: nombre del proyecto
+   - `bffs`: objeto `{"NombreBFF": ["Dominio1", "Dominio2"]}`
+   - `microservicio_be`: nombre del microservicio backend
+
+2. Editar `scripts/diagrams/config/pipeline.config.json`:
+   - `project_name`: nombre corto para el archivo .drawio
+   - `output_assets_dir`: directorio donde guardar los PNGs y .drawio
+
+3. Ejecutar el pipeline completo:
+   ```bash
+   cd scripts/diagrams
+   bash run_pipeline.sh
+   ```
