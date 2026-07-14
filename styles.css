@@ -445,6 +445,16 @@ select.topbar-entity-select,
     padding-left: 12px;
     margin-left: 4px;
     border-left: 1px solid var(--border);
+    cursor: pointer;
+    border-radius: var(--radius);
+}
+.user-profile:hover .user-name,
+.user-profile:focus-visible .user-name {
+    color: var(--atlas-primary);
+}
+.user-profile:focus-visible {
+    outline: 2px solid var(--atlas-primary);
+    outline-offset: 2px;
 }
 .avatar {
     width: 40px;
@@ -1456,6 +1466,17 @@ tr.row-select-locked {
     color: var(--text-muted);
     cursor: not-allowed;
     opacity: 0.85;
+}
+
+.profile-homebanking-block {
+    margin-top: 8px;
+    padding-top: 4px;
+}
+.profile-homebanking-block .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .radio-group {

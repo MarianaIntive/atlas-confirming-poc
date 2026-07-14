@@ -985,11 +985,80 @@ function applyPocVersionLabels() {
 function syncLoggedUserDisplayFromLogin() {
     const input = document.getElementById('username');
     const display = document.getElementById('logged-user-display');
+    const roleDisplay = document.getElementById('logged-user-role-display');
+    const avatarInitials = document.getElementById('logged-user-avatar-initials');
     if (!display) return;
-    const raw = input?.value?.trim();
-    display.textContent = raw
-        ? raw.charAt(0).toUpperCase() + raw.slice(1)
-        : 'Administrador Atlas';
+
+    const session = getLoggedSession();
+    const linkedUser = session.abmUserId ? abmUsers.find(u => u.id === session.abmUserId) : null;
+    const raw = input?.value?.trim() || session.username || '';
+
+    let displayName = 'Administrador Atlas';
+    if (linkedUser) {
+        displayName = `${linkedUser.nombre} ${linkedUser.apellido}`.trim();
+    } else if (raw) {
+        displayName = raw.charAt(0).toUpperCase() + raw.slice(1);
+    }
+    display.textContent = displayName;
+
+    if (roleDisplay) {
+        roleDisplay.textContent = `${session.dominio || '—'} · ${session.rol || '—'}`;
+    }
+    if (avatarInitials) {
+        const parts = displayName.split(/\s+/).filter(Boolean);
+        const initials = parts.length >= 2
+            ? `${parts[0][0]}${parts[1][0]}`
+            : (parts[0] || 'AD').slice(0, 2);
+        avatarInitials.textContent = initials.toUpperCase();
+    }
+}
+
+function getLoggedProfileViewModel() {
+    const session = getLoggedSession();
+    const linkedUser = session.abmUserId ? abmUsers.find(u => u.id === session.abmUserId) : null;
+    const ente = linkedUser ? getUserAssociatedEnte(linkedUser) : null;
+    return {
+        username: session.username || '—',
+        documento: linkedUser?.documento || session.documento || '—',
+        nombre: linkedUser?.nombre || (session.dominio === 'Banco' ? 'Administrador' : '—'),
+        apellido: linkedUser?.apellido || (session.dominio === 'Banco' ? 'Atlas' : '—'),
+        email: linkedUser?.email || (session.username?.includes('@') ? session.username : '—'),
+        telefono: linkedUser?.telefono || '—',
+        dominio: session.dominio || '—',
+        rol: session.rol || '—',
+        ente: ente ? `${ente.razon} (${ente.ruc})` : (session.dominio === 'Banco' ? 'Banco Atlas' : '—'),
+    };
+}
+
+function openMyProfileModal() {
+    const profile = getLoggedProfileViewModel();
+    const setVal = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value || '—';
+    };
+    setVal('profile-username', profile.username);
+    setVal('profile-documento', profile.documento);
+    setVal('profile-nombre', profile.nombre);
+    setVal('profile-apellido', profile.apellido);
+    setVal('profile-email', profile.email);
+    setVal('profile-telefono', profile.telefono);
+    setVal('profile-dominio', profile.dominio);
+    setVal('profile-rol', profile.rol);
+    setVal('profile-ente', profile.ente);
+    openModal('my-profile-modal');
+}
+
+function requestHomebankingPasswordUpdate() {
+    showCustomConfirm(
+        'Será redirigido a Home Banking para actualizar su contraseña de login. ¿Desea continuar?',
+        () => {
+            showCustomAlert(
+                'Solicitud enviada a Home Banking. En esta demostración no se modifica la contraseña; cuando la integración esté disponible se abrirá el flujo seguro de actualización.',
+                'Contraseña — Home Banking'
+            );
+        },
+        'Actualizar contraseña'
+    );
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2127,7 +2196,8 @@ function openAbmModal(participantId = null, presetTipo = null) {
     editingParticipantId = participantId;
     const form = document.getElementById('abm-form');
     form.reset();
-    document.getElementById('abm-file-list').innerHTML = '';
+    const fileList = document.getElementById('abm-file-list');
+    if (fileList) fileList.innerHTML = '';
     populateAbmEgpPadreSelect();
     clearProveedorAdminFields();
     syncAbmProveedorAdminBlock(null);
@@ -2330,8 +2400,9 @@ document.getElementById('abm-tipo')?.addEventListener('change', syncAbmTipoField
 
 function handleFileSelect(input) {
     const list = document.getElementById('abm-file-list');
+    if (!list || !input) return;
     list.innerHTML = '';
-    Array.from(input.files).forEach(file => {
+    Array.from(input.files || []).forEach(file => {
         const item = document.createElement('div');
         item.className = 'file-item';
         item.innerHTML = `<i class="ph ph-file-pdf"></i> <span>${file.name}</span> <span style="margin-left:auto;color:#9ca3af;font-size:12px;">${(file.size / 1024).toFixed(1)} KB</span>`;
