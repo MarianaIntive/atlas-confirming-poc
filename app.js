@@ -1068,11 +1068,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ====== NAVEGACIÓN Y LOGIN ======
 
-document.getElementById('login-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    syncLoggedSessionFromLogin(document.getElementById('username')?.value);
+// Punto único de entrada a la plataforma: lo invocan los flujos de login (auth.js)
+// y el acceso sin credenciales del modo demo.
+function enterPlatformSession(username, { sinCredenciales = false } = {}) {
+    syncLoggedSessionFromLogin(username ?? document.getElementById('username')?.value);
+    loggedSession.sinCredenciales = sinCredenciales;
     syncLoggedUserDisplayFromLogin();
     applyPocVersionLabels();
+    document.getElementById('topbar-demo-chip')?.classList.toggle('hidden', !sinCredenciales);
     document.getElementById('login-view').classList.remove('active');
     document.getElementById('app-view').classList.add('active');
     initDashboardChart();
@@ -1084,10 +1087,14 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     populateAbmRolesFilterSelect();
     populateOperatingEntitySelect();
     renderOperatingEntityPanel();
-});
+}
 
 document.getElementById('logout-btn').addEventListener('click', (e) => {
     e.preventDefault();
+    if (typeof authLogout === 'function') {
+        authLogout('MANUAL');
+        return;
+    }
     document.getElementById('app-view').classList.remove('active');
     document.getElementById('login-view').classList.add('active');
 });
