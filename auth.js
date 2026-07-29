@@ -105,8 +105,10 @@ const authState = {
     perfil: 'EGP',
     estado: 'PRIMER_LOGIN',        // PRIMER_LOGIN | RECURRENTE | PASS_EXPIRADA | BLOQUEADO
     flujo: 'LOGIN',                // LOGIN | PRIMER_LOGIN | RECUPERO
+    username: '',
     intentosFallidos: 0,
     passwordDefinida: null,
+    dispositivoConfiable: false,
     mailContacto: '',
     otp: null,
     otpIntentos: 0,
@@ -185,7 +187,7 @@ function authGoToStep(step) {
 
     authRenderWizard(step);
     authOnEnterStep(step);
-    document.getElementById('login-view')?.scrollTo?.({ top: 0 });
+    window.scrollTo({ top: 0 });
 }
 
 const AUTH_WIZARD_MAP = {
@@ -241,13 +243,16 @@ function authOnEnterStep(step) {
         case 'aviso-ad':
             authSetMessage('auth-ad-msg', AUTH_MESSAGES.MSG_12);
             break;
-        case 'usuario-bloqueado':
+        case 'usuario-bloqueado': {
             authSetMessage('auth-blocked-msg', AUTH_MESSAGES.MSG_02);
-            authShow(authEl('auth-blocked-note'), true);
-            authEl('auth-blocked-note').querySelector('span').textContent = authProfile().credencialAD
-                ? 'Para usuarios BANCO el desbloqueo se gestiona en el directorio corporativo o con la Mesa de Ayuda.'
-                : 'El desbloqueo se realiza cambiando tu contraseña o desde la Mesa de Ayuda.';
+            const note = authEl('auth-blocked-note')?.querySelector('span');
+            if (note) {
+                note.textContent = authProfile().credencialAD
+                    ? 'Para usuarios BANCO el desbloqueo se gestiona en el directorio corporativo o con la Mesa de Ayuda.'
+                    : 'El desbloqueo se realiza cambiando tu contraseña o desde la Mesa de Ayuda.';
+            }
             break;
+        }
         default:
             break;
     }

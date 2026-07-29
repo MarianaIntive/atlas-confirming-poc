@@ -235,8 +235,8 @@ La aplicación alterna entre dos contenedores principales:
 
 | Vista contenedora | ID | Visible cuando |
 |-------------------|-----|----------------|
-| Login | `login-view` | Usuario no autenticado (inicio) |
-| Aplicación | `app-view` | Tras submit exitoso del login |
+| Login y flujos de acceso | `login-view` | Usuario no autenticado (inicio). Contiene las pantallas `.auth-step` de la épica LOGIN |
+| Aplicación | `app-view` | Al completar un flujo de acceso o al ingresar sin credenciales |
 
 Dentro de `app-view`, el layout es **Sidebar + Topbar + Content Wrapper**.
 
@@ -266,7 +266,7 @@ Dentro de `app-view`, el layout es **Sidebar + Topbar + Content Wrapper**.
 |----------|----------------|-----------|
 | Centro de Ayuda | `showCustomAlert(...)` | Modal aviso: "Centro de ayuda: contenido de demostración." |
 | Perfil de Usuario | `showCustomAlert(...)` | Modal aviso: "Perfil de usuario: vista de demostración." |
-| Cerrar Sesión | `#logout-btn` click | Oculta `app-view`, muestra `login-view` |
+| Cerrar Sesión | `#logout-btn` click | `authLogout('MANUAL')`: oculta `app-view`, muestra `login-view` y reinicia el flujo de acceso |
 
 ### 6.3 Topbar — Elementos globales
 
@@ -300,45 +300,83 @@ Dentro de `app-view`, el layout es **Sidebar + Topbar + Content Wrapper**.
 
 ### 7.1 Módulo: Autenticación (Login)
 
-**Vista:** `#login-view`  
+**Vista:** `#login-view` · **Lógica:** `auth.js`  
 **Estado inicial:** Activa al cargar la aplicación.
+
+> Las historias de esta épica están especificadas en `assets/historias-usuario-login_v1.0.0.md`
+> (criterios de aceptación en Gherkin) y el recorrido de las pantallas en
+> `assets/poc-pantallas-login.md`. Todo el comportamiento es **simulado en el front end**: no hay
+> Keycloak, AD, Home Banking ni envío real de correos.
 
 #### 7.1.1 Layout
 
 - Logo Banco Atlas (`assets/logo-banco-atlas.png`).
-- Título: "Portal de Confirming".
-- Subtítulo: "Acceso para EGP, Proveedores y Administradores".
-- Formulario `#login-form`.
+- Título y subtítulo dinámicos según la pantalla del flujo (`#auth-step-title` / `#auth-step-subtitle`).
+- Una sección `.auth-step` por pantalla; solo la que tiene la clase `active` se muestra.
+- Panel de POC "Escenarios de login" (`#auth-demo`) para cambiar perfil, estado de la credencial y
+  tiempo de inactividad, y para saltar a cualquier pantalla.
 
-#### 7.1.2 Campos del formulario
+#### 7.1.2 Pantallas del flujo
 
-| Campo | ID | Tipo | Obligatorio | Valor demo precargado | Placeholder |
-|-------|-----|------|-----------|----------------------|-------------|
-| Usuario | `#username` | text | Sí (`required`) | `admin` | "Ingrese su usuario" |
-| Contraseña | `#password` | password | Sí (`required`) | `admin` | "••••••••" |
+| `data-step` | Historia | Contenido |
+|-------------|----------|-----------|
+| `login` | LO-25 | Usuario, contraseña, "¿Olvidaste tu contraseña?" e ingreso sin credenciales |
+| `2fa-ad` | LO-07 | Doble factor gestionado por el AD (usuarios BANCO) |
+| `primer-login-temporal` | LO-10 | Aviso de contraseña temporal de un solo uso |
+| `canal-password` | LO-10 / LO-31 | Elección entre Home Banking y contraseña propia |
+| `derivacion-homebanking` | LO-10 / LO-31 | Derivación informativa a Home Banking |
+| `nueva-password` | LO-10 / LO-13 | Creación de contraseña con checklist de política en vivo |
+| `2fa-mail` | LO-22 | Confirmación (o cambio) del correo que recibe el código |
+| `2fa-otp` | LO-22 / LO-27 | Ingreso del código de 6 dígitos, vigencia, reenvío y dispositivo confiable |
+| `2fa-listo` | LO-22 | Cierre de la configuración de 2FA |
+| `olvide-password` | LO-30 / LO-31 / LO-32 | Ingreso del usuario para recuperar el acceso |
+| `aviso-ad` | LO-30 | Aviso de que la contraseña se administra en el AD |
+| `usuario-bloqueado` | LO-34 | Bloqueo por 3 intentos fallidos |
+| `password-actualizada` | LO-32 / LO-33 | Confirmación del cambio de contraseña |
 
-#### 7.1.3 Botón "Ingresar al Portal"
+#### 7.1.3 Campos del formulario de login
 
-**Tipo:** `submit` del formulario.  
-**Estilo:** `btn-primary w-100`.
+| Campo | ID | Tipo | Obligatorio | Placeholder |
+|-------|-----|------|-----------|-------------|
+| Usuario | `#username` | text | Sí (validado en JS) | "Ingrese su usuario" |
+| Contraseña | `#password` | password | Sí (validado en JS) | "••••••••" |
+
+El usuario se precarga con el del perfil elegido en el panel de escenarios; la contraseña esperada la
+indica ese mismo panel. Cualquier otra contraseña dispara el flujo de intentos fallidos.
+
+#### 7.1.4 Botón "Ingresar al Portal"
 
 **Flujo paso a paso:**
 
-1. Usuario completa (o acepta valores precargados) usuario y contraseña.
-2. Usuario hace clic en "Ingresar al Portal" o presiona Enter en el formulario.
-3. Sistema intercepta submit (`preventDefault`) — **no valida credenciales contra backend**.
-4. Sistema oculta `#login-view` (remueve `active`).
-5. Sistema muestra `#app-view` (agrega `active`).
-6. Sistema inicializa en secuencia:
-   - `initDashboardChart()` — gráfico de barras.
-   - `renderInvoices()` — tabla confirming sin filtros.
-   - `renderParticipants()` — tabla entes.
-   - `renderAbmUsers()` — tabla usuarios.
-   - `renderAbmRoles()` — tabla roles.
-   - `populateOperatingEntitySelect()` — selector topbar.
-   - `renderEntityInfoPanel()` — panel ente (oculto si "Todos los entes").
+1. `auth.js` intercepta el submit y valida que usuario y contraseña estén completos.
+2. Si la contraseña no coincide con la del escenario, incrementa el contador de intentos y muestra
+   los restantes; al tercer intento lleva a la pantalla de usuario bloqueado.
+3. Con la contraseña correcta deriva según el perfil y el estado de la credencial:
+   - BANCO → doble factor del AD.
+   - EGP / Proveedor con contraseña temporal → aviso de contraseña temporal.
+   - EGP / Proveedor con contraseña expirada → flujo de cambio de contraseña.
+   - Login recurrente → envío y validación del código de 2FA.
+4. Al completar el flujo se invoca `enterPlatformSession(username)`, que oculta `#login-view`,
+   muestra `#app-view` e inicializa dashboard, confirming, ABM y selectores.
 
-**Criterio UX (Krug):** Una sola acción principal evidente; campos etiquetados claramente.
+#### 7.1.5 Ingreso sin credenciales (modo demo)
+
+El botón "Ingresar sin credenciales (modo demo)" invoca `enterPlatformSession(username, { sinCredenciales: true })`
+y entra directo a la plataforma. Mientras la sesión sea de este tipo, la topbar muestra el chip
+"Modo demo sin login". Esta opción se mantiene siempre disponible para poder probar la plataforma
+mientras el login no está integrado.
+
+#### 7.1.6 Cierre de sesión (LO-29 y RN-06)
+
+- **Manual:** `#logout-btn` invoca `authLogout('MANUAL')`, que vuelve al login y descarta el estado
+  del flujo (en el próximo ingreso se vuelve a pedir el 2FA).
+- **Por inactividad:** al entrar a la plataforma arranca el vigía de inactividad (5 minutos por
+  defecto, configurable a 30 o 10 segundos para capturas). Un minuto antes del cierre se abre
+  `#session-timeout-modal` con cuenta regresiva: "Continuar conectado" renueva la sesión y la falta de
+  respuesta cierra la sesión con el mensaje correspondiente.
+
+**Criterio UX (Krug):** una sola acción principal evidente por pantalla; el estado del flujo se
+comunica con el indicador de pasos (contraseña → verificación → listo).
 
 ---
 
@@ -1050,26 +1088,47 @@ neto        = montoAdelanto - interes - comision - iva
 ```
 (○) Inicio
   → [▭] Mostrar pantalla login]
-  → [▭] Usuario ingresa credenciales]
-  → [▭] Usuario clic "Ingresar al Portal"]
-  → {◇} ¿Formulario válido HTML5?}
-      → No → [▭] Navegador muestra validación nativa] → (○) Fin espera
-      → Sí → [▭] Ocultar login / Mostrar app]
-            → [▭] Inicializar dashboard, confirming, ABM, selectores]
-            → (○) Fin — sesión demo activa
+  → {◇} ¿Ingresa sin credenciales?}
+      → Sí → [▭] Entrar a la plataforma en modo demo] → (○) Fin — sesión demo activa
+      → No → [▭] Usuario ingresa credenciales]
+            → {◇} ¿Campos completos?}
+                → No → [▭] Mostrar validación de campo obligatorio] → (○) Fin espera
+                → Sí → {◇} ¿Contraseña correcta?}
+                      → No → {◇} ¿Tercer intento fallido?}
+                            → No → [▭] Mostrar intentos restantes] → (○) Fin espera
+                            → Sí → [▭] Mostrar usuario bloqueado] → (○) Fin
+                      → Sí → {◇} ¿Dominio BANCO?}
+                            → Sí → [▭] Doble factor del AD] → (○) Sesión activa
+                            → No → {◇} ¿Contraseña temporal o expirada?}
+                                  → Sí → [▭] Definir nueva contraseña] → [▭] Configurar 2FA] → (○) Sesión activa
+                                  → No → [▭] Validar código de 2FA] → (○) Sesión activa
 ```
 
 ```mermaid
 flowchart TD
     Start((Inicio)) --> A[Mostrar login]
-    A --> B[Ingresar credenciales]
-    B --> C[Clic Ingresar al Portal]
-    C --> D{Formulario válido?}
-    D -->|No| E[Validación HTML5]
+    A --> Bypass{Ingresa sin credenciales?}
+    Bypass -->|Sí| Demo[Entrar en modo demo]
+    Demo --> End((Sesión activa))
+    Bypass -->|No| B[Ingresar credenciales]
+    B --> C{Campos completos?}
+    C -->|No| E[Validación de campo obligatorio]
     E --> Wait((Espera))
-    D -->|Sí| F[Mostrar app-view]
-    F --> G[Inicializar módulos]
-    G --> End((Sesión activa))
+    C -->|Sí| P{Contraseña correcta?}
+    P -->|No| I{Tercer intento?}
+    I -->|No| J[Mostrar intentos restantes]
+    J --> Wait
+    I -->|Sí| K[Usuario bloqueado]
+    K --> Fin((Fin))
+    P -->|Sí| D{Dominio BANCO?}
+    D -->|Sí| AD[Doble factor del AD]
+    AD --> End
+    D -->|No| T{Contraseña temporal o expirada?}
+    T -->|Sí| NP[Definir nueva contraseña]
+    NP --> MFA[Configurar 2FA]
+    MFA --> End
+    T -->|No| V[Validar código de 2FA]
+    V --> End
 ```
 
 ---
@@ -1332,6 +1391,10 @@ Epic numbering: **E1** Acceso, **E2** Dashboard, **E3** Confirming, **E4** ABM, 
 
 ### E1 — Acceso al portal
 
+> Los criterios de aceptación completos de la épica de acceso (primer login, 2FA, cambio y
+> desbloqueo de contraseña, bloqueo por intentos e inactividad) están en
+> `assets/historias-usuario-login_v1.0.0.md`. Acá quedan solo las historias propias de la POC.
+
 #### US-1.1 — Login demo
 
 **Como** usuario del portal  
@@ -1341,29 +1404,47 @@ Epic numbering: **E1** Acceso, **E2** Dashboard, **E3** Confirming, **E4** ABM, 
 ```gherkin
 Feature: Login al Portal de Confirming
 
-  Scenario: Ingreso exitoso con formulario completo
+  Scenario: Ingreso exitoso con la contraseña del escenario
     Given estoy en la pantalla de login del Portal de Confirming
-    And el campo "Usuario" contiene "admin"
-    And el campo "Contraseña" contiene "admin"
+    And el escenario de demo es perfil "EGP" con login recurrente
+    And el campo "Usuario" contiene "ana"
+    And el campo "Contraseña" contiene "Atlas2026!"
     When hago clic en el botón "Ingresar al Portal"
-    Then ya no veo la pantalla de login
-    And veo el layout principal con sidebar y topbar
+    Then el sistema me solicita el código de verificación en dos pasos
+    When ingreso el código correcto
+    Then veo el layout principal con sidebar y topbar
     And el título de página es "Dashboard General"
 
-  Scenario: Formulario incompleto bloqueado por navegador
+  Scenario: Formulario incompleto
     Given estoy en la pantalla de login
     And vacío el campo "Usuario"
     When intento enviar el formulario
     Then permanezco en la pantalla de login
+    And veo la validación de campo obligatorio
 ```
 
-#### US-1.2 — Cerrar sesión
+#### US-1.2 — Ingresar sin credenciales (modo demo)
+
+**Como** persona que necesita probar la plataforma  
+**Quiero** entrar sin credenciales mientras el login no está integrado  
+**Para** recorrer y capturar las pantallas del portal  
+
+```gherkin
+  Scenario: Acceso directo en modo demo
+    Given estoy en la pantalla de login del Portal de Confirming
+    When hago clic en "Ingresar sin credenciales (modo demo)"
+    Then accedo a la plataforma sin validar credenciales
+    And veo el chip "Modo demo sin login" en la barra superior
+```
+
+#### US-1.3 — Cerrar sesión
 
 ```gherkin
   Scenario: Cierre de sesión desde sidebar
     Given he iniciado sesión correctamente
     When hago clic en "Cerrar Sesión" en el footer del sidebar
     Then veo nuevamente la pantalla de login
+    And en el próximo ingreso se me solicita el código de verificación en dos pasos
 ```
 
 ---
