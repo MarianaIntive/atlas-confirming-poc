@@ -1,6 +1,6 @@
 # Documentación Técnica: Portal de Confirming Banco Atlas (POC)
 
-**Versión documento / POC:** 2.10.7 (`v2.10.7`)  
+**Versión documento / POC:** 2.11.0 (`v2.11.0`)  
 **Estado:** Proof of Concept — iteración activa  
 **Última actualización:** 19 de Mayo, 2026  
 **Versión anterior del documento:** 1.0.0
@@ -287,6 +287,11 @@ Sin cambio sustancial respecto a 1.0.0; ampliar con:
 ---
 
 ## 12. Changelog
+
+### v2.11.0 — 2026-07-28
+
+- **LOGIN:** flujos de acceso en front (`auth.js`): primer login, 2FA, recupero de contraseña, bloqueo e inactividad; panel de escenarios POC e **Ingresar sin credenciales**.
+- Historias Gherkin y guía de pantallas en `assets/historias-usuario-login_*.md` y `assets/poc-pantallas-login.md`.
 
 ### v2.10.7 — 2026-05-19
 
