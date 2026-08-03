@@ -1,7 +1,7 @@
 # Historias de Usuario — Épica LOGIN (prueba.2.0)
 
 > **Versión:** prueba.2.0 · **Fecha:** 2026-08-03
-> **Prompt aplicado:** skill `po-expert-user-stories`; desestimar tachadas; elaborar **solo filas puntuadas**; recomendaciones de faltantes por separado; escenarios Excel → lógica Gherkin (ES) con validaciones/errores; FE contrastada con POC https://marianaintive.github.io/atlas-confirming-poc/
+> **Prompt aplicado:** skill `po-expert-user-stories`; desestimar tachadas; elaborar filas puntuadas **y**, por pedido explícito, los enablers LO-11 / LO-13 / LO-26 / LO-28 / LO-33 / LO-35; recomendaciones de faltantes por separado; escenarios Excel → lógica Gherkin (ES) con validaciones/errores; FE contrastada con POC https://marianaintive.github.io/atlas-confirming-poc/
 > **Excel de entrada:** se solicitó `login (2).xlsx`; **no estaba disponible en el entorno**. Se usó el Excel adjunto de la sesión `login (3) (1).xlsx` (hojas LOGIN + API + Matriz), cuyo contenido de hoja LOGIN es el de la épica LOGIN referenciada como login (2).
 > **Otros archivos del repo:** no se usaron como fuente de historias.
 > **Producto:** Portal de Confirming (Atlas Trade)
@@ -16,8 +16,9 @@
 4. [Actores y reglas transversales](#4-actores-y-reglas-transversales)
 5. [Catálogo de mensajes (MSG)](#5-catálogo-de-mensajes-msg)
 6. [Historias puntuadas — funcionales (HU)](#6-historias-puntuadas--funcionales-hu)
-7. [Historias puntuadas — técnicas (HT) y tareas](#7-historias-puntuadas--técnicas-ht-y-tareas)
-8. [Filas vivas no puntuadas (no elaboradas)](#8-filas-vivas-no-puntuadas-no-elaboradas)
+7. [Historias técnicas (HT) y tareas](#7-historias-técnicas-ht-y-tareas)
+
+8. [Filas vivas aún no elaboradas](#8-filas-vivas-aún-no-elaboradas)
 9. [Spikes (columna DUDAS)](#9-spikes-columna-dudas)
 10. [Recomendaciones del PO — qué faltaría](#10-recomendaciones-del-po--qué-faltaría)
 11. [Matriz de trazabilidad HU ↔ endpoint ↔ POC](#11-matriz-de-trazabilidad-hu--endpoint--poc)
@@ -41,10 +42,10 @@
 
 | Fila | Key | Summary | Tachada | Puntuada | Decisión |
 |-----:|-----|---------|:-------:|:--------:|----------|
-| 3 | LO-01 | Implementar servicio OAuth | No | No | Viva sin puntos → §8 (listada, no elaborada como historia) |
+| 3 | LO-01 | Implementar servicio OAuth | No | No | Viva sin elaborar → §8 |
 | 4 | LO-02 | Estructura DER LOGIN | Sí | No | ❌ Desestimada |
 | 5 | XX | Configuración ente Open-API Atlas | No | Sí | ✅ TAREA elaborada §7 |
-| 6 | — | Config. mail Atlas Core/Trade | No | No | Viva sin puntos → §8 |
+| 6 | LO-01-a *(propuesto)* | Config. mail Atlas Core/Trade | No | No | Viva sin elaborar → §8 (key propuesta) |
 | 7 | — | SPEC CORE | No | Sí | ✅ TAREA elaborada §7 |
 | 8 | LO-03 | Mail Bienvenida BANCO | Sí | Sí | ❌ Desestimada (nota: resuelto por Keycloak) |
 | 9 | LO-04 | EP POST BE Envío mail | Sí | Sí | ❌ Desestimada |
@@ -54,9 +55,9 @@
 | 13 | LO-08 | EP validar temporal KC | Sí | No | ❌ Desestimada |
 | 14 | LO-09 | EP update pass AD | Sí | No | ❌ Desestimada |
 | 15 | LO-10 | PANTALLA Primer Login EGP/PROVEEDOR | No | Sí | ✅ HU-FE §6 |
-| 16 | LO-11 | EP validar temporal + flag | No | No | Viva sin puntos → §8 (enabler implícito de LO-10) |
+| 16 | LO-11 | EP validar temporal + flag | No | No | ✅ HT elaborada §7 (pedido explícito; key Excel LO-11) |
 | 17 | LO-12 | EP update pass Home Banking | Sí | No | ❌ Desestimada (impacta LO-10/31) |
-| 18 | LO-13 | EP update pass manual | No | No | Viva sin puntos → §8 |
+| 18 | LO-13 | EP update pass manual | No | No | ✅ HT elaborada §7 (pedido explícito; key Excel LO-13) |
 | 19 | LO-14 | Primer Login PROVEEDOR CLIENTE | Sí | Sí | ❌ Desestimada (unificada en LO-10) |
 | 20 | LO-15 | EP validar temporal | Sí | No | ❌ Desestimada |
 | 21 | LO-16 | EP update HB | Sí | No | ❌ Desestimada |
@@ -68,21 +69,23 @@
 | 27 | LO-22 | 2FA primer login EGP/PROVEEDOR | No | Sí | ✅ HU-FE §6 |
 | 28 | LO-23 | 2FA primer login (variante) | Sí | Sí | ❌ Desestimada |
 | 29 | LO-24 | EP mail OTP + validación código | No | Sí | ✅ HT §7 |
-| 30 | — | EP Mail del usuario | No | No | Viva sin puntos → §8 |
+| 30 | LO-24-a *(propuesto)* | EP Mail del usuario | No | No | Viva sin elaborar → §8 (key propuesta) |
 | 31 | LO-25 | PANTALLA Acceso próximo login | No | Sí | ✅ HU-FE §6 |
-| 32 | LO-26 | EP validación AD/Home/Manual | No | No | Viva sin puntos → §8 (nota Keycloak en escenarios cortos) |
+| 32 | LO-26 | EP validación AD/Home/Manual | No | No* | ✅ HT elaborada §7 (pedido explícito; nota Keycloak en Excel) |
 | 33 | LO-27 | 2FA accesos próximos | No | Sí | ✅ HU-FE §6 |
-| 34 | LO-28 | EP validación 2FA | No | No | Viva sin puntos → §8 |
+| 34 | LO-28 | EP validación 2FA | No | No | ✅ HT elaborada §7 (pedido explícito; key Excel LO-28) |
 | 35 | LO-29 | Cierre sesión por inactividad | No | Sí | ✅ HU-FE §6 |
-| 36 | — | EP cookie en validador login | No | No | Viva sin puntos → §8 |
+| 36 | LO-29-a *(propuesto)* | EP cookie en validador login | No | No | Viva sin elaborar → §8 (key propuesta) |
 | 37 | LO-30 | Cambio/desbloqueo pass BANCO | No | Sí | ✅ HU-FE §6 |
 | 38 | LO-31 | Cambio/desbloqueo + Home Banking | No | Sí | ✅ HU-FE §6 |
 | 39 | LO-32 | Cambio/desbloqueo pass manual | No | Sí | ✅ HU-FE §6 |
-| 40 | LO-33 | EP PATCH cambio contraseña | No | No | Viva sin puntos → §8 |
+| 40 | LO-33 | EP PATCH cambio contraseña | No | No | ✅ HT elaborada §7 (pedido explícito; key Excel LO-33) |
 | 41 | LO-34 | Bloqueo n intentos FE | No | Sí | ✅ HU-FE §6 |
-| 42 | LO-35 | EP validación pass + flag | No | No | Viva sin puntos → §8 |
+| 42 | LO-35 | EP validación pass + flag | No | No | ✅ HT elaborada §7 (pedido explícito; key Excel LO-35) |
 
-**Elaboradas en este documento:** 10 HU + 2 HT + 2 TAREA puntuadas. **Desestimadas:** 18. **Vivas sin puntos (no elaboradas):** 10.
+\* LO-26 tiene una línea en ESCENARIOS (nota Keycloak), sin viñetas numeradas.
+
+**Elaboradas en este documento:** 10 HU + **8 HT** (2 puntuadas + 6 enablers pedidos) + 2 TAREA. **Desestimadas:** 18. **Vivas aún sin elaborar:** 4 (LO-01, fila 6, fila 30, fila 36).
 
 ---
 
@@ -125,7 +128,7 @@ Revisión de https://marianaintive.github.io/atlas-confirming-poc/ (flujos de ac
 | **RN-02** | Bloqueo a los **3** intentos fallidos (Keycloak + flag BFF + msj FE) | LO-34 Excel |
 | **RN-03** | Inactividad **5 min**; warning **1 min** antes; cookie inválida → login | LO-29 DUDAS |
 | **RN-04** | EGP/Proveedor: pedir 2FA **siempre** tras cerrar sesión | LO-27 DUDAS |
-| **RN-05** | Keycloak resuelve origen AD/Home/Manual | LO-26 (fila no elaborada; nota usada) |
+| **RN-05** | Keycloak resuelve origen AD/Home/Manual | LO-26 (nota Excel; HT elaborada en §7) |
 | **RN-06** | Notificaciones/Mail existente; reintentos + histórico Trade | LO-06 |
 | **RN-07** | Forgot no revela si el usuario existe (POC) | POC olvido pass |
 | **RN-08** | Política de pass de la POC (checklist) — validar con Seguridad | POC nueva contraseña |
@@ -320,7 +323,7 @@ Característica: Primer login BANCO
 | **Actor** | Usuario EGP o Proveedor |
 | **Dominios** | EGP, PROVEEDOR CLIENTE, PROVEEDOR NO CLIENTE |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-05; enablers LO-11/LO-13 (no puntuados) |
+| **Depende de** | LO-05, LO-11, LO-13 |
 | **Habilita** | LO-22 |
 | **Pantalla POC** | `login` → `primer-login-temporal` → `canal-password` → (`derivacion-homebanking`|`nueva-password`) |
 
@@ -390,7 +393,7 @@ Característica: Primer login EGP/Proveedor
 
 #### Notas / preguntas abiertas
 - **S-02** momento de ofrecer HB (DUDAS).
-- Enabler LO-11/LO-13 no puntuados: ver §8.
+- Enablers LO-11 / LO-13 elaborados en §7.
 
 #### Chequeo INVEST
 | I | N | V | E | S | T |
@@ -490,7 +493,7 @@ Característica: Configuración 2FA primer login
 | **Actor** | Usuario que finalizó primer login |
 | **Dominios** | BANCO, EGP, PROVEEDOR |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-01/LO-26 (no puntuado) |
+| **Depende de** | LO-01, LO-26 |
 | **Habilita** | LO-27 |
 | **Pantalla POC** | `?paso=login` (estado recurrente) |
 
@@ -547,7 +550,7 @@ Característica: Login recurrente
 - Primer login/temporal (LO-10).
 
 #### Notas / preguntas abiertas
-- LO-26 no puntuada: la nota de Keycloak se toma como supuesto RN-05.
+- LO-26 elaborada en §7 (RN-05).
 
 #### Chequeo INVEST
 | I | N | V | E | S | T |
@@ -565,7 +568,7 @@ Característica: Login recurrente
 | **Actor** | Usuario post primer login |
 | **Dominios** | EGP/PROVEEDOR (BANCO según S-01) |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-25, LO-28 (no puntuado) |
+| **Depende de** | LO-25, LO-28 |
 | **Habilita** | Acceso a plataforma |
 | **Pantalla POC** | `2fa-otp` con opción recordar dispositivo |
 
@@ -706,7 +709,7 @@ Característica: Cierre por inactividad
 | **Actor** | Usuario BANCO con pass olvidada/expirada |
 | **Dominios** | BANCO |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-33 (no puntuado) |
+| **Depende de** | LO-33 |
 | **Habilita** | Reintento de login AD |
 | **Pantalla POC** | `olvide-password` → `aviso-ad` (+ contacto Mesa de Ayuda en POC) |
 
@@ -770,7 +773,7 @@ Característica: Recupero BANCO
 | **Actor** | Usuario EGP/Proveedor con HB |
 | **Dominios** | EGP, PROVEEDOR CLIENTE |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-33 (no puntuado) |
+| **Depende de** | LO-33 |
 | **Habilita** | Login con nueva pass |
 | **Pantalla POC** | `olvide-password` → `canal-password` / `derivacion-homebanking` |
 
@@ -833,7 +836,7 @@ Característica: Recupero con Home Banking
 | **Actor** | Usuario EGP/Proveedor en recupero manual |
 | **Dominios** | EGP, PROVEEDOR (cliente o no) |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-33/LO-24 (parcialmente no puntuados) |
+| **Depende de** | LO-33, LO-24 |
 | **Habilita** | Login con nueva pass |
 | **Pantalla POC** | `olvide-password` → (`2fa-otp`) → `nueva-password` → `password-actualizada` |
 
@@ -899,7 +902,7 @@ Característica: Cambio manual de contraseña
 | **Actor** | Usuario que falla el login reiteradamente |
 | **Dominios** | Todos |
 | **Prioridad sugerida** | Must |
-| **Depende de** | LO-35 (no puntuado) |
+| **Depende de** | LO-35 |
 | **Habilita** | LO-30…32 |
 | **Pantalla POC** | `login` (contador) → `usuario-bloqueado` |
 
@@ -960,7 +963,9 @@ Característica: Bloqueo por intentos
 
 ---
 
-## 7. Historias puntuadas — técnicas (HT) y tareas
+## 7. Historias técnicas (HT) y tareas
+
+> Incluye HT puntuadas (LO-06, LO-24), HT enablers elaborados por pedido (LO-11, LO-13, LO-26, LO-28, LO-33, LO-35 — **todas con Issue Key ya asignado en el Excel**) y tareas puntuadas.
 
 ### LO-06 — POST · Envío de mail (servicio existente)
 
@@ -1041,6 +1046,323 @@ Característica: OTP
 
 ---
 
+### LO-11 — POST · Validar mail/contraseña temporal (flag temporal)
+
+| | |
+|---|---|
+| **Tipo** | HT (enabler) |
+| **Épica** | LOGIN |
+| **Issue Key** | LO-11 *(Excel)* |
+| **Habilita** | LO-10 |
+| **Contrato** | `POST /v1/auth/first-login` → BE `POST /internal/v1/auth/first-login` (Excel lo enuncia como GET; la hoja API lo define como POST) |
+
+#### Objetivo técnico
+Validar usuario/mail y contraseña temporal contra Keycloak y devolver el **flag de pass temporal** para que el FE obligue el cambio (RN-01).
+
+#### Escenarios fuente
+> Summary Excel (sin viñetas): `EP GET BFF / BE - Validar mail/contraseña temporal contra Keycloak (respuesta con flag de pass temporal)`
+
+#### Criterios de aceptación
+1. **[Feliz]** Credencial temporal válida → **200** con señal de pass temporal y `nextStep` del wizard (p. ej. cambio de contraseña / 2FA).
+2. **[Feliz]** La respuesta incluye dato suficiente para que el FE bloquee el acceso a la plataforma hasta cambiar la pass (RN-01).
+3. **[Error]** Credenciales inválidas → **401**; incrementa contador de intentos (alineado a LO-35 / RN-02).
+4. **[Error]** Usuario sin rol / no habilitado → **403**.
+5. **[Validación]** Body incompleto → **400** / **422**.
+
+#### Escenarios BDD
+```gherkin
+Característica: Validación de contraseña temporal
+  Escenario: Temporal válida con flag
+    Cuando el FE invoca first-login con usuario y contraseña temporal válidos
+    Entonces el BFF responde 200
+    Y la respuesta indica que la contraseña es temporal
+    Y el FE obliga al flujo de actualización (LO-10)
+  Escenario: Credenciales inválidas
+    Cuando el FE invoca first-login con contraseña incorrecta
+    Entonces responde 401
+  Escenario: Usuario sin permisos
+    Cuando el usuario no tiene rol habilitado en Confirming
+    Entonces responde 403
+```
+
+#### Errores esperados
+| Código HTTP | Código negocio | Cuándo |
+|-------------|----------------|--------|
+| 200 | — | OK + flag temporal / nextStep |
+| 400/422 | VALIDATION_ERROR | Datos incompletos |
+| 401 | — | Credenciales inválidas |
+| 403 | — | Sin rol / no habilitado |
+
+---
+
+### LO-13 — POST/PATCH · Actualizar contraseña ingresada por el usuario
+
+| | |
+|---|---|
+| **Tipo** | HT (enabler) |
+| **Épica** | LOGIN |
+| **Issue Key** | LO-13 *(Excel)* |
+| **Habilita** | LO-10, LO-32 |
+| **Contrato** | `PATCH /v1/auth/password` → `PATCH /internal/v1/auth/password` (Excel: EP POST; hoja API: PATCH) |
+
+#### Objetivo técnico
+Persistir en Keycloak la nueva contraseña definida por el usuario (canal manual), reemplazando la temporal o la anterior en recupero.
+
+#### Escenarios fuente
+> Summary Excel: `EP POST BFF / BE - Actualizar contraseña ingresada por el usuario`
+
+#### Criterios de aceptación
+1. **[Feliz]** `newPassword` (+ `otp` si el flujo lo exige) válido → **200** `{ "updated": true }`.
+2. **[Feliz]** Tras éxito en primer login, el flag de pass temporal queda en falso.
+3. **[Error]** OTP inválido → **401**; no modifica la credencial.
+4. **[Validación]** Incumple política (RN-08 / checklist POC) → **422** `PASSWORD_POLICY`.
+5. **[Validación]** No se loguea ni se devuelve la contraseña en claro.
+
+#### Escenarios BDD
+```gherkin
+Característica: Actualización de contraseña manual
+  Escenario: Cambio exitoso
+    Cuando el FE invoca PATCH /v1/auth/password con newPassword válido
+    Entonces responde 200 con updated true
+    Y Keycloak almacena la nueva contraseña
+  Escenario: Política no cumplida
+    Cuando newPassword no cumple la política
+    Entonces responde 422 con PASSWORD_POLICY
+  Escenario: OTP inválido en recupero
+    Cuando el flujo exige otp y el valor es incorrecto
+    Entonces responde 401
+    Y la contraseña no cambia
+```
+
+#### Errores esperados
+| Código HTTP | Código negocio | Cuándo |
+|-------------|----------------|--------|
+| 200 | — | Actualizada |
+| 401 | OTP_INVALID | OTP inválido |
+| 422 | PASSWORD_POLICY | No cumple política |
+| 422 | PASSWORD_REUSE | Reutiliza reciente / temporal |
+
+---
+
+### LO-26 — POST · Validación de credenciales AD / Home / Manual
+
+| | |
+|---|---|
+| **Tipo** | HT (enabler) |
+| **Épica** | LOGIN |
+| **Issue Key** | LO-26 *(Excel)* |
+| **Habilita** | LO-07, LO-25, LO-30, LO-31, LO-32 |
+| **Contrato** | `POST /v1/auth/login` + `POST /v1/auth/token-exchange`; BE `GET /internal/v1/users/{id}/login-policy` |
+
+#### Objetivo técnico
+Autenticar sin que el FE elija el origen de la contraseña. Excel: *"Keycloak se encarga de diferenciar dónde buscar la pass"* (RN-05). Exponer canales permitidos vía `login-policy`.
+
+#### Escenarios fuente
+> Summary: `EP GET BFF- Validación de credenciales AD/Home/Manual`  
+> Escenarios Excel: `Keycloak se encarga de difrerenciar donde buscar la pass`
+
+#### Criterios de aceptación
+1. **[Feliz]** `POST /login` → **200** con `authorizationUrl`, `state`, `codeVerifier`.
+2. **[Feliz]** `POST /token-exchange` → **200** con tokens y `mfaRequired`.
+3. **[Feliz]** Autenticación transparente para orígenes AD / HOMEBANKING / MANUAL (RN-05).
+4. **[Feliz]** `login-policy` indica canales (AD, HB, manual) para mostrar/ocultar HB en FE (LO-10/31).
+5. **[Error]** Auth fallida → **401** + intentos restantes (sin enumerar usuarios, RN-07).
+
+#### Escenarios BDD
+```gherkin
+Característica: Login unificado con resolución de origen en Keycloak
+  Escenario: Inicio OAuth
+    Cuando el FE invoca POST /v1/auth/login
+    Entonces responde 200 con authorizationUrl, state y codeVerifier
+  Escenario: Token exchange
+    Cuando el FE invoca POST /v1/auth/token-exchange con code válido
+    Entonces responde 200 con accessToken, refreshToken y mfaRequired
+  Esquema del escenario: Origen transparente
+    Dado un usuario cuya pass se administra en "<origen>"
+    Cuando se autentica con usuario y contraseña
+    Entonces Keycloak resuelve el provider
+    Y el FE no envía el origen
+    Ejemplos:
+      | origen |
+      | AD |
+      | HOMEBANKING |
+      | MANUAL |
+  Escenario: Consulta login-policy
+    Cuando el BE responde GET login-policy
+    Entonces incluye los canales permitidos del usuario
+  Escenario: Credenciales inválidas
+    Cuando la autenticación falla
+    Entonces responde 401 con intentos restantes
+```
+
+#### Errores esperados
+| Código HTTP | Código negocio | Cuándo |
+|-------------|----------------|--------|
+| 200 | — | OK |
+| 401 | — | Credenciales inválidas |
+| 403 | — | Sin permisos / deshabilitado |
+
+---
+
+### LO-28 — POST · Validación de 2FA
+
+| | |
+|---|---|
+| **Tipo** | HT (enabler) |
+| **Épica** | LOGIN |
+| **Issue Key** | LO-28 *(Excel)* |
+| **Habilita** | LO-27 |
+| **Contrato** | `POST /v1/auth/mfa/verify` → `POST /internal/v1/auth/mfa/verify` (Excel: EP GET; hoja API: POST) |
+
+#### Objetivo técnico
+Validar el segundo factor en accesos posteriores y, opcionalmente, registrar dispositivo confiable (`trustDevice` / `deviceId`).
+
+#### Escenarios fuente
+> Summary Excel: `EP GET BFF - Validación de 2FA`
+
+#### Criterios de aceptación
+1. **[Feliz]** OTP correcto + `trustDevice=true` → **200** `{ verified: true, deviceId }` y registro en dispositivo confiable.
+2. **[Feliz]** OTP correcto + `trustDevice=false` → **200** sin registrar dispositivo.
+3. **[Alternativo]** Tras logout, `mfaRequired=true` aunque exista dispositivo (RN-04).
+4. **[Error]** OTP incorrecto/vencido → **401** con código de negocio.
+5. **[Error]** Intentos de OTP agotados → **429** (si aplica política OTP).
+
+#### Escenarios BDD
+```gherkin
+Característica: Validación de 2FA
+  Escenario: OK con dispositivo confiable
+    Cuando el FE invoca mfa/verify con otp correcto y trustDevice true
+    Entonces responde 200 con verified true y deviceId
+  Escenario: OK sin recordar dispositivo
+    Cuando trustDevice es false y el otp es correcto
+    Entonces responde 200
+    Y no registra dispositivo
+  Escenario: OTP inválido
+    Cuando el otp es incorrecto
+    Entonces responde 401 con OTP_INVALID
+  Escenario: Exigencia tras cerrar sesión
+    Dado el usuario cerró sesión
+    Cuando se autentica de nuevo
+    Entonces mfaRequired es true
+```
+
+#### Errores esperados
+| Código HTTP | Código negocio | Cuándo |
+|-------------|----------------|--------|
+| 200 | — | Verificado |
+| 401 | OTP_INVALID / OTP_EXPIRED / OTP_USED | Código inválido |
+| 429 | OTP_ATTEMPTS | Intentos agotados |
+
+---
+
+### LO-33 — PATCH/POST · Cambio de contraseña (forgot + update)
+
+| | |
+|---|---|
+| **Tipo** | HT (enabler) |
+| **Épica** | LOGIN |
+| **Issue Key** | LO-33 *(Excel)* |
+| **Habilita** | LO-30, LO-31, LO-32 |
+| **Contrato** | `PATCH /v1/auth/password` + `POST /v1/auth/password/forgot` → BE `PATCH /internal/v1/auth/password` |
+
+#### Objetivo técnico
+Resolver la acción de recupero según dominio y aplicar el cambio de contraseña (Excel: `EP PATCH BFF - Cambio de contraseña`).
+
+#### Escenarios fuente
+> Summary Excel: `EP PATCH BFF - Cambio de contraseña`  
+> Contrato forgot (hoja API): `action = REDIRECT_AD | CHOOSE_CHANNEL | OTP_SENT`
+
+#### Criterios de aceptación
+1. **[Feliz]** Forgot BANCO → **200** `action=REDIRECT_AD` (soporta LO-30 / MSG-08).
+2. **[Feliz]** Forgot EGP/Proveedor cliente → **200** `action=CHOOSE_CHANNEL` (LO-31).
+3. **[Feliz]** Forgot Proveedor no cliente → **200** `action=OTP_SENT` (LO-32).
+4. **[Feliz]** Usuario inexistente → **200** genérico sin revelar existencia (RN-07 / MSG-14).
+5. **[Feliz]** PATCH con newPassword + otp válidos → **200** `{ updated: true }`; libera bloqueo si aplica.
+6. **[Error]** OTP inválido en PATCH → **401**; no cambia pass.
+7. **[Error]** Abuso de forgot → **429**.
+
+#### Escenarios BDD
+```gherkin
+Característica: Forgot y cambio de contraseña
+  Esquema del escenario: Acción por dominio
+    Cuando el FE invoca POST /v1/auth/password/forgot para "<dominio>"
+    Entonces action = "<action>"
+    Ejemplos:
+      | dominio | action |
+      | BANCO | REDIRECT_AD |
+      | EGP | CHOOSE_CHANNEL |
+      | PROVEEDOR CLIENTE | CHOOSE_CHANNEL |
+      | PROVEEDOR NO CLIENTE | OTP_SENT |
+  Escenario: No enumeración de usuarios
+    Cuando el usuario no existe
+    Entonces responde 200 genérico
+    Y no envía código
+  Escenario: PATCH exitoso
+    Cuando invoco PATCH /v1/auth/password con datos válidos
+    Entonces updated es true
+    Y se libera el bloqueo si existía
+```
+
+#### Errores esperados
+| Código HTTP | Código negocio | Cuándo |
+|-------------|----------------|--------|
+| 200 | — | Acción resuelta / updated |
+| 401 | OTP_INVALID | OTP inválido |
+| 422 | PASSWORD_POLICY | Política |
+| 429 | RATE_LIMIT | Abuso de forgot |
+
+---
+
+### LO-35 — POST · Validación de pass + flag de status
+
+| | |
+|---|---|
+| **Tipo** | HT (enabler) |
+| **Épica** | LOGIN |
+| **Issue Key** | LO-35 *(Excel)* |
+| **Habilita** | LO-34 |
+| **Contrato** | POST de validación de pass / login que responde al FE y actualiza el flag de status en BFF/Keycloak |
+
+#### Objetivo técnico
+Excel: responder al FE el resultado de la validación y actualizar el flag de estado de la pass (incl. bloqueada a los 3 intentos).
+
+#### Escenarios fuente
+> Summary Excel: `EP POST Validación de pass (responde al FE y actualiza el flag de status de pass)`  
+> Relacionado a LO-34: POST login falla → flag bloqueada → FE muestra error.
+
+#### Criterios de aceptación
+1. **[Alternativo]** Fallo con intentos disponibles → **401** + `remainingAttempts`; incrementa contador.
+2. **[Seguridad]** 3er fallo → Keycloak bloquea; flag `BLOQUEADA`; respuesta de bloqueo al FE (**423** `USER_LOCKED` o equivalente consumible por LO-34).
+3. **[Feliz]** Login exitoso → reinicia contador; status activo.
+4. **[Feliz]** Consulta de estado (si se expone) → ACTIVA / TEMPORAL / EXPIRADA / BLOQUEADA.
+5. **[Validación]** Errores no revelan existencia del usuario ni fragmentos de pass (RN-07).
+
+#### Escenarios BDD
+```gherkin
+Característica: Validación de pass y flag de status
+  Escenario: Fallo con intentos restantes
+    Cuando el FE valida una contraseña incorrecta
+    Entonces responde 401 con remainingAttempts
+    Y el contador se incrementa
+  Escenario: Bloqueo al tercer fallo
+    Dado el usuario tiene 2 fallos
+    Cuando falla el tercero
+    Entonces se actualiza el flag a BLOQUEADA
+    Y el FE puede mostrar MSG-02 (LO-34)
+  Escenario: Reinicio por login exitoso
+    Dado había fallos acumulados
+    Cuando se autentica correctamente
+    Entonces el contador vuelve a cero
+```
+
+#### Errores esperados
+| Código HTTP | Código negocio | Cuándo |
+|-------------|----------------|--------|
+| 401 | — | Fallido (+ remainingAttempts) |
+| 423 | USER_LOCKED | Bloqueado (RN-02) |
+
+---
+
 ### T-02 — Configuración ente Open-API Atlas *(key Excel XX, puntuada)*
 
 | | |
@@ -1081,24 +1403,18 @@ Configuración inicial OPEN API ATLAS
 
 ---
 
-## 8. Filas vivas no puntuadas (no elaboradas)
+## 8. Filas vivas aún no elaboradas
 
-Según el prompt, **no** se escriben historias completas. Quedan registradas para no perder trazabilidad:
+Quedan fuera de las tarjetas (sin puntos en Excel y sin pedido de elaboración). Se proponen Issue Keys donde faltan:
 
-| Key / fila | Summary | Por qué importa |
-|------------|---------|-----------------|
-| LO-01 | Implementar servicio OAuth | Base de login |
-| fila 6 | Config. mail Core/Trade | Habilita LO-05/06/24 |
-| LO-11 | Validar temporal + flag | Enabler directo de LO-10 |
-| LO-13 | Actualizar pass ingresada por usuario | Enabler LO-10/32 |
-| LO-26 | Validación AD/Home/Manual (+ nota Keycloak) | Enabler LO-07/25 |
-| LO-28 | Validación 2FA | Enabler LO-27 |
-| fila 30 | Mail del usuario | Enabler LO-22 (cambiar mail OTP) |
-| fila 36 | Cookie en validador de login | Enabler LO-29 |
-| LO-33 | PATCH cambio de contraseña | Enabler LO-30…32 |
-| LO-35 | Validación pass + flag status | Enabler LO-34 |
+| Key | Summary | Por qué importa | Key propuesta |
+|-----|---------|-----------------|---------------|
+| LO-01 | Implementar servicio OAuth | Base de login | *(ya tiene LO-01)* |
+| LO-01-a *(propuesto)* | Config. mail Atlas Core/Trade (fila 6) | Habilita LO-05/06/24 | **LO-01-a** |
+| LO-24-a *(propuesto)* | EP Mail del usuario (fila 30) | Enabler LO-22 (cambiar mail OTP) | **LO-24-a** |
+| LO-29-a *(propuesto)* | Cookie en validador de login (fila 36) | Enabler LO-29 | **LO-29-a** |
 
-> Recomendación operativa: puntuar estas filas en el Excel (contratos/AC) o promoverlas a HT formales en el backlog.
+> LO-11 / LO-13 / LO-26 / LO-28 / LO-33 / LO-35 ya tenían Issue Key en el Excel y fueron elaboradas en §7.
 
 ---
 
@@ -1124,7 +1440,7 @@ Según el prompt, **no** se escriben historias completas. Quedan registradas par
 | R-01 | Flujo/endpoint real Home Banking | Pedido en LO-10/31; LO-12 tachado; POC lo marca informativo | Alta |
 | R-02 | Definir OTP mail vs TOTP (`qrUri`/`secret` en API) | Contradicción Excel vs hoja API | Alta |
 | R-03 | Logout manual | RN-04/POC dependen de cerrar sesión | Alta |
-| R-04 | Elaborar HT no puntuadas (LO-11,13,26,28,33,35, cookie, mail usuario) | Sin ellas las HU FE no cierran contrato | Alta |
+| R-04 | Elaborar restantes sin tarjeta (LO-01 detalle, LO-01-a mail, LO-24-a mail usuario, LO-29-a cookie) | Cierran OAuth, OTP mail y sesión | Alta |
 | R-05 | Desbloqueo desde ABM / Mesa | Bloqueo LO-34 sin herramienta admin | Alta |
 | R-06 | Auditoría INTENTO_LOGIN / SESION_AUDIT | Están en matriz, sin historia | Alta |
 | R-07 | Expiración periódica de pass + aviso | Se menciona expirada sin regla | Media |
@@ -1142,15 +1458,15 @@ Según el prompt, **no** se escriben historias completas. Quedan registradas par
 |----|-----------------------------|--------------|
 | LO-05 | `POST /v1/auth/welcome-mail/trigger` | ABM alta usuario (sin pantalla login) |
 | LO-07 | `POST /v1/auth/login`, `token-exchange` | `login` → `2fa-ad` |
-| LO-10 | `POST /v1/auth/first-login`, `PATCH /password` | `login` → temporal → canal → nueva pass / HB |
-| LO-22 | `POST /v1/auth/mfa/setup`, `mfa/verify` | `2fa-mail` → `2fa-otp` → `2fa-listo` |
-| LO-25 | `POST /v1/auth/login`, `token-exchange` | `login` |
-| LO-27 | `POST /v1/auth/mfa/verify` | `2fa-otp` (recordar dispositivo) |
-| LO-29 | cookie sesión (fila 36) | sesión + simular inactividad |
-| LO-30 | `POST /v1/auth/password/forgot` | `olvide-password` → `aviso-ad` |
-| LO-31 | `password/forgot` | olvido → canal / derivación HB |
-| LO-32 | `password/forgot`, `PATCH /password` | olvido → OTP → nueva pass → actualizada |
-| LO-34 | login + flag status (LO-35) | `login` → `usuario-bloqueado` |
+| LO-10 | LO-11, LO-13 · `POST /v1/auth/first-login`, `PATCH /password` | `login` → temporal → canal → nueva pass / HB |
+| LO-22 | LO-24 · `POST /v1/auth/mfa/setup`, `mfa/verify` | `2fa-mail` → `2fa-otp` → `2fa-listo` |
+| LO-25 | LO-26 · `POST /v1/auth/login`, `token-exchange` | `login` |
+| LO-27 | LO-28, LO-24 · `POST /v1/auth/mfa/verify` | `2fa-otp` (recordar dispositivo) |
+| LO-29 | LO-29-a *(propuesto)* cookie sesión | sesión + simular inactividad |
+| LO-30 | LO-33 · `POST /v1/auth/password/forgot` | `olvide-password` → `aviso-ad` |
+| LO-31 | LO-33 · `password/forgot` | olvido → canal / derivación HB |
+| LO-32 | LO-33, LO-24 · `password/forgot`, `PATCH /password` | olvido → OTP → nueva pass → actualizada |
+| LO-34 | LO-35 · login + flag status | `login` → `usuario-bloqueado` |
 
 \* La hoja Matriz usa **otra** numeración LO; aquí se mapea por capacidad usando keys de LOGIN + contratos API.
 
