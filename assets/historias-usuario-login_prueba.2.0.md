@@ -17,7 +17,6 @@
 5. [Catálogo de mensajes (MSG)](#5-catálogo-de-mensajes-msg)
 6. [Historias puntuadas — funcionales (HU)](#6-historias-puntuadas--funcionales-hu)
 7. [Historias técnicas (HT) y tareas](#7-historias-técnicas-ht-y-tareas)
-
 8. [Filas vivas aún no elaboradas](#8-filas-vivas-aún-no-elaboradas)
 9. [Spikes (columna DUDAS)](#9-spikes-columna-dudas)
 10. [Recomendaciones del PO — qué faltaría](#10-recomendaciones-del-po--qué-faltaría)
@@ -637,7 +636,7 @@ Característica: 2FA en accesos posteriores
 | **Actor** | Usuario logueado |
 | **Dominios** | Todos |
 | **Prioridad sugerida** | Must |
-| **Depende de** | Cookie de sesión (fila 36, no puntuada) |
+| **Depende de** | LO-29-a *(propuesto)* |
 | **Habilita** | Protección de sesión |
 | **Pantalla POC** | Sesión activa + control POC *Simular inactividad* |
 
